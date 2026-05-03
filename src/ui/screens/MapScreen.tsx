@@ -1,10 +1,12 @@
-import { StyleSheet, Text, View } from "react-native";
+import { ImageBackground, StyleSheet, Text, View } from "react-native";
 import { Screen } from "../components/Screen";
 import { SteelCard } from "../components/SteelCard";
 import { usePlayerStore } from "../../store/usePlayerStore";
 import { resolveAvatarPosition } from "../../features/mapJourney/mapEngine";
 import { theme } from "../../core/theme";
 import { GutsMarker } from "../components/GutsMarker";
+
+const worldMapAsset = require("../../../assets/map/world-map.png");
 
 export function MapScreen() {
   const progress = usePlayerStore((state) => state.progress);
@@ -19,7 +21,9 @@ export function MapScreen() {
       </SteelCard>
 
       <View style={styles.mapContainer}>
-        <GutsMarker xPct={avatar.x} yPct={avatar.y} />
+        <ImageBackground source={worldMapAsset} style={styles.mapBackground} imageStyle={styles.mapImage}>
+          <GutsMarker xPct={avatar.x} yPct={avatar.y} />
+        </ImageBackground>
       </View>
     </Screen>
   );
@@ -34,7 +38,14 @@ const styles = StyleSheet.create({
     borderRadius: theme.radius.lg,
     borderWidth: 1,
     borderColor: theme.colors.metal,
-    backgroundColor: "#101014",
     overflow: "hidden",
+  },
+  mapBackground: {
+    flex: 1,
+    backgroundColor: "#101014",
+  },
+  mapImage: {
+    resizeMode: "cover",
+    opacity: 0.92,
   },
 });

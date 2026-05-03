@@ -1,4 +1,4 @@
-import { StyleSheet, View } from "react-native";
+import { Image, StyleSheet, View } from "react-native";
 import { theme } from "../../core/theme";
 
 type GutsMarkerProps = {
@@ -6,20 +6,32 @@ type GutsMarkerProps = {
   yPct: number;
 };
 
+const gutsMarkerAsset = require("../../../assets/map/guts-marker.png");
+
 export function GutsMarker({ xPct, yPct }: GutsMarkerProps) {
-  return <View style={[styles.marker, { left: `${xPct * 100}%`, top: `${yPct * 100}%` }]} />;
+  return (
+    <View style={[styles.marker, { left: `${xPct * 100}%`, top: `${yPct * 100}%` }]}>
+      <Image source={gutsMarkerAsset} style={styles.image} resizeMode="contain" />
+    </View>
+  );
 }
 
 const styles = StyleSheet.create({
   marker: {
     position: "absolute",
-    width: 14,
-    height: 14,
-    borderRadius: 7,
-    marginLeft: -7,
-    marginTop: -7,
-    backgroundColor: theme.colors.blood.glow,
-    borderWidth: 2,
-    borderColor: theme.colors.text.primary,
+    width: 40,
+    height: 40,
+    marginLeft: -20,
+    marginTop: -20,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  image: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: theme.colors.blood.glow,
+    backgroundColor: "rgba(0,0,0,0.35)",
   },
 });
