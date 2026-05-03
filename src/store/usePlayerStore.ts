@@ -1,23 +1,18 @@
 import { create } from "zustand";
+import { buildProgressFromSteps } from "../features/progression/engine";
 import type { PlayerProgress } from "../features/progression/types";
 
-const initialProgress: PlayerProgress = {
-  totalSteps: 0,
-  totalDistanceKm: 0,
-  progressPct: 0,
-  currentStageId: "stage-001",
-  currentStageProgressPct: 0,
-  streakDays: 0,
-  brandState: "idle",
-  lastActiveDateISO: new Date(0).toISOString(),
-};
+const initialProgress: PlayerProgress = buildProgressFromSteps(0, 0, new Date(0).toISOString());
 
 type PlayerState = {
   progress: PlayerProgress;
   setProgress: (progress: PlayerProgress) => void;
+  syncFromSteps: (totalSteps: number, streakDays: number, lastActiveDateISO: string) => void;
 };
 
 export const usePlayerStore = create<PlayerState>((set) => ({
   progress: initialProgress,
   setProgress: (progress) => set({ progress }),
+  syncFromSteps: (totalSteps, streakDays, lastActiveDateISO) =>
+    set({ progress: buildProgressFromSteps(totalSteps, streakDays, lastActiveDateISO) }),
 }));
