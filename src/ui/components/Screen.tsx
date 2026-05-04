@@ -1,5 +1,6 @@
 import { ReactNode } from "react";
-import { SafeAreaView, StyleSheet, View } from "react-native";
+import { StyleSheet, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { theme } from "../../core/theme";
 
 type ScreenProps = { children: ReactNode };

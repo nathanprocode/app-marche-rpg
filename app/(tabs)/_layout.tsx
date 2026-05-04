@@ -21,7 +21,7 @@ function TabIcon({ name, color, size, focused }: TabIconProps) {
         toValue: focused ? 1.12 : 1,
         duration: 180,
         easing: Easing.out(Easing.quad),
-        useNativeDriver: true,
+        useNativeDriver: false,
       }),
       Animated.timing(glow, {
         toValue: focused ? 1 : 0,
