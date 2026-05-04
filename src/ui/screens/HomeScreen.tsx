@@ -15,7 +15,7 @@ export function HomeScreen() {
 
   async function handleSyncDay(): Promise<void> {
     await runDailySync();
-    router.push("/map");
+    router.push("/(tabs)/map");
   }
 
   return (
@@ -32,7 +32,7 @@ export function HomeScreen() {
             <Text style={styles.buttonText}>Synchroniser la journée</Text>
           </Pressable>
 
-          <Pressable style={[styles.button, styles.secondaryButton]} onPress={() => router.push("/map")}>
+          <Pressable style={[styles.button, styles.secondaryButton]} onPress={() => router.push("/(tabs)/map")}>
             <Text style={styles.buttonText}>Voir la carte</Text>
           </Pressable>
         </View>
