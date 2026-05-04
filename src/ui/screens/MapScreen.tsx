@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useRef } from "react";
-import { Animated, Easing, ImageBackground, StyleSheet, Text, View } from "react-native";
+import { Animated, Easing, ImageBackground, Pressable, StyleSheet, Text, View } from "react-native";
 import checkpoints from "../../data/map/checkpoints.json";
 import stages from "../../data/map/stages.json";
 import { Screen } from "../components/Screen";
 import { SteelCard } from "../components/SteelCard";
 import { usePlayerStore } from "../../store/usePlayerStore";
 import { useBrandStore } from "../../store/useBrandStore";
+import { runDailySync } from "../../features/runtime/dailySync";
 import { resolveAvatarPosition } from "../../features/mapJourney/mapEngine";
 import { theme } from "../../core/theme";
 import { GutsMarker } from "../components/GutsMarker";
@@ -36,15 +37,39 @@ export function MapScreen() {
   const avatar = resolveAvatarPosition(progress.currentStageId, progress.currentStageProgressPct);
   const points = checkpoints as Checkpoint[];
   const stageList = stages as Stage[];
-  const bloodPulse = useRef(new Animated.Value(0.22)).current;
+
+  const bloodPulse = useRef(new Animated.Value(0.2)).current;
+  const fogPulse = useRef(new Animated.Value(0.08)).current;
+  const shakeX = useRef(new Animated.Value(0)).current;
 
   const currentStageIndex = stageList.findIndex((stage) => stage.id === progress.currentStageId);
   const segmentPairs = useMemo(() => points.slice(0, -1).map((from, i) => [from, points[i + 1]] as const), [points]);
 
   useEffect(() => {
+    const fogLoop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(fogPulse, {
+          toValue: 0.16,
+          duration: 3500,
+          easing: Easing.inOut(Easing.sin),
+          useNativeDriver: true,
+        }),
+        Animated.timing(fogPulse, {
+          toValue: 0.08,
+          duration: 3500,
+          easing: Easing.inOut(Easing.sin),
+          useNativeDriver: true,
+        }),
+      ]),
+    );
+    fogLoop.start();
+    return () => fogLoop.stop();
+  }, [fogPulse]);
+
+  useEffect(() => {
     if (brandVisual.state !== "bleeding") return;
 
-    const pulse = Animated.loop(
+    const bloodLoop = Animated.loop(
       Animated.sequence([
         Animated.timing(bloodPulse, {
           toValue: 0.42,
@@ -53,7 +78,7 @@ export function MapScreen() {
           useNativeDriver: true,
         }),
         Animated.timing(bloodPulse, {
-          toValue: 0.22,
+          toValue: 0.2,
           duration: 900,
           easing: Easing.inOut(Easing.quad),
           useNativeDriver: true,
@@ -61,9 +86,23 @@ export function MapScreen() {
       ]),
     );
 
-    pulse.start();
-    return () => pulse.stop();
-  }, [bloodPulse, brandVisual.state]);
+    const shakeLoop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(shakeX, { toValue: -2, duration: 65, useNativeDriver: true }),
+        Animated.timing(shakeX, { toValue: 2, duration: 65, useNativeDriver: true }),
+        Animated.timing(shakeX, { toValue: 0, duration: 65, useNativeDriver: true }),
+      ]),
+    );
+
+    bloodLoop.start();
+    shakeLoop.start();
+
+    return () => {
+      bloodLoop.stop();
+      shakeLoop.stop();
+      shakeX.setValue(0);
+    };
+  }, [bloodPulse, brandVisual.state, shakeX]);
 
   return (
     <Screen>
@@ -72,9 +111,12 @@ export function MapScreen() {
         <Text style={styles.meta}>Étape: {progress.currentStageId}</Text>
         <Text style={styles.meta}>Progression étape: {progress.currentStageProgressPct.toFixed(1)}%</Text>
         <Text style={styles.meta}>Km restants: {kmRemaining(progress).toFixed(1)}</Text>
+        <Pressable style={styles.syncBtn} onPress={() => void runDailySync()}>
+          <Text style={styles.syncBtnText}>Forcer une synchro</Text>
+        </Pressable>
       </SteelCard>
 
-      <View style={styles.mapContainer}>
+      <Animated.View style={[styles.mapContainer, { transform: [{ translateX: shakeX }] }]}>
         <ImageBackground source={worldMapAsset} style={styles.mapBackground} imageStyle={styles.mapImage}>
           {segmentPairs.map(([from, to], index) => {
             const done = index < currentStageIndex;
@@ -116,11 +158,12 @@ export function MapScreen() {
 
           <GutsMarker xPct={avatar.x} yPct={avatar.y} />
 
+          <Animated.View pointerEvents="none" style={[styles.fogOverlay, { opacity: fogPulse }]} />
           {brandVisual.state === "bleeding" ? (
             <Animated.View pointerEvents="none" style={[styles.bleedOverlay, { opacity: bloodPulse }]} />
           ) : null}
         </ImageBackground>
-      </View>
+      </Animated.View>
     </Screen>
   );
 }
@@ -128,6 +171,18 @@ export function MapScreen() {
 const styles = StyleSheet.create({
   title: { color: theme.colors.text.primary, fontSize: theme.typography.size.lg },
   meta: { color: theme.colors.text.muted, marginTop: theme.spacing.xs },
+  syncBtn: {
+    marginTop: theme.spacing.md,
+    borderWidth: 1,
+    borderColor: theme.colors.metal,
+    borderRadius: theme.radius.sm,
+    padding: theme.spacing.sm,
+  },
+  syncBtnText: {
+    color: theme.colors.text.primary,
+    textAlign: "center",
+    fontSize: theme.typography.size.sm,
+  },
   mapContainer: {
     marginTop: theme.spacing.lg,
     flex: 1,
@@ -175,6 +230,10 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.blood.glow,
     transform: [{ scale: 1.2 }],
     borderColor: theme.colors.text.primary,
+  },
+  fogOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(185,185,185,0.18)",
   },
   bleedOverlay: {
     ...StyleSheet.absoluteFillObject,
