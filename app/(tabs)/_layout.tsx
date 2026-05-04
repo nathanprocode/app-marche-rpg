@@ -76,7 +76,7 @@ export default function TabsLayout() {
             profile: focused ? "person" : "person-outline",
           };
 
-          return <TabIcon name={iconByRoute[route.name] ?? "ellipse" color={color} size={size} focused={focused} />;
+          return <TabIcon name={iconByRoute[route.name] ?? "ellipse"} color={color} size={size} focused={focused} />;
         },
       })}
     >
