@@ -21,9 +21,11 @@ export default function RootLayout() {
   }, [bindAuthListener]);
 
   useEffect(() => {
+    console.log("🔥 [LAYOUT] Cloud load effect", { isAuthenticated, userId, userName });
     async function loadCloudState() {
       if (!isAuthenticated || !userId) return;
       const cloudDoc = await ensureUserDocAndLoad(userId, userName ?? "Traqué");
+      console.log("🔥 [LAYOUT] Cloud doc loaded", cloudDoc);
       setProgress(cloudDoc.progression);
 
       useBrandStore.setState((prev) => ({

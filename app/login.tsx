@@ -19,13 +19,23 @@ export default function LoginRoute() {
 
   useEffect(() => {
     async function handleGoogleResponse() {
-      if (response?.type !== "success") return;
-      const idToken = response.params.id_token;
-      if (!idToken) return;
+      if (!response) return;
+      console.log("🔥 [LOGIN] Google response type:", response.type);
+      if (response.type !== "success") return;
+
+      const idToken = response.params?.id_token;
+      console.log("🔥 [LOGIN] id_token received:", Boolean(idToken));
+      if (!idToken) {
+        console.log("🔥 [LOGIN] Missing id_token in Google response params", response.params);
+        return;
+      }
 
       setLoading(true);
       try {
-        await signInFirebaseWithGoogleIdToken(idToken);
+        const userCredential = await signInFirebaseWithGoogleIdToken(idToken);
+        console.log("🔥 [LOGIN] Firebase signInWithCredential UID:", userCredential.user.uid);
+      } catch (error) {
+        console.log("🔥 [LOGIN] Firebase sign-in error:", error);
       } finally {
         setLoading(false);
       }
