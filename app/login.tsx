@@ -1,28 +1,40 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import * as WebBrowser from "expo-web-browser";
+import * as Google from "expo-auth-session/providers/google";
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-native";
 import { theme } from "../src/core/theme";
 import { Screen } from "../src/ui/components/Screen";
-import { useAuthStore } from "../src/store/useAuthStore";
-import "../src/core/firebase";
+import { signInFirebaseWithGoogleIdToken } from "../src/core/firebase";
 
 WebBrowser.maybeCompleteAuthSession();
 
+const GOOGLE_WEB_CLIENT_ID = "REPLACE_WITH_WEB_CLIENT_ID.apps.googleusercontent.com";
+const GOOGLE_ANDROID_CLIENT_ID = "REPLACE_WITH_ANDROID_CLIENT_ID.apps.googleusercontent.com";
+
 export default function LoginRoute() {
-  const setAuthenticatedUser = useAuthStore((s) => s.setAuthenticatedUser);
   const [loading, setLoading] = useState(false);
 
-  async function handleGoogleSignIn(): Promise<void> {
-    setLoading(true);
-    try {
-      // Sprint 1: placeholder UI/routing validation.
-      // Sprint 2: remplacer par le vrai flux AuthSession + Firebase Google provider.
-      await new Promise((resolve) => setTimeout(resolve, 800));
-      setAuthenticatedUser("Épéiste Noir");
-    } finally {
-      setLoading(false);
+  const [request, response, promptAsync] = Google.useIdTokenAuthRequest({
+    webClientId: GOOGLE_WEB_CLIENT_ID,
+    androidClientId: GOOGLE_ANDROID_CLIENT_ID,
+  });
+
+  useEffect(() => {
+    async function handleGoogleResponse() {
+      if (response?.type !== "success") return;
+      const idToken = response.params.id_token;
+      if (!idToken) return;
+
+      setLoading(true);
+      try {
+        await signInFirebaseWithGoogleIdToken(idToken);
+      } finally {
+        setLoading(false);
+      }
     }
-  }
+
+    void handleGoogleResponse();
+  }, [response]);
 
   return (
     <Screen>
@@ -30,7 +42,11 @@ export default function LoginRoute() {
         <Text style={styles.title}>Marche du Faucon</Text>
         <Text style={styles.subtitle}>Le serment d'acier commence ici.</Text>
 
-        <Pressable style={styles.googleBtn} onPress={() => void handleGoogleSignIn()}>
+        <Pressable
+          disabled={!request || loading}
+          style={[styles.googleBtn, (!request || loading) && styles.googleBtnDisabled]}
+          onPress={() => void promptAsync()}
+        >
           {loading ? (
             <ActivityIndicator color={theme.colors.text.primary} />
           ) : (
@@ -72,6 +88,9 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 10,
     shadowOffset: { width: 0, height: 0 },
+  },
+  googleBtnDisabled: {
+    opacity: 0.5,
   },
   googleBtnText: {
     color: theme.colors.text.primary,

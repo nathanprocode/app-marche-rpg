@@ -26,7 +26,8 @@
     "react-native-web": "^0.21.0",
     "firebase": "^12.4.0",
     "expo-auth-session": "~6.2.0",
-    "expo-web-browser": "~15.0.8"
+    "expo-web-browser": "~15.0.8",
+    "expo-random": "~14.0.1"
   },
   "devDependencies": {
     "@types/react": "~19.1.0",
