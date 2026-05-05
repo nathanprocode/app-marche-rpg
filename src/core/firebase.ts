@@ -10,6 +10,7 @@ import {
   signOut,
   type User,
 } from "firebase/auth";
+import { getFirestore } from "firebase/firestore";
 
 const firebaseConfig = {
   apiKey: "AIzaSyAqlXqFF1_m6VAwVAvr_lRXgSZESy_BJ4k",
@@ -22,6 +23,7 @@ const firebaseConfig = {
 };
 
 export const firebaseApp = getApps().length ? getApp() : initializeApp(firebaseConfig);
+export const firestoreDb = getFirestore(firebaseApp);
 
 export const firebaseAuth = (() => {
   try {

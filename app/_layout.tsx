@@ -1,18 +1,41 @@
 import { Redirect, Stack, useSegments } from "expo-router";
 import { useEffect } from "react";
 import { Text, View } from "react-native";
+import { ensureUserDocAndLoad } from "../src/features/userCloud/service";
 import { useAuthStore } from "../src/store/useAuthStore";
+import { useBrandStore } from "../src/store/useBrandStore";
+import { usePlayerStore } from "../src/store/usePlayerStore";
 
 export default function RootLayout() {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const isAuthResolved = useAuthStore((s) => s.isAuthResolved);
+  const userId = useAuthStore((s) => s.userId);
+  const userName = useAuthStore((s) => s.userName);
   const bindAuthListener = useAuthStore((s) => s.bindAuthListener);
+  const setProgress = usePlayerStore((s) => s.setProgress);
   const segments = useSegments();
   const isOnLogin = segments[0] === "login";
 
   useEffect(() => {
     bindAuthListener();
   }, [bindAuthListener]);
+
+  useEffect(() => {
+    async function loadCloudState() {
+      if (!isAuthenticated || !userId) return;
+      const cloudDoc = await ensureUserDocAndLoad(userId, userName ?? "Traqué");
+      setProgress(cloudDoc.progression);
+
+      useBrandStore.setState((prev) => ({
+        status: {
+          ...prev.status,
+          visual: { ...prev.status.visual, intensity: cloudDoc.brandIntensity },
+        },
+      }));
+    }
+
+    void loadCloudState();
+  }, [isAuthenticated, userId, userName, setProgress]);
 
   if (!isAuthResolved) {
     return (
