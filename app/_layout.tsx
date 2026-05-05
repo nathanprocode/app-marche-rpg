@@ -4,15 +4,10 @@ import { useAuthStore } from "../src/store/useAuthStore";
 export default function RootLayout() {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const segments = useSegments();
-  const inAuthScreen = segments[0] === "login";
+  const isOnLogin = segments[0] === "login";
 
-  if (!isAuthenticated && !inAuthScreen) {
-    return <Redirect href="/login" />;
-  }
-
-  if (isAuthenticated && inAuthScreen) {
-    return <Redirect href="/(tabs)" />;
-  }
+  if (!isAuthenticated && !isOnLogin) return <Redirect href="/login" />;
+  if (isAuthenticated && isOnLogin) return <Redirect href="/(tabs)" />;
 
   return (
     <Stack initialRouteName="(tabs)" screenOptions={{ headerShown: false }}>

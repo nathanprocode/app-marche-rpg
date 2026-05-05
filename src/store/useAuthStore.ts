@@ -3,16 +3,13 @@ import { create } from "zustand";
 type AuthState = {
   isAuthenticated: boolean;
   userName: string | null;
-  loginWithGoogle: () => Promise<void>;
+  setAuthenticatedUser: (userName: string) => void;
   logout: () => void;
 };
 
 export const useAuthStore = create<AuthState>((set) => ({
   isAuthenticated: false,
   userName: null,
-  loginWithGoogle: async () => {
-    await new Promise((resolve) => setTimeout(resolve, 700));
-    set({ isAuthenticated: true, userName: "Épéiste Noir" });
-  },
+  setAuthenticatedUser: (userName) => set({ isAuthenticated: true, userName }),
   logout: () => set({ isAuthenticated: false, userName: null }),
 }));
