@@ -1,0 +1,7 @@
+[
+  { "stageId": "stage-001", "x": 0.08, "y": 0.72 },
+  { "stageId": "stage-002", "x": 0.20, "y": 0.66 },
+  { "stageId": "stage-003", "x": 0.36, "y": 0.58 },
+  { "stageId": "stage-004", "x": 0.54, "y": 0.45 },
+  { "stageId": "stage-005", "x": 0.72, "y": 0.30 }
+]
