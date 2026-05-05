@@ -1,0 +1,13 @@
+{
+  "expo": {
+    "name": "Marche du Faucon",
+    "slug": "marche-du-faucon",
+    "scheme": "marchedufaucon",
+    "plugins": [
+      "expo-router"
+    ],
+    "web": {
+      "bundler": "metro"
+    }
+  }
+}

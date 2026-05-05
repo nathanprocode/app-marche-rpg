@@ -1,0 +1,7 @@
+[
+  { "id": "stage-001", "name": "Ruines du pendu", "startKm": 0, "endKm": 2 },
+  { "id": "stage-002", "name": "Chemin des corbeaux", "startKm": 2, "endKm": 5 },
+  { "id": "stage-003", "name": "Marais noir", "startKm": 5, "endKm": 9 },
+  { "id": "stage-004", "name": "Col d'acier", "startKm": 9, "endKm": 14 },
+  { "id": "stage-005", "name": "Fort du faucon", "startKm": 14, "endKm": 20 }
+]
