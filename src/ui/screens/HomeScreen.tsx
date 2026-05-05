@@ -1,0 +1,79 @@
+import { Text, StyleSheet, Pressable, View } from "react-native";
+import { useRouter } from "expo-router";
+import { Screen } from "../components/Screen";
+import { SteelCard } from "../components/SteelCard";
+import { theme } from "../../core/theme";
+import { runDailySync } from "../../features/runtime/dailySync";
+import { usePedometerStore } from "../../store/usePedometerStore";
+import { usePlayerStore } from "../../store/usePlayerStore";
+
+export function HomeScreen() {
+  const router = useRouter();
+  const steps = usePedometerStore((state) => state.stepsToday);
+  const distance = usePedometerStore((state) => state.distanceTodayKm);
+  const progress = usePlayerStore((state) => state.progress.progressPct);
+  const totalSteps = usePlayerStore((state) => state.progress.totalSteps);
+  const totalKm = usePlayerStore((state) => state.progress.totalDistanceKm);
+  const addDevSteps = usePlayerStore((state) => state.addDevSteps);
+  const resetProgressionDev = usePlayerStore((state) => state.resetProgressionDev);
+
+  async function handleSyncDay(): Promise<void> {
+    await runDailySync();
+    router.push("/(tabs)/map");
+  }
+
+  return (
+    <Screen>
+      <SteelCard>
+        <Text style={styles.title}>Marche du Faucon</Text>
+        <Text style={styles.subtitle}>Objectif: 1000 km</Text>
+        <Text style={styles.subtitle}>Pas du jour: {steps}</Text>
+        <Text style={styles.subtitle}>Km du jour: {distance.toFixed(2)}</Text>
+        <Text style={styles.subtitle}>Progression totale: {progress.toFixed(2)}%</Text>
+        <Text style={styles.subtitle}>Total pas: {totalSteps}</Text>
+        <Text style={styles.subtitle}>Total km: {totalKm.toFixed(3)}</Text>
+
+        <View style={styles.actions}>
+          <Pressable style={styles.button} onPress={() => void handleSyncDay()}>
+            <Text style={styles.buttonText}>Synchroniser la journée</Text>
+          </Pressable>
+
+          <Pressable style={styles.devButton} onPress={() => void addDevSteps(500)}>
+            <Text style={styles.buttonText}>+ 500 Pas (Dev)</Text>
+          </Pressable>
+
+          <Pressable style={styles.devButton} onPress={() => void resetProgressionDev()}>
+            <Text style={styles.buttonText}>Reset Progression (Dev)</Text>
+          </Pressable>
+
+          <Pressable style={[styles.button, styles.secondaryButton]} onPress={() => router.push("/(tabs)/map")}>
+            <Text style={styles.buttonText}>Voir la carte</Text>
+          </Pressable>
+        </View>
+      </SteelCard>
+    </Screen>
+  );
+}
+
+const styles = StyleSheet.create({
+  title: { color: theme.colors.text.primary, fontSize: theme.typography.size.xl },
+  subtitle: { color: theme.colors.text.muted, marginTop: theme.spacing.sm },
+  actions: { marginTop: theme.spacing.lg, gap: theme.spacing.sm },
+  button: {
+    borderRadius: theme.radius.md,
+    borderWidth: 1,
+    borderColor: theme.colors.blood.glow,
+    padding: theme.spacing.md,
+  },
+  devButton: {
+    borderRadius: theme.radius.md,
+    borderWidth: 1,
+    borderColor: theme.colors.blood.base,
+    backgroundColor: "rgba(138,3,3,0.2)",
+    padding: theme.spacing.md,
+  },
+  secondaryButton: {
+    borderColor: theme.colors.metal,
+  },
+  buttonText: { color: theme.colors.text.primary, textAlign: "center", fontWeight: "700" },
+});
