@@ -35,7 +35,7 @@ export function GutsMarker({ xPct, yPct }: GutsMarkerProps) {
   }, [pulse]);
 
   return (
-    <View style={[styles.marker, { left: `${xPct * 100}%`, top: `${yPct * 100}%` }]}>
+    <View style={[styles.marker, { left: `${xPct}%`, top: `${yPct}%` }]}>
       <Animated.View style={{ transform: [{ scale: pulse }] }}>
         <Image source={gutsMarkerAsset} style={styles.image} resizeMode="contain" />
       </Animated.View>
