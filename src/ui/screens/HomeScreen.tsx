@@ -15,6 +15,7 @@ export function HomeScreen() {
   const totalSteps = usePlayerStore((state) => state.progress.totalSteps);
   const totalKm = usePlayerStore((state) => state.progress.totalDistanceKm);
   const addDevSteps = usePlayerStore((state) => state.addDevSteps);
+  const resetProgressionDev = usePlayerStore((state) => state.resetProgressionDev);
 
   async function handleSyncDay(): Promise<void> {
     await runDailySync();
@@ -39,6 +40,10 @@ export function HomeScreen() {
 
           <Pressable style={styles.devButton} onPress={() => void addDevSteps(500)}>
             <Text style={styles.buttonText}>+ 500 Pas (Dev)</Text>
+          </Pressable>
+
+          <Pressable style={styles.devButton} onPress={() => void resetProgressionDev()}>
+            <Text style={styles.buttonText}>Reset Progression (Dev)</Text>
           </Pressable>
 
           <Pressable style={[styles.button, styles.secondaryButton]} onPress={() => router.push("/(tabs)/map")}>

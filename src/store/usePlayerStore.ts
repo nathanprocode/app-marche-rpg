@@ -12,6 +12,7 @@ type PlayerState = {
   setProgress: (progress: PlayerProgress) => void;
   syncFromSteps: (totalSteps: number, streakDays: number, lastActiveDateISO: string) => void;
   addDevSteps: (stepsToAdd?: number) => Promise<void>;
+  resetProgressionDev: () => Promise<void>;
 };
 
 export const usePlayerStore = create<PlayerState>((set, get) => ({
@@ -41,6 +42,35 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
       });
     } else {
       console.log("🔥 [PLAYER STORE] skipped cloud sync (no uid)");
+    }
+  },
+  resetProgressionDev: async () => {
+    const resetProgress: PlayerProgress = {
+      totalSteps: 0,
+      totalDistanceKm: 0,
+      progressPct: 0,
+      currentStageId: "stage-001",
+      currentStageProgressPct: 0,
+      streakDays: 0,
+      brandState: "idle",
+      lastActiveDateISO: new Date(0).toISOString(),
+    };
+
+    set({ progress: resetProgress });
+
+    const uid = useAuthStore.getState().userId;
+    const brandIntensity = useBrandStore.getState().status.visual.intensity;
+    if (uid) {
+      await saveProgressionToCloud(uid, resetProgress, brandIntensity);
+      console.log("🔥 [PLAYER STORE] resetProgressionDev synced", {
+        uid,
+        totalSteps: resetProgress.totalSteps,
+        totalDistanceKm: resetProgress.totalDistanceKm,
+        currentStageId: resetProgress.currentStageId,
+        currentStageProgressPct: resetProgress.currentStageProgressPct,
+      });
+    } else {
+      console.log("🔥 [PLAYER STORE] reset skipped cloud sync (no uid)");
     }
   },
 }));
