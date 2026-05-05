@@ -12,6 +12,9 @@ export function HomeScreen() {
   const steps = usePedometerStore((state) => state.stepsToday);
   const distance = usePedometerStore((state) => state.distanceTodayKm);
   const progress = usePlayerStore((state) => state.progress.progressPct);
+  const totalSteps = usePlayerStore((state) => state.progress.totalSteps);
+  const totalKm = usePlayerStore((state) => state.progress.totalDistanceKm);
+  const addDevSteps = usePlayerStore((state) => state.addDevSteps);
 
   async function handleSyncDay(): Promise<void> {
     await runDailySync();
@@ -26,10 +29,16 @@ export function HomeScreen() {
         <Text style={styles.subtitle}>Pas du jour: {steps}</Text>
         <Text style={styles.subtitle}>Km du jour: {distance.toFixed(2)}</Text>
         <Text style={styles.subtitle}>Progression totale: {progress.toFixed(2)}%</Text>
+        <Text style={styles.subtitle}>Total pas: {totalSteps}</Text>
+        <Text style={styles.subtitle}>Total km: {totalKm.toFixed(3)}</Text>
 
         <View style={styles.actions}>
           <Pressable style={styles.button} onPress={() => void handleSyncDay()}>
             <Text style={styles.buttonText}>Synchroniser la journée</Text>
+          </Pressable>
+
+          <Pressable style={styles.devButton} onPress={() => void addDevSteps(500)}>
+            <Text style={styles.buttonText}>+ 500 Pas (Dev)</Text>
           </Pressable>
 
           <Pressable style={[styles.button, styles.secondaryButton]} onPress={() => router.push("/(tabs)/map")}>
@@ -51,8 +60,15 @@ const styles = StyleSheet.create({
     borderColor: theme.colors.blood.glow,
     padding: theme.spacing.md,
   },
+  devButton: {
+    borderRadius: theme.radius.md,
+    borderWidth: 1,
+    borderColor: theme.colors.blood.base,
+    backgroundColor: "rgba(138,3,3,0.2)",
+    padding: theme.spacing.md,
+  },
   secondaryButton: {
     borderColor: theme.colors.metal,
   },
-  buttonText: { color: theme.colors.text.primary, textAlign: "center" },
+  buttonText: { color: theme.colors.text.primary, textAlign: "center", fontWeight: "700" },
 });
