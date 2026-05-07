@@ -33,7 +33,7 @@ export function usePedometer(enabled = true): UsePedometerState {
     error: null,
   });
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const lastNotifiedTotalKmRef = useRef<number | null>(null);
+  const lastNotifiedDistanceBucketRef = useRef<number | null>(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -81,7 +81,7 @@ export function usePedometer(enabled = true): UsePedometerState {
           usePedometerStore.getState().setLiveSteps(baseStepsToday);
         }
 
-        lastNotifiedTotalKmRef.current = Math.floor(stepsToKm(baseTotalSteps));
+        lastNotifiedDistanceBucketRef.current = Math.floor(stepsToKm(baseTotalSteps) * 100);
         await updatePersistentTrackingNotificationAsync({
           stepsToday: baseStepsToday,
           totalSteps: baseTotalSteps,
@@ -92,12 +92,12 @@ export function usePedometer(enabled = true): UsePedometerState {
           const liveStepsToday = baseStepsToday + steps;
           const liveTotalSteps = baseTotalSteps + steps;
           const liveTotalKm = stepsToKm(liveTotalSteps);
-          const currentTotalKmFloor = Math.floor(liveTotalKm);
+          const currentDistanceBucket = Math.floor(liveTotalKm * 100);
 
           usePedometerStore.getState().setLiveSteps(liveStepsToday, updatedAtISO);
 
-          if (lastNotifiedTotalKmRef.current !== currentTotalKmFloor) {
-            lastNotifiedTotalKmRef.current = currentTotalKmFloor;
+          if (lastNotifiedDistanceBucketRef.current !== currentDistanceBucket) {
+            lastNotifiedDistanceBucketRef.current = currentDistanceBucket;
             void updatePersistentTrackingNotificationAsync({
               stepsToday: liveStepsToday,
               totalSteps: liveTotalSteps,

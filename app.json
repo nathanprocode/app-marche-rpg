@@ -41,12 +41,19 @@
         "ACTIVITY_RECOGNITION",
         "POST_NOTIFICATIONS",
         "FOREGROUND_SERVICE",
-        "FOREGROUND_SERVICE_HEALTH"
+        "FOREGROUND_SERVICE_HEALTH",
+        "WAKE_LOCK"
       ]
     },
     "web": {
       "bundler": "metro",
       "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "93306631-d82a-49bc-a402-a0c468e808a6"
+      }
     }
   }
 }

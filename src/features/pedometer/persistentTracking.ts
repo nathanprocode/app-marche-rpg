@@ -18,7 +18,9 @@ type TrackingNotificationPayload = {
 
 function getChapterTitle(totalKm: number): string {
   const position = calculateGutsPosition(totalKm, BERSERK_CHECKPOINTS);
-  return `Arc de ${position.previous.arc}`;
+  const arc = position.previous.arc;
+  const prefix = arc.toLocaleLowerCase().startsWith("âge") ? "de l'" : "de ";
+  return `🌑 Arc ${prefix}${arc}`;
 }
 
 function ensureNotificationHandler(): void {
@@ -97,7 +99,7 @@ export async function clearPersistentTrackingNotificationAsync(): Promise<void> 
   trackingNotificationId = null;
 }
 
-TaskManager.defineTask(BACKGROUND_PEDOMETER_TASK, async ({ error }: { error?: Error | null }) => {
+TaskManager.defineTask(BACKGROUND_PEDOMETER_TASK, async ({ error }: any) => {
   if (error) {
     console.log("[BACKGROUND_PEDOMETER_TASK] error", error);
     return;
