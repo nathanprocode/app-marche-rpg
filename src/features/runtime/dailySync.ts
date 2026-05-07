@@ -11,7 +11,7 @@ export async function runDailySync(currentDateISO = new Date().toISOString()): P
 
   const pedometerState = usePedometerStore.getState();
   const playerState = usePlayerStore.getState();
-  playerState.syncFromSteps(
+  await playerState.syncFromSteps(
     pedometerState.stepsToday,
     playerState.progress.streakDays,
     playerState.progress.lastActiveDateISO,

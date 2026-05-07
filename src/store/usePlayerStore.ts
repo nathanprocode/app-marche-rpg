@@ -11,8 +11,10 @@ const initialProgress: PlayerProgress = buildProgressFromSteps(0, 0, new Date(0)
 
 type PlayerState = {
   progress: PlayerProgress;
+  unlockedCheckpoints: string[];
   setProgress: (progress: PlayerProgress) => void;
-  syncFromSteps: (totalSteps: number, streakDays: number, lastActiveDateISO: string) => void;
+  setUnlockedCheckpoints: (checkpointIds: string[]) => void;
+  syncFromSteps: (totalSteps: number, streakDays: number, lastActiveDateISO: string) => Promise<void>;
   addDevSteps: (stepsToAdd?: number) => Promise<void>;
   advanceToNextCheckpointDev: () => Promise<void>;
   resetProgressionDev: () => Promise<void>;
@@ -22,11 +24,40 @@ function stepsForKm(km: number): number {
   return Math.ceil((km * 1000) / GAME_CONFIG.metersPerStep);
 }
 
+function resolveUnlockedCheckpoints(totalDistanceKm: number, currentIds: string[] = []): string[] {
+  const reachedIds = BERSERK_CHECKPOINTS.filter(
+    (checkpoint) => checkpoint.kmThreshold <= totalDistanceKm + 0.0001,
+  ).map((checkpoint) => checkpoint.id);
+
+  return Array.from(new Set([...currentIds, ...reachedIds]));
+}
+
+async function saveCurrentProgress(progression: PlayerProgress, unlockedCheckpoints: string[]): Promise<void> {
+  const uid = useAuthStore.getState().userId;
+  const brandIntensity = useBrandStore.getState().status.visual.intensity;
+
+  if (uid) {
+    await saveProgressionToCloud(uid, progression, brandIntensity, unlockedCheckpoints);
+  }
+}
+
 export const usePlayerStore = create<PlayerState>((set, get) => ({
   progress: initialProgress,
-  setProgress: (progress) => set({ progress }),
-  syncFromSteps: (totalSteps, streakDays, lastActiveDateISO) =>
-    set({ progress: buildProgressFromSteps(totalSteps, streakDays, lastActiveDateISO) }),
+  unlockedCheckpoints: resolveUnlockedCheckpoints(initialProgress.totalDistanceKm),
+  setProgress: (progress) =>
+    set((state) => ({
+      progress,
+      unlockedCheckpoints: resolveUnlockedCheckpoints(progress.totalDistanceKm, state.unlockedCheckpoints),
+    })),
+  setUnlockedCheckpoints: (checkpointIds) => set({ unlockedCheckpoints: checkpointIds }),
+  syncFromSteps: async (totalSteps, streakDays, lastActiveDateISO) => {
+    const progress = buildProgressFromSteps(totalSteps, streakDays, lastActiveDateISO);
+    const unlockedCheckpoints = resolveUnlockedCheckpoints(progress.totalDistanceKm, get().unlockedCheckpoints);
+
+    set({ progress, unlockedCheckpoints });
+
+    await saveCurrentProgress(progress, unlockedCheckpoints);
+  },
   addDevSteps: async (stepsToAdd = 500) => {
     const current = get().progress;
     const updated = buildProgressFromSteps(
@@ -34,22 +65,10 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
       current.streakDays,
       current.lastActiveDateISO,
     );
+    const unlockedCheckpoints = resolveUnlockedCheckpoints(updated.totalDistanceKm, get().unlockedCheckpoints);
 
-    set({ progress: updated });
-
-    const uid = useAuthStore.getState().userId;
-    const brandIntensity = useBrandStore.getState().status.visual.intensity;
-    if (uid) {
-      await saveProgressionToCloud(uid, updated, brandIntensity);
-      console.log("🔥 [PLAYER STORE] saveProgressionToCloud synced", {
-        uid,
-        totalSteps: updated.totalSteps,
-        totalDistanceKm: updated.totalDistanceKm,
-        currentStageProgressPct: updated.currentStageProgressPct,
-      });
-    } else {
-      console.log("🔥 [PLAYER STORE] skipped cloud sync (no uid)");
-    }
+    set({ progress: updated, unlockedCheckpoints });
+    await saveCurrentProgress(updated, unlockedCheckpoints);
   },
   advanceToNextCheckpointDev: async () => {
     const current = get().progress;
@@ -66,22 +85,10 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
       current.streakDays,
       current.lastActiveDateISO,
     );
+    const unlockedCheckpoints = resolveUnlockedCheckpoints(updated.totalDistanceKm, get().unlockedCheckpoints);
 
-    set({ progress: updated });
-
-    const uid = useAuthStore.getState().userId;
-    const brandIntensity = useBrandStore.getState().status.visual.intensity;
-    if (uid) {
-      await saveProgressionToCloud(uid, updated, brandIntensity);
-      console.log("🔥 [PLAYER STORE] advanceToNextCheckpointDev synced", {
-        uid,
-        totalSteps: updated.totalSteps,
-        totalDistanceKm: updated.totalDistanceKm,
-        nextCheckpointId: nextCheckpoint.id,
-      });
-    } else {
-      console.log("🔥 [PLAYER STORE] checkpoint advance skipped cloud sync (no uid)");
-    }
+    set({ progress: updated, unlockedCheckpoints });
+    await saveCurrentProgress(updated, unlockedCheckpoints);
   },
   resetProgressionDev: async () => {
     const resetProgress: PlayerProgress = {
@@ -94,22 +101,9 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
       brandState: "idle",
       lastActiveDateISO: new Date(0).toISOString(),
     };
+    const unlockedCheckpoints = resolveUnlockedCheckpoints(resetProgress.totalDistanceKm);
 
-    set({ progress: resetProgress });
-
-    const uid = useAuthStore.getState().userId;
-    const brandIntensity = useBrandStore.getState().status.visual.intensity;
-    if (uid) {
-      await saveProgressionToCloud(uid, resetProgress, brandIntensity);
-      console.log("🔥 [PLAYER STORE] resetProgressionDev synced", {
-        uid,
-        totalSteps: resetProgress.totalSteps,
-        totalDistanceKm: resetProgress.totalDistanceKm,
-        currentStageId: resetProgress.currentStageId,
-        currentStageProgressPct: resetProgress.currentStageProgressPct,
-      });
-    } else {
-      console.log("🔥 [PLAYER STORE] reset skipped cloud sync (no uid)");
-    }
+    set({ progress: resetProgress, unlockedCheckpoints });
+    await saveCurrentProgress(resetProgress, unlockedCheckpoints);
   },
 }));

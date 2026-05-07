@@ -13,6 +13,7 @@ export default function RootLayout() {
   const userName = useAuthStore((s) => s.userName);
   const bindAuthListener = useAuthStore((s) => s.bindAuthListener);
   const setProgress = usePlayerStore((s) => s.setProgress);
+  const setUnlockedCheckpoints = usePlayerStore((s) => s.setUnlockedCheckpoints);
   const segments = useSegments();
   const isOnLogin = segments[0] === "login";
 
@@ -27,6 +28,7 @@ export default function RootLayout() {
       const cloudDoc = await ensureUserDocAndLoad(userId, userName ?? "Traqué");
       console.log("🔥 [LAYOUT] Cloud doc loaded", cloudDoc);
       setProgress(cloudDoc.progression);
+      setUnlockedCheckpoints(cloudDoc.unlockedCheckpoints);
 
       useBrandStore.setState((prev) => ({
         status: {
@@ -37,7 +39,7 @@ export default function RootLayout() {
     }
 
     void loadCloudState();
-  }, [isAuthenticated, userId, userName, setProgress]);
+  }, [isAuthenticated, userId, userName, setProgress, setUnlockedCheckpoints]);
 
   if (!isAuthResolved) {
     return (
@@ -56,6 +58,7 @@ export default function RootLayout() {
       <Stack.Screen name="(tabs)" />
       <Stack.Screen name="onboarding" />
       <Stack.Screen name="quests" />
+      <Stack.Screen name="gallery" />
     </Stack>
   );
 }
