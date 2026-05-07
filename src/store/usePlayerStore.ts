@@ -1,4 +1,6 @@
 import { create } from "zustand";
+import { GAME_CONFIG } from "../core/constants/game";
+import { BERSERK_CHECKPOINTS } from "../data/map/berserk-checkpoints";
 import { buildProgressFromSteps } from "../features/progression/engine";
 import { saveProgressionToCloud } from "../features/userCloud/service";
 import type { PlayerProgress } from "../features/progression/types";
@@ -12,8 +14,13 @@ type PlayerState = {
   setProgress: (progress: PlayerProgress) => void;
   syncFromSteps: (totalSteps: number, streakDays: number, lastActiveDateISO: string) => void;
   addDevSteps: (stepsToAdd?: number) => Promise<void>;
+  advanceToNextCheckpointDev: () => Promise<void>;
   resetProgressionDev: () => Promise<void>;
 };
+
+function stepsForKm(km: number): number {
+  return Math.ceil((km * 1000) / GAME_CONFIG.metersPerStep);
+}
 
 export const usePlayerStore = create<PlayerState>((set, get) => ({
   progress: initialProgress,
@@ -42,6 +49,38 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
       });
     } else {
       console.log("🔥 [PLAYER STORE] skipped cloud sync (no uid)");
+    }
+  },
+  advanceToNextCheckpointDev: async () => {
+    const current = get().progress;
+    const nextCheckpoint = BERSERK_CHECKPOINTS.find(
+      (checkpoint) => checkpoint.kmThreshold > current.totalDistanceKm + 0.0001,
+    );
+
+    if (!nextCheckpoint) {
+      return;
+    }
+
+    const updated = buildProgressFromSteps(
+      stepsForKm(nextCheckpoint.kmThreshold),
+      current.streakDays,
+      current.lastActiveDateISO,
+    );
+
+    set({ progress: updated });
+
+    const uid = useAuthStore.getState().userId;
+    const brandIntensity = useBrandStore.getState().status.visual.intensity;
+    if (uid) {
+      await saveProgressionToCloud(uid, updated, brandIntensity);
+      console.log("🔥 [PLAYER STORE] advanceToNextCheckpointDev synced", {
+        uid,
+        totalSteps: updated.totalSteps,
+        totalDistanceKm: updated.totalDistanceKm,
+        nextCheckpointId: nextCheckpoint.id,
+      });
+    } else {
+      console.log("🔥 [PLAYER STORE] checkpoint advance skipped cloud sync (no uid)");
     }
   },
   resetProgressionDev: async () => {

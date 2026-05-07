@@ -3,6 +3,7 @@ import { useRouter } from "expo-router";
 import { Screen } from "../components/Screen";
 import { SteelCard } from "../components/SteelCard";
 import { theme } from "../../core/theme";
+import { BERSERK_CHECKPOINTS } from "../../data/map/berserk-checkpoints";
 import { runDailySync } from "../../features/runtime/dailySync";
 import { usePedometerStore } from "../../store/usePedometerStore";
 import { usePlayerStore } from "../../store/usePlayerStore";
@@ -14,8 +15,9 @@ export function HomeScreen() {
   const progress = usePlayerStore((state) => state.progress.progressPct);
   const totalSteps = usePlayerStore((state) => state.progress.totalSteps);
   const totalKm = usePlayerStore((state) => state.progress.totalDistanceKm);
-  const addDevSteps = usePlayerStore((state) => state.addDevSteps);
+  const advanceToNextCheckpointDev = usePlayerStore((state) => state.advanceToNextCheckpointDev);
   const resetProgressionDev = usePlayerStore((state) => state.resetProgressionDev);
+  const nextCheckpoint = BERSERK_CHECKPOINTS.find((checkpoint) => checkpoint.kmThreshold > totalKm + 0.0001);
 
   async function handleSyncDay(): Promise<void> {
     await runDailySync();
@@ -38,8 +40,14 @@ export function HomeScreen() {
             <Text style={styles.buttonText}>Synchroniser la journée</Text>
           </Pressable>
 
-          <Pressable style={styles.devButton} onPress={() => void addDevSteps(500)}>
-            <Text style={styles.buttonText}>+ 500 Pas (Dev)</Text>
+          <Pressable
+            disabled={!nextCheckpoint}
+            style={[styles.devButton, !nextCheckpoint && styles.disabledButton]}
+            onPress={() => void advanceToNextCheckpointDev()}
+          >
+            <Text style={styles.buttonText}>
+              {nextCheckpoint ? `Checkpoint suivant: ${nextCheckpoint.title}` : "Parcours terminé"}
+            </Text>
           </Pressable>
 
           <Pressable style={styles.devButton} onPress={() => void resetProgressionDev()}>
@@ -71,6 +79,9 @@ const styles = StyleSheet.create({
     borderColor: theme.colors.blood.base,
     backgroundColor: "rgba(138,3,3,0.2)",
     padding: theme.spacing.md,
+  },
+  disabledButton: {
+    opacity: 0.55,
   },
   secondaryButton: {
     borderColor: theme.colors.metal,

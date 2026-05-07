@@ -1,4 +1,5 @@
 import type { BerserkCheckpoint } from "../../data/map/berserk-checkpoints";
+import type { MapPoint } from "./types";
 
 export type GutsPositionResult = {
   x: number;
@@ -10,6 +11,15 @@ export type GutsPositionResult = {
 
 function lerp(a: number, b: number, t: number): number {
   return a + (b - a) * t;
+}
+
+export function interpolatePoint(from: MapPoint, to: MapPoint, progressPct: number): MapPoint {
+  const t = Math.max(0, Math.min(1, progressPct / 100));
+
+  return {
+    x: lerp(from.x, to.x, t),
+    y: lerp(from.y, to.y, t),
+  };
 }
 
 export function calculateGutsPosition(totalKm: number, checkpoints: BerserkCheckpoint[]): GutsPositionResult {
@@ -25,8 +35,7 @@ export function calculateGutsPosition(totalKm: number, checkpoints: BerserkCheck
 
   if (totalKm >= sorted[sorted.length - 1].kmThreshold) {
     const last = sorted[sorted.length - 1];
-    const beforeLast = sorted[sorted.length - 2];
-    return { x: last.x, y: last.y, previous: beforeLast, next: last, segmentProgressPct: 100 };
+    return { x: last.x, y: last.y, previous: last, next: last, segmentProgressPct: 100 };
   }
 
   let previous = sorted[0];
