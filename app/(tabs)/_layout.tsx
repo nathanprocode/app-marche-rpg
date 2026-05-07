@@ -80,7 +80,7 @@ export default function TabsLayout() {
         },
       })}
     >
-      <Tabs.Screen name="index" options={{ title: "Bivouac" }} />
+      <Tabs.Screen name="index" options={{ title: "Feu de camp" }} />
       <Tabs.Screen name="map" options={{ title: "Carte" }} />
       <Tabs.Screen name="profile" options={{ title: "Profil" }} />
     </Tabs>

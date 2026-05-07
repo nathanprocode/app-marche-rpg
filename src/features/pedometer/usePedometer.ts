@@ -2,6 +2,13 @@ import { useEffect, useRef, useState } from "react";
 import { Pedometer } from "expo-sensors";
 import { usePedometerStore } from "../../store/usePedometerStore";
 import { usePlayerStore } from "../../store/usePlayerStore";
+import {
+  clearPersistentTrackingNotificationAsync,
+  registerBackgroundPedometerTaskAsync,
+  unregisterBackgroundPedometerTaskAsync,
+  updatePersistentTrackingNotificationAsync,
+} from "./persistentTracking";
+import { stepsToKm } from "./service";
 
 type PedometerPermission = "granted" | "denied" | "undetermined";
 
@@ -26,6 +33,7 @@ export function usePedometer(enabled = true): UsePedometerState {
     error: null,
   });
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastNotifiedTotalKmRef = useRef<number | null>(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -33,6 +41,8 @@ export function usePedometer(enabled = true): UsePedometerState {
 
     async function startPedometer(): Promise<void> {
       if (!enabled) {
+        await clearPersistentTrackingNotificationAsync();
+        await unregisterBackgroundPedometerTaskAsync();
         return;
       }
 
@@ -60,6 +70,8 @@ export function usePedometer(enabled = true): UsePedometerState {
           return;
         }
 
+        await registerBackgroundPedometerTaskAsync();
+
         const baseTotalSteps = usePlayerStore.getState().progress.totalSteps;
         let baseStepsToday = usePedometerStore.getState().stepsToday;
 
@@ -69,12 +81,28 @@ export function usePedometer(enabled = true): UsePedometerState {
           usePedometerStore.getState().setLiveSteps(baseStepsToday);
         }
 
+        lastNotifiedTotalKmRef.current = Math.floor(stepsToKm(baseTotalSteps));
+        await updatePersistentTrackingNotificationAsync({
+          stepsToday: baseStepsToday,
+          totalSteps: baseTotalSteps,
+        });
+
         subscription = Pedometer.watchStepCount(({ steps }: { steps: number }) => {
           const updatedAtISO = new Date().toISOString();
           const liveStepsToday = baseStepsToday + steps;
           const liveTotalSteps = baseTotalSteps + steps;
+          const liveTotalKm = stepsToKm(liveTotalSteps);
+          const currentTotalKmFloor = Math.floor(liveTotalKm);
 
           usePedometerStore.getState().setLiveSteps(liveStepsToday, updatedAtISO);
+
+          if (lastNotifiedTotalKmRef.current !== currentTotalKmFloor) {
+            lastNotifiedTotalKmRef.current = currentTotalKmFloor;
+            void updatePersistentTrackingNotificationAsync({
+              stepsToday: liveStepsToday,
+              totalSteps: liveTotalSteps,
+            });
+          }
 
           if (saveTimeoutRef.current) {
             clearTimeout(saveTimeoutRef.current);
@@ -107,6 +135,8 @@ export function usePedometer(enabled = true): UsePedometerState {
     return () => {
       isMounted = false;
       subscription?.remove();
+      void clearPersistentTrackingNotificationAsync();
+      void unregisterBackgroundPedometerTaskAsync();
       if (saveTimeoutRef.current) {
         clearTimeout(saveTimeoutRef.current);
       }

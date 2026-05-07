@@ -12,8 +12,10 @@ const initialProgress: PlayerProgress = buildProgressFromSteps(0, 0, new Date(0)
 type PlayerState = {
   progress: PlayerProgress;
   unlockedCheckpoints: string[];
+  isPermanentTrackingEnabled: boolean;
   setProgress: (progress: PlayerProgress) => void;
   setUnlockedCheckpoints: (checkpointIds: string[]) => void;
+  setPermanentTrackingEnabled: (enabled: boolean) => void;
   syncFromSteps: (totalSteps: number, streakDays: number, lastActiveDateISO: string) => Promise<void>;
   addDevSteps: (stepsToAdd?: number) => Promise<void>;
   advanceToNextCheckpointDev: () => Promise<void>;
@@ -44,12 +46,14 @@ async function saveCurrentProgress(progression: PlayerProgress, unlockedCheckpoi
 export const usePlayerStore = create<PlayerState>((set, get) => ({
   progress: initialProgress,
   unlockedCheckpoints: resolveUnlockedCheckpoints(initialProgress.totalDistanceKm),
+  isPermanentTrackingEnabled: false,
   setProgress: (progress) =>
     set((state) => ({
       progress,
       unlockedCheckpoints: resolveUnlockedCheckpoints(progress.totalDistanceKm, state.unlockedCheckpoints),
     })),
   setUnlockedCheckpoints: (checkpointIds) => set({ unlockedCheckpoints: checkpointIds }),
+  setPermanentTrackingEnabled: (enabled) => set({ isPermanentTrackingEnabled: enabled }),
   syncFromSteps: async (totalSteps, streakDays, lastActiveDateISO) => {
     const progress = buildProgressFromSteps(totalSteps, streakDays, lastActiveDateISO);
     const unlockedCheckpoints = resolveUnlockedCheckpoints(progress.totalDistanceKm, get().unlockedCheckpoints);

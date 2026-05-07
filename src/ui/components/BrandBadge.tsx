@@ -8,7 +8,6 @@ export function BrandBadge({ visual }: { visual: BrandVisualState }) {
   return (
     <View style={[styles.badge, bleeding && styles.bleeding]}>
       <Text style={styles.title}>Marque du Sacrifice</Text>
-      <Text style={styles.meta}>État: {visual.state}</Text>
       <Text style={styles.meta}>Intensité: {(visual.intensity * 100).toFixed(0)}%</Text>
     </View>
   );

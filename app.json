@@ -3,12 +3,26 @@
     "name": "Marche du Faucon",
     "slug": "marche-du-faucon",
     "scheme": "marchedufaucon",
+    "icon": "./assets/icon.png",
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#000000"
+    },
     "plugins": [
       "expo-router",
       [
         "expo-sensors",
         {
           "motionPermission": "Autorisez l'accès pour que vos pas fassent avancer le Traqué sur la carte."
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/icon.png",
+          "color": "#C1121F",
+          "defaultChannel": "marche-du-faucon-tracking"
         }
       ]
     ],
@@ -18,12 +32,21 @@
       }
     },
     "android": {
+      "package": "com.natha.marchedufaucon",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#000000"
+      },
       "permissions": [
-        "ACTIVITY_RECOGNITION"
+        "ACTIVITY_RECOGNITION",
+        "POST_NOTIFICATIONS",
+        "FOREGROUND_SERVICE",
+        "FOREGROUND_SERVICE_HEALTH"
       ]
     },
     "web": {
-      "bundler": "metro"
+      "bundler": "metro",
+      "favicon": "./assets/favicon.png"
     }
   }
 }

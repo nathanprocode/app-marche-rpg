@@ -16,10 +16,11 @@ export default function RootLayout() {
   const bindAuthListener = useAuthStore((s) => s.bindAuthListener);
   const setProgress = usePlayerStore((s) => s.setProgress);
   const setUnlockedCheckpoints = usePlayerStore((s) => s.setUnlockedCheckpoints);
+  const isPermanentTrackingEnabled = usePlayerStore((s) => s.isPermanentTrackingEnabled);
   const segments = useSegments();
   const isOnLogin = segments[0] === "login";
 
-  usePedometer(isAuthResolved && isAuthenticated && isCloudStateLoaded);
+  usePedometer(isAuthResolved && isAuthenticated && isCloudStateLoaded && isPermanentTrackingEnabled);
 
   useEffect(() => {
     bindAuthListener();

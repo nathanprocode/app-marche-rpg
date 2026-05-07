@@ -1,4 +1,5 @@
-import { ImageBackground, ScrollView, StyleSheet, Text, View } from "react-native";
+import { useEffect, useRef, useState } from "react";
+import { ImageBackground, ScrollView, StyleSheet, Text, View, type LayoutChangeEvent } from "react-native";
 import { BERSERK_CHECKPOINTS } from "../../data/map/berserk-checkpoints";
 import { calculateGutsPosition } from "../../features/mapJourney/interpolation";
 import { Screen } from "../components/Screen";
@@ -12,8 +13,30 @@ const MAP_WIDTH = 1448;
 const MAP_HEIGHT = 1086;
 
 export function MapScreen() {
+  const verticalScrollRef = useRef<ScrollView>(null);
+  const horizontalScrollRef = useRef<ScrollView>(null);
+  const [viewport, setViewport] = useState({ width: 0, height: 0 });
   const progress = usePlayerStore((state) => state.progress);
   const position = calculateGutsPosition(progress.totalDistanceKm, BERSERK_CHECKPOINTS);
+
+  useEffect(() => {
+    if (!viewport.width || !viewport.height) {
+      return;
+    }
+
+    const markerX = (position.x / 100) * MAP_WIDTH;
+    const markerY = (position.y / 100) * MAP_HEIGHT;
+    const x = Math.max(0, markerX - viewport.width / 2);
+    const y = Math.max(0, markerY - viewport.height / 2);
+
+    horizontalScrollRef.current?.scrollTo({ x, animated: true });
+    verticalScrollRef.current?.scrollTo({ y, animated: true });
+  }, [position.x, position.y, viewport.height, viewport.width]);
+
+  function handleMapViewportLayout(event: LayoutChangeEvent): void {
+    const { width, height } = event.nativeEvent.layout;
+    setViewport({ width, height });
+  }
 
   return (
     <Screen>
@@ -23,9 +46,9 @@ export function MapScreen() {
         <Text style={styles.meta}>Progression segment: {position.segmentProgressPct.toFixed(1)}%</Text>
       </SteelCard>
 
-      <View style={styles.mapViewport}>
-        <ScrollView nestedScrollEnabled showsVerticalScrollIndicator>
-          <ScrollView horizontal showsHorizontalScrollIndicator>
+      <View style={styles.mapViewport} onLayout={handleMapViewportLayout}>
+        <ScrollView ref={verticalScrollRef} nestedScrollEnabled showsVerticalScrollIndicator>
+          <ScrollView ref={horizontalScrollRef} horizontal showsHorizontalScrollIndicator>
             <ImageBackground source={worldMapAsset} style={styles.mapBackground} imageStyle={styles.mapImage}>
               {BERSERK_CHECKPOINTS.map((checkpoint, index) => {
                 const isReached = checkpoint.kmThreshold <= progress.totalDistanceKm + 0.0001;
