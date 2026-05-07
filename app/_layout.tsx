@@ -1,12 +1,14 @@
 import { Redirect, Stack, useSegments } from "expo-router";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Text, View } from "react-native";
+import { usePedometer } from "../src/features/pedometer/usePedometer";
 import { ensureUserDocAndLoad } from "../src/features/userCloud/service";
 import { useAuthStore } from "../src/store/useAuthStore";
 import { useBrandStore } from "../src/store/useBrandStore";
 import { usePlayerStore } from "../src/store/usePlayerStore";
 
 export default function RootLayout() {
+  const [isCloudStateLoaded, setIsCloudStateLoaded] = useState(false);
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const isAuthResolved = useAuthStore((s) => s.isAuthResolved);
   const userId = useAuthStore((s) => s.userId);
@@ -17,6 +19,8 @@ export default function RootLayout() {
   const segments = useSegments();
   const isOnLogin = segments[0] === "login";
 
+  usePedometer(isAuthResolved && isAuthenticated && isCloudStateLoaded);
+
   useEffect(() => {
     bindAuthListener();
   }, [bindAuthListener]);
@@ -24,7 +28,10 @@ export default function RootLayout() {
   useEffect(() => {
     console.log("🔥 [LAYOUT] Cloud load effect", { isAuthenticated, userId, userName });
     async function loadCloudState() {
-      if (!isAuthenticated || !userId) return;
+      if (!isAuthenticated || !userId) {
+        setIsCloudStateLoaded(false);
+        return;
+      }
       const cloudDoc = await ensureUserDocAndLoad(userId, userName ?? "Traqué");
       console.log("🔥 [LAYOUT] Cloud doc loaded", cloudDoc);
       setProgress(cloudDoc.progression);
@@ -36,6 +43,7 @@ export default function RootLayout() {
           visual: { ...prev.status.visual, intensity: cloudDoc.brandIntensity },
         },
       }));
+      setIsCloudStateLoaded(true);
     }
 
     void loadCloudState();

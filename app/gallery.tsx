@@ -133,12 +133,12 @@ const styles = StyleSheet.create({
   },
   panelImage: {
     width: "100%",
-    aspectRatio: 1070 / 747,
+    height: 200,
     backgroundColor: "#050506",
   },
   lockedPanel: {
     width: "100%",
-    aspectRatio: 1070 / 747,
+    height: 200,
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: "rgba(0,0,0,0.42)",

@@ -4,8 +4,24 @@
     "slug": "marche-du-faucon",
     "scheme": "marchedufaucon",
     "plugins": [
-      "expo-router"
+      "expo-router",
+      [
+        "expo-sensors",
+        {
+          "motionPermission": "Autorisez l'accès pour que vos pas fassent avancer le Traqué sur la carte."
+        }
+      ]
     ],
+    "ios": {
+      "infoPlist": {
+        "NSMotionUsageDescription": "Autorisez l'accès pour que vos pas fassent avancer le Traqué sur la carte."
+      }
+    },
+    "android": {
+      "permissions": [
+        "ACTIVITY_RECOGNITION"
+      ]
+    },
     "web": {
       "bundler": "metro"
     }
