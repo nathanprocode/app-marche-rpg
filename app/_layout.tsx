@@ -19,6 +19,8 @@ export default function RootLayout() {
   const isPermanentTrackingEnabled = usePlayerStore((s) => s.isPermanentTrackingEnabled);
   const segments = useSegments();
   const isOnLogin = segments[0] === "login";
+  const isOnOAuthRedirect = segments[0] === "oauthredirect";
+  const isOnPublicAuthRoute = isOnLogin || isOnOAuthRedirect;
 
   usePedometer(isAuthResolved && isAuthenticated && isCloudStateLoaded && isPermanentTrackingEnabled);
 
@@ -58,12 +60,13 @@ export default function RootLayout() {
     );
   }
 
-  if (!isAuthenticated && !isOnLogin) return <Redirect href="/login" />;
-  if (isAuthenticated && isOnLogin) return <Redirect href="/(tabs)" />;
+  if (!isAuthenticated && !isOnPublicAuthRoute) return <Redirect href="/login" />;
+  if (isAuthenticated && isOnPublicAuthRoute) return <Redirect href="/(tabs)" />;
 
   return (
     <Stack initialRouteName="(tabs)" screenOptions={{ headerShown: false }}>
       <Stack.Screen name="login" />
+      <Stack.Screen name="oauthredirect" />
       <Stack.Screen name="(tabs)" />
       <Stack.Screen name="onboarding" />
       <Stack.Screen name="quests" />

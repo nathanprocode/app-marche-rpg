@@ -2,7 +2,7 @@
   "expo": {
     "name": "Marche du Faucon",
     "slug": "marche-du-faucon",
-    "scheme": "marchedufaucon",
+    "scheme": ["marchedufaucon", "com.natha.marchedufaucon"],
     "icon": "./assets/icon.png",
     "splash": {
       "image": "./assets/splash-icon.png",
@@ -24,7 +24,8 @@
           "color": "#C1121F",
           "defaultChannel": "marche-du-faucon-tracking"
         }
-      ]
+      ],
+      "./plugins/withPermanentPedometer"
     ],
     "ios": {
       "infoPlist": {
