@@ -10,30 +10,48 @@ class PermanentPedometerModule : Module() {
   override fun definition() = ModuleDefinition {
     Name("PermanentPedometer")
 
-    Function("startTracking") { title: String, text: String ->
+    Function("startTracking") { title: String, text: String, baseTotalSteps: Double, baseStepsToday: Double, metersPerStep: Double ->
       val context = requireContext()
       val intent = Intent(context, PermanentPedometerService::class.java).apply {
         putExtra(PermanentPedometerService.EXTRA_TITLE, title)
         putExtra(PermanentPedometerService.EXTRA_TEXT, text)
+        putExtra(PermanentPedometerService.EXTRA_BASE_TOTAL_STEPS, baseTotalSteps)
+        putExtra(PermanentPedometerService.EXTRA_BASE_STEPS_TODAY, baseStepsToday)
+        putExtra(PermanentPedometerService.EXTRA_METERS_PER_STEP, metersPerStep)
       }
 
-      ContextCompat.startForegroundService(context, intent)
+      try {
+        ContextCompat.startForegroundService(context, intent)
+      } catch (error: Exception) {
+        error.printStackTrace()
+      }
     }
 
     Function("stopTracking") {
       val context = requireContext()
-      context.stopService(Intent(context, PermanentPedometerService::class.java))
+      try {
+        context.stopService(Intent(context, PermanentPedometerService::class.java))
+      } catch (error: Exception) {
+        error.printStackTrace()
+      }
     }
 
-    Function("updateNotification") { title: String, text: String ->
+    Function("updateNotification") { title: String, text: String, baseTotalSteps: Double, baseStepsToday: Double, metersPerStep: Double ->
       val context = requireContext()
       val intent = Intent(context, PermanentPedometerService::class.java).apply {
         action = PermanentPedometerService.ACTION_UPDATE_NOTIFICATION
         putExtra(PermanentPedometerService.EXTRA_TITLE, title)
         putExtra(PermanentPedometerService.EXTRA_TEXT, text)
+        putExtra(PermanentPedometerService.EXTRA_BASE_TOTAL_STEPS, baseTotalSteps)
+        putExtra(PermanentPedometerService.EXTRA_BASE_STEPS_TODAY, baseStepsToday)
+        putExtra(PermanentPedometerService.EXTRA_METERS_PER_STEP, metersPerStep)
       }
 
-      context.startService(intent)
+      try {
+        context.startService(intent)
+      } catch (error: Exception) {
+        error.printStackTrace()
+      }
     }
 
     Function("getSteps") {
@@ -43,6 +61,21 @@ class PermanentPedometerModule : Module() {
       )
 
       prefs.getFloat(PermanentPedometerService.KEY_SAVED_STEPS, 0f).toDouble()
+    }
+
+    Function("acknowledgeSteps") {
+      val prefs = requireContext().getSharedPreferences(
+        PermanentPedometerService.PREFS_NAME,
+        Context.MODE_PRIVATE
+      )
+      val lastCounter = prefs.getFloat(PermanentPedometerService.KEY_LAST_COUNTER, -1f)
+      val editor = prefs.edit().putFloat(PermanentPedometerService.KEY_SAVED_STEPS, 0f)
+
+      if (lastCounter >= 0f) {
+        editor.putFloat(PermanentPedometerService.KEY_STEP_COUNTER_BASELINE, lastCounter)
+      }
+
+      editor.apply()
     }
   }
 

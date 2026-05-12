@@ -44,8 +44,9 @@ const styles = StyleSheet.create({
   },
   title: {
     color: theme.colors.text.primary,
+    fontFamily: theme.typography.fontFamily.heading,
     fontSize: 36,
-    fontWeight: "800",
+    fontWeight: theme.typography.weight.extraBold,
     textAlign: "center",
   },
   subtitle: {

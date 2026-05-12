@@ -1,7 +1,9 @@
+import { APP_HEADING_FONT_FAMILY } from "../fonts";
+
 export const typography = {
   fontFamily: {
     regular: "System",
-    heading: "System",
+    heading: APP_HEADING_FONT_FAMILY,
   },
   size: {
     xs: 12,
@@ -14,5 +16,6 @@ export const typography = {
     regular: "400",
     medium: "500",
     bold: "700",
+    extraBold: "800",
   },
 } as const;

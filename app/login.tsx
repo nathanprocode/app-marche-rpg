@@ -106,8 +106,9 @@ const styles = StyleSheet.create({
   },
   title: {
     color: theme.colors.text.primary,
+    fontFamily: theme.typography.fontFamily.heading,
     fontSize: 38,
-    fontWeight: "800",
+    fontWeight: theme.typography.weight.extraBold,
     textAlign: "center",
     letterSpacing: 0.5,
   },

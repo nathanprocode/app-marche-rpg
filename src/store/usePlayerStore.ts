@@ -1,3 +1,4 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { create } from "zustand";
 import { GAME_CONFIG } from "../core/constants/game";
 import { BERSERK_CHECKPOINTS } from "../data/map/berserk-checkpoints";
@@ -8,6 +9,7 @@ import { useAuthStore } from "./useAuthStore";
 import { useBrandStore } from "./useBrandStore";
 
 const initialProgress: PlayerProgress = buildProgressFromSteps(0, 0, new Date(0).toISOString());
+const PERMANENT_TRACKING_STORAGE_KEY = "marche-du-faucon:permanent-tracking-enabled";
 
 type PlayerState = {
   progress: PlayerProgress;
@@ -16,6 +18,7 @@ type PlayerState = {
   setProgress: (progress: PlayerProgress) => void;
   setUnlockedCheckpoints: (checkpointIds: string[]) => void;
   setPermanentTrackingEnabled: (enabled: boolean) => void;
+  hydratePermanentTrackingPreference: () => Promise<void>;
   syncFromSteps: (totalSteps: number, streakDays: number, lastActiveDateISO: string) => Promise<void>;
   addDevSteps: (stepsToAdd?: number) => Promise<void>;
   advanceToNextCheckpointDev: () => Promise<void>;
@@ -53,7 +56,18 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
       unlockedCheckpoints: resolveUnlockedCheckpoints(progress.totalDistanceKm, state.unlockedCheckpoints),
     })),
   setUnlockedCheckpoints: (checkpointIds) => set({ unlockedCheckpoints: checkpointIds }),
-  setPermanentTrackingEnabled: (enabled) => set({ isPermanentTrackingEnabled: enabled }),
+  setPermanentTrackingEnabled: (enabled) => {
+    set({ isPermanentTrackingEnabled: enabled });
+    void AsyncStorage.setItem(PERMANENT_TRACKING_STORAGE_KEY, enabled ? "true" : "false");
+  },
+  hydratePermanentTrackingPreference: async () => {
+    const storedValue = await AsyncStorage.getItem(PERMANENT_TRACKING_STORAGE_KEY);
+    if (storedValue === null) {
+      return;
+    }
+
+    set({ isPermanentTrackingEnabled: storedValue === "true" });
+  },
   syncFromSteps: async (totalSteps, streakDays, lastActiveDateISO) => {
     const progress = buildProgressFromSteps(totalSteps, streakDays, lastActiveDateISO);
     const unlockedCheckpoints = resolveUnlockedCheckpoints(progress.totalDistanceKm, get().unlockedCheckpoints);

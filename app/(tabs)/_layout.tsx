@@ -1,7 +1,8 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Tabs } from "expo-router";
 import { useEffect, useRef } from "react";
-import { Animated, Easing, StyleSheet, View } from "react-native";
+import { Animated, Easing, Platform, StyleSheet, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { theme } from "../../src/core/theme";
 
 type TabIconProps = {
@@ -50,6 +51,10 @@ function TabIcon({ name, color, size, focused }: TabIconProps) {
 }
 
 export default function TabsLayout() {
+  const insets = useSafeAreaInsets();
+  const minimumBottomPadding = Platform.OS === "android" ? 36 : 14;
+  const bottomPadding = Math.max(insets.bottom, minimumBottomPadding);
+
   return (
     <Tabs
       screenOptions={({ route }) => ({
@@ -61,13 +66,14 @@ export default function TabsLayout() {
           backgroundColor: theme.colors.bg.secondary,
           borderTopColor: theme.colors.metal,
           borderTopWidth: 0.5,
-          height: 68,
-          paddingTop: 8,
-          paddingBottom: 8,
+          height: 72 + bottomPadding,
+          paddingTop: 10,
+          paddingBottom: bottomPadding,
         },
         tabBarLabelStyle: {
           fontSize: 12,
           fontWeight: "600",
+          marginBottom: 2,
         },
         tabBarIcon: ({ color, size, focused }) => {
           const iconByRoute: Record<string, keyof typeof Ionicons.glyphMap> = {
@@ -98,7 +104,7 @@ const styles = StyleSheet.create({
     marginTop: 3,
     width: 5,
     height: 5,
-    borderRadius: 3,
+    borderRadius: theme.radius.sm,
     backgroundColor: theme.colors.blood.glow,
   },
 });

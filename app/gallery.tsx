@@ -1,14 +1,17 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import { Image, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Image, Modal, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { BERSERK_CHECKPOINTS } from "../src/data/map/berserk-checkpoints";
 import { BERSERK_PANEL_IMAGES } from "../src/data/map/berserk-panels";
 import { theme } from "../src/core/theme";
 import { usePlayerStore } from "../src/store/usePlayerStore";
+import { useState } from "react";
+import type { ImageSourcePropType } from "react-native";
 
 export default function GalleryScreen() {
   const router = useRouter();
   const unlockedCheckpoints = usePlayerStore((state) => state.unlockedCheckpoints);
+  const [selectedPanel, setSelectedPanel] = useState<ImageSourcePropType | null>(null);
 
   return (
     <View style={styles.screen}>
@@ -40,7 +43,9 @@ export default function GalleryScreen() {
               </View>
 
               {isUnlocked && panelImage ? (
-                <Image source={panelImage} style={styles.panelImage} resizeMode="cover" />
+                <Pressable onPress={() => setSelectedPanel(panelImage)}>
+                  <Image source={panelImage} style={styles.panelImage} resizeMode="cover" />
+                </Pressable>
               ) : (
                 <View style={styles.lockedPanel}>
                   <Ionicons name="lock-closed" size={34} color={theme.colors.metal} />
@@ -57,6 +62,15 @@ export default function GalleryScreen() {
           );
         })}
       </ScrollView>
+
+      <Modal visible={selectedPanel !== null} transparent animationType="fade" onRequestClose={() => setSelectedPanel(null)}>
+        <View style={styles.lightbox}>
+          <Pressable style={styles.closeButton} onPress={() => setSelectedPanel(null)}>
+            <Ionicons name="close" size={26} color={theme.colors.text.primary} />
+          </Pressable>
+          {selectedPanel ? <Image source={selectedPanel} style={styles.lightboxImage} resizeMode="contain" /> : null}
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -81,7 +95,7 @@ const styles = StyleSheet.create({
     height: 42,
     alignItems: "center",
     justifyContent: "center",
-    borderRadius: 21,
+    borderRadius: theme.radius.sm,
     borderWidth: 1,
     borderColor: theme.colors.metal,
     backgroundColor: theme.colors.bg.secondary,
@@ -97,8 +111,9 @@ const styles = StyleSheet.create({
   },
   title: {
     color: theme.colors.text.primary,
+    fontFamily: theme.typography.fontFamily.heading,
     fontSize: theme.typography.size.xl,
-    fontWeight: "700",
+    fontWeight: theme.typography.weight.extraBold,
     marginTop: theme.spacing.xs,
   },
   card: {
@@ -127,8 +142,9 @@ const styles = StyleSheet.create({
   },
   cardTitle: {
     color: theme.colors.text.primary,
+    fontFamily: theme.typography.fontFamily.heading,
     fontSize: theme.typography.size.md,
-    fontWeight: "700",
+    fontWeight: theme.typography.weight.extraBold,
     marginTop: theme.spacing.xs,
   },
   panelImage: {
@@ -159,5 +175,30 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     paddingHorizontal: theme.spacing.md,
     paddingBottom: theme.spacing.md,
+  },
+  lightbox: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(0,0,0,0.94)",
+    padding: theme.spacing.md,
+  },
+  closeButton: {
+    position: "absolute",
+    top: 48,
+    right: 20,
+    zIndex: 2,
+    width: 44,
+    height: 44,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: theme.radius.sm,
+    borderWidth: 1,
+    borderColor: theme.colors.metal,
+    backgroundColor: theme.colors.bg.secondary,
+  },
+  lightboxImage: {
+    width: "100%",
+    height: "86%",
   },
 });

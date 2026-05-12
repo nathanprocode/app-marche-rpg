@@ -1,10 +1,18 @@
 import { useEffect, useRef, useState } from "react";
 import { Pedometer } from "expo-sensors";
 import { PermissionsAndroid, Platform } from "react-native";
+import { GAME_CONFIG } from "../../core/constants/game";
 import { usePedometerStore } from "../../store/usePedometerStore";
 import { usePlayerStore } from "../../store/usePlayerStore";
 import { clearPersistentTrackingNotificationAsync, updatePersistentTrackingNotificationAsync } from "./persistentTracking";
-import { loadPermanentPedometerModule, safeGetSteps, safeStartTracking, safeStopTracking, safeUpdateNotification } from "./permanentPedometerNative";
+import {
+  loadPermanentPedometerModule,
+  safeAcknowledgeSteps,
+  safeGetSteps,
+  safeStartTracking,
+  safeStopTracking,
+  safeUpdateNotification,
+} from "./permanentPedometerNative";
 import { stepsToKm } from "./service";
 import { buildTrackingNotificationContent } from "./trackingNotification";
 
@@ -16,6 +24,8 @@ type UsePedometerState = {
   isWatching: boolean;
   error: string | null;
 };
+
+const ENABLE_NATIVE_FOREGROUND_SERVICE = false;
 
 function getStartOfToday(): Date {
   const start = new Date();
@@ -33,6 +43,19 @@ async function requestAndroidPermanentTrackingPermissions(): Promise<boolean> {
     return true;
   }
 
+  const hasActivityPermission = await requestAndroidActivityRecognitionPermission();
+  if (!hasActivityPermission) {
+    return false;
+  }
+
+  return requestAndroidNotificationPermission();
+}
+
+async function requestAndroidActivityRecognitionPermission(): Promise<boolean> {
+  if (Platform.OS !== "android") {
+    return true;
+  }
+
   const activityPermission = await PermissionsAndroid.request(
     PermissionsAndroid.PERMISSIONS.ACTIVITY_RECOGNITION,
     {
@@ -43,11 +66,16 @@ async function requestAndroidPermanentTrackingPermissions(): Promise<boolean> {
     },
   );
 
-  if (activityPermission !== PermissionsAndroid.RESULTS.GRANTED) {
-    return false;
+  return activityPermission === PermissionsAndroid.RESULTS.GRANTED;
+}
+
+async function requestAndroidNotificationPermission(): Promise<boolean> {
+  if (Platform.OS !== "android" || Platform.Version < 33) {
+    return true;
   }
 
-  if (Platform.Version < 33) {
+  const alreadyGranted = await PermissionsAndroid.check(PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS);
+  if (alreadyGranted) {
     return true;
   }
 
@@ -80,14 +108,7 @@ export function usePedometer(enabled = true): UsePedometerState {
     let subscription: { remove: () => void } | null = null;
 
     async function syncNativeSteps(nativeSteps: number): Promise<void> {
-      const previousNativeSteps = lastNativeStepsRef.current;
-      lastNativeStepsRef.current = nativeSteps;
-
-      if (previousNativeSteps === null) {
-        return;
-      }
-
-      const deltaSteps = Math.max(0, nativeSteps - previousNativeSteps);
+      const deltaSteps = Math.max(0, Math.round(nativeSteps));
       if (deltaSteps <= 0) {
         return;
       }
@@ -101,11 +122,19 @@ export function usePedometer(enabled = true): UsePedometerState {
       await usePlayerStore
         .getState()
         .syncFromSteps(nextTotalSteps, progress.streakDays, progress.lastActiveDateISO);
+      await safeAcknowledgeSteps();
+
+      const { title, text } = buildTrackingNotificationContent(nextStepsToday, nextTotalSteps);
+      const didUpdateNativeNotification = await safeUpdateNotification(
+        title,
+        text,
+        nextTotalSteps,
+        nextStepsToday,
+        GAME_CONFIG.metersPerStep,
+      );
 
       if (shouldRefreshNotification(lastNotifiedDistanceBucketRef.current, nextTotalSteps)) {
         lastNotifiedDistanceBucketRef.current = Math.floor(stepsToKm(nextTotalSteps) * 100);
-        const { title, text } = buildTrackingNotificationContent(nextStepsToday, nextTotalSteps);
-        const didUpdateNativeNotification = await safeUpdateNotification(title, text);
 
         if (!didUpdateNativeNotification) {
           await updatePersistentTrackingNotificationAsync({
@@ -134,7 +163,13 @@ export function usePedometer(enabled = true): UsePedometerState {
       const stepsToday = usePedometerStore.getState().stepsToday;
       const { title, text } = buildTrackingNotificationContent(stepsToday, progress.totalSteps);
 
-      const didStart = await safeStartTracking(title, text);
+      const didStart = await safeStartTracking(
+        title,
+        text,
+        progress.totalSteps,
+        stepsToday,
+        GAME_CONFIG.metersPerStep,
+      );
       if (!didStart) {
         return false;
       }
@@ -145,8 +180,10 @@ export function usePedometer(enabled = true): UsePedometerState {
         return false;
       }
 
-      lastNativeStepsRef.current = initialNativeSteps;
+      lastNativeStepsRef.current = 0;
       lastNotifiedDistanceBucketRef.current = Math.floor(stepsToKm(progress.totalSteps) * 100);
+
+      await syncNativeSteps(initialNativeSteps);
 
       intervalId = setInterval(() => {
         const nativeSteps = safeGetSteps(permanentPedometer);
@@ -163,6 +200,14 @@ export function usePedometer(enabled = true): UsePedometerState {
     }
 
     async function startExpoPedometerFallback(): Promise<void> {
+      const hasActivityPermission = await requestAndroidActivityRecognitionPermission();
+      if (!hasActivityPermission) {
+        if (isMounted) {
+          setState({ isAvailable: true, permission: "denied", isWatching: false, error: null });
+        }
+        return;
+      }
+
       const isAvailable = await Pedometer.isAvailableAsync();
       if (!isMounted) return;
 
@@ -188,37 +233,59 @@ export function usePedometer(enabled = true): UsePedometerState {
 
       const baseTotalSteps = usePlayerStore.getState().progress.totalSteps;
       let baseStepsToday = usePedometerStore.getState().stepsToday;
+      let lastSensorStepsToday = baseStepsToday;
 
-      const todaySnapshot = await Pedometer.getStepCountAsync(getStartOfToday(), new Date());
-      baseStepsToday = todaySnapshot.steps;
-      usePedometerStore.getState().setLiveSteps(baseStepsToday);
+      async function refreshTrackingNotification(stepsToday: number, totalSteps: number): Promise<void> {
+        try {
+          await updatePersistentTrackingNotificationAsync({ stepsToday, totalSteps });
+        } catch (error) {
+          console.log("[Pedometer] tracking notification update failed", error);
+        }
+      }
 
-      await updatePersistentTrackingNotificationAsync({
-        stepsToday: baseStepsToday,
-        totalSteps: baseTotalSteps,
-      });
+      async function applySensorSteps(nextSensorStepsToday: number): Promise<void> {
+        const deltaSteps = Math.max(0, Math.round(nextSensorStepsToday - lastSensorStepsToday));
+        if (deltaSteps <= 0) {
+          return;
+        }
 
-      subscription = Pedometer.watchStepCount(({ steps }: { steps: number }) => {
-        const liveStepsToday = baseStepsToday + steps;
-        const liveTotalSteps = baseTotalSteps + steps;
+        lastSensorStepsToday = nextSensorStepsToday;
+        const progress = usePlayerStore.getState().progress;
+        const currentStepsToday = usePedometerStore.getState().stepsToday;
+        const liveStepsToday = currentStepsToday + deltaSteps;
+        const liveTotalSteps = progress.totalSteps + deltaSteps;
 
         usePedometerStore.getState().setLiveSteps(liveStepsToday);
-        void usePlayerStore
-          .getState()
-          .syncFromSteps(
-            liveTotalSteps,
-            usePlayerStore.getState().progress.streakDays,
-            usePlayerStore.getState().progress.lastActiveDateISO,
-          );
+        await usePlayerStore.getState().syncFromSteps(liveTotalSteps, progress.streakDays, progress.lastActiveDateISO);
 
         if (shouldRefreshNotification(lastNotifiedDistanceBucketRef.current, liveTotalSteps)) {
           lastNotifiedDistanceBucketRef.current = Math.floor(stepsToKm(liveTotalSteps) * 100);
-          void updatePersistentTrackingNotificationAsync({
-            stepsToday: liveStepsToday,
-            totalSteps: liveTotalSteps,
-          });
+          await refreshTrackingNotification(liveStepsToday, liveTotalSteps);
         }
+      }
+
+      try {
+        const todaySnapshot = await Pedometer.getStepCountAsync(getStartOfToday(), new Date());
+        baseStepsToday = todaySnapshot.steps;
+        lastSensorStepsToday = todaySnapshot.steps;
+        usePedometerStore.getState().setLiveSteps(baseStepsToday);
+      } catch (error) {
+        console.log("[Pedometer] daily snapshot unavailable", error);
+      }
+
+      await refreshTrackingNotification(baseStepsToday, baseTotalSteps);
+
+      subscription = Pedometer.watchStepCount(({ steps }: { steps: number }) => {
+        void applySensorSteps(baseStepsToday + steps);
       });
+
+      intervalId = setInterval(() => {
+        Pedometer.getStepCountAsync(getStartOfToday(), new Date())
+          .then((snapshot) => applySensorSteps(snapshot.steps))
+          .catch((error) => {
+            console.log("[Pedometer] polling snapshot unavailable", error);
+          });
+      }, 10000);
 
       if (isMounted) {
         setState((current) => ({ ...current, isWatching: true }));
@@ -232,10 +299,14 @@ export function usePedometer(enabled = true): UsePedometerState {
       }
 
       try {
-        const didStartNative = await startNativePedometer();
-        if (!didStartNative) {
-          await startExpoPedometerFallback();
+        if (ENABLE_NATIVE_FOREGROUND_SERVICE) {
+          const didStartNative = await startNativePedometer();
+          if (didStartNative) {
+            return;
+          }
         }
+
+        await startExpoPedometerFallback();
       } catch (error) {
         if (!isMounted) return;
 

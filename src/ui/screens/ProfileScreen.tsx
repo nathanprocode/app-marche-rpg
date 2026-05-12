@@ -50,7 +50,13 @@ export function ProfileScreen() {
 }
 
 const styles = StyleSheet.create({
-  title: { color: theme.colors.text.primary, fontSize: theme.typography.size.xl, marginBottom: theme.spacing.sm },
+  title: {
+    color: theme.colors.text.primary,
+    fontFamily: theme.typography.fontFamily.heading,
+    fontSize: theme.typography.size.xl,
+    fontWeight: theme.typography.weight.extraBold,
+    marginBottom: theme.spacing.sm,
+  },
   meta: { color: theme.colors.text.muted, marginBottom: theme.spacing.xs },
   settingRow: {
     marginTop: theme.spacing.lg,
@@ -69,7 +75,8 @@ const styles = StyleSheet.create({
   },
   settingTitle: {
     color: theme.colors.text.primary,
-    fontWeight: "700",
+    fontFamily: theme.typography.fontFamily.heading,
+    fontWeight: theme.typography.weight.extraBold,
   },
   settingDesc: {
     color: theme.colors.text.muted,

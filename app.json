@@ -2,7 +2,10 @@
   "expo": {
     "name": "Marche du Faucon",
     "slug": "marche-du-faucon",
-    "scheme": ["marchedufaucon", "com.natha.marchedufaucon"],
+    "scheme": [
+      "marchedufaucon",
+      "com.natha.marchedufaucon"
+    ],
     "icon": "./assets/icon.png",
     "splash": {
       "image": "./assets/splash-icon.png",
@@ -53,7 +56,7 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "93306631-d82a-49bc-a402-a0c468e808a6"
+        "projectId": "ca54dc56-b303-429e-842a-9f07b04afe4d"
       }
     }
   }

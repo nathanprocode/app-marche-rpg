@@ -56,7 +56,7 @@ const styles = StyleSheet.create({
   image: {
     width: 40,
     height: 40,
-    borderRadius: 20,
+    borderRadius: theme.radius.sm,
     borderWidth: 1,
     borderColor: theme.colors.blood.glow,
     backgroundColor: "rgba(0,0,0,0.35)",
