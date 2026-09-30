@@ -3,14 +3,19 @@ import { initializeApp, getApps, getApp } from "firebase/app";
 import {
   getAuth,
   initializeAuth,
-  getReactNativePersistence,
   GoogleAuthProvider,
   onAuthStateChanged,
   signInWithCredential,
   signOut,
   type User,
 } from "firebase/auth";
+import * as FirebaseAuth from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
+
+// Exporté à l'exécution par le bundle React Native de Firebase, mais absent de ses types.
+const { getReactNativePersistence } = FirebaseAuth as unknown as {
+  getReactNativePersistence: (storage: typeof AsyncStorage) => import("firebase/auth").Persistence;
+};
 
 const firebaseConfig = {
   apiKey: "AIzaSyAqlXqFF1_m6VAwVAvr_lRXgSZESy_BJ4k",
