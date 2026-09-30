@@ -181,7 +181,7 @@ export function MapScreen() {
                 <View key={checkpoint.id} pointerEvents="none" style={[styles.markerSlot, { left: `${checkpoint.x}%`, top: `${checkpoint.y}%` }]}>
                   <View style={[styles.diamond, isReached ? styles.diamondReached : styles.diamondAhead]} />
                   {isPrevious || isNext ? (
-                    <View style={styles.markerChip}>
+                    <View style={[styles.markerChip, isNext && styles.markerChipAbove]}>
                       <Text numberOfLines={1} style={styles.markerChipText}>
                         {checkpoint.title}
                       </Text>
@@ -271,6 +271,8 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
     backgroundColor: "rgba(12,10,9,0.88)",
   },
+  // Le prochain point s'affiche au-dessus, le dernier franchi en dessous : les étiquettes ne se chevauchent plus.
+  markerChipAbove: { top: -40 },
   markerChipText: { ...theme.text.displayS, fontSize: 16, lineHeight: 24, color: theme.colors.bone },
   hud: {
     position: "absolute",
