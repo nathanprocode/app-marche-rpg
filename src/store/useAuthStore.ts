@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { DEV_PREVIEW_UID, isDevPreview } from "../core/devPreview";
 import { subscribeFirebaseAuthState, signOutFirebase } from "../core/firebase";
 
 type AuthState = {
@@ -21,6 +22,11 @@ export const useAuthStore = create<AuthState>((set) => ({
     if (isBound) return;
     isBound = true;
 
+    if (isDevPreview) {
+      set({ isAuthenticated: true, userName: "Testeur", userId: DEV_PREVIEW_UID, isAuthResolved: true });
+      return;
+    }
+
     subscribeFirebaseAuthState((user) => {
       if (user) {
         set({
@@ -35,7 +41,7 @@ export const useAuthStore = create<AuthState>((set) => ({
     });
   },
   logout: async () => {
-    await signOutFirebase();
+    if (!isDevPreview) await signOutFirebase();
     set({ isAuthenticated: false, userName: null, userId: null, isAuthResolved: true });
   },
 }));

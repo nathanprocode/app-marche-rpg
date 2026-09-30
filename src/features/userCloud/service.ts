@@ -1,4 +1,5 @@
 import { doc, getDoc, setDoc } from "firebase/firestore";
+import { DEV_PREVIEW_UID } from "../../core/devPreview";
 import { firestoreDb } from "../../core/firebase";
 import { BERSERK_CHECKPOINTS } from "../../data/map/berserk-checkpoints";
 import { buildProgressFromSteps } from "../progression/engine";
@@ -34,7 +35,23 @@ export function buildDefaultUserCloudDoc(uid: string, displayName: string): User
   };
 }
 
+/** Données fictives du mode test : aucun appel réseau. */
+function buildDevPreviewDoc(displayName: string): UserCloudDoc {
+  const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+  const progression = buildProgressFromSteps(90822, 3, yesterday);
+  return {
+    uid: DEV_PREVIEW_UID,
+    displayName,
+    progression,
+    unlockedCheckpoints: resolveUnlockedCheckpoints(progression.totalDistanceKm),
+    brandIntensity: 0.4,
+    updatedAtISO: new Date().toISOString(),
+  };
+}
+
 export async function ensureUserDocAndLoad(uid: string, displayName: string): Promise<UserCloudDoc> {
+  if (uid === DEV_PREVIEW_UID) return buildDevPreviewDoc(displayName);
+
   const ref = doc(firestoreDb, "users", uid);
   const snap = await getDoc(ref);
 
@@ -63,6 +80,8 @@ export async function saveProgressionToCloud(
   brandIntensity: number,
   unlockedCheckpoints: string[] = [],
 ) {
+  if (uid === DEV_PREVIEW_UID) return;
+
   const ref = doc(firestoreDb, "users", uid);
   await setDoc(
     ref,
