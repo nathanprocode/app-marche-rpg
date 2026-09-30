@@ -1,13 +1,36 @@
-import { buildProgressFromSteps, computeGlobalProgressPct } from "../engine";
+import { buildProgressFromSteps, computeGlobalProgressPct, deriveBrandState } from "../engine";
 
-function assert(condition: boolean, message: string): void {
-  if (!condition) throw new Error(message);
-}
+const NEVER = new Date(0).toISOString();
 
-export function testProgressionEngine(): void {
-  const pct = computeGlobalProgressPct(1000);
-  assert(pct > 0, "global progress should be > 0 for 1000km");
+describe("computeGlobalProgressPct", () => {
+  it("vaut 0 au départ et 100 à l'arrivée", () => {
+    expect(computeGlobalProgressPct(0)).toBe(0);
+    expect(computeGlobalProgressPct(1000)).toBe(100);
+    expect(computeGlobalProgressPct(2500)).toBe(100);
+  });
+});
 
-  const progress = buildProgressFromSteps(10_000, 3, new Date().toISOString());
-  assert(progress.totalSteps === 10_000, "totalSteps should match input");
-}
+describe("deriveBrandState", () => {
+  it("saigne sous le seuil de pas du jour", () => {
+    expect(deriveBrandState(0)).toBe("bleeding");
+    expect(deriveBrandState(1499)).toBe("bleeding");
+  });
+
+  it("est apaisée dès le seuil atteint", () => {
+    expect(deriveBrandState(1500)).toBe("active");
+  });
+});
+
+describe("buildProgressFromSteps", () => {
+  it("convertit les pas en distance (0,75 m par pas)", () => {
+    const progress = buildProgressFromSteps(10_000, 3, NEVER);
+    expect(progress.totalSteps).toBe(10_000);
+    expect(progress.totalDistanceKm).toBeCloseTo(7.5, 5);
+    expect(progress.streakDays).toBe(3);
+  });
+
+  it("dérive l'état de la Marque des pas du jour, pas du total (régression)", () => {
+    expect(buildProgressFromSteps(500_000, 0, NEVER, 0).brandState).toBe("bleeding");
+    expect(buildProgressFromSteps(100, 0, NEVER, 2000).brandState).toBe("active");
+  });
+});

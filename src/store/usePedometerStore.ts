@@ -1,6 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { create } from "zustand";
-import { readStepsToday, stepsToKm } from "../features/pedometer/service";
+import { stepsToKm } from "../features/pedometer/service";
 
 const PEDOMETER_DAY_STORAGE_KEY = "marche-du-faucon:pedometer-day";
 
@@ -17,7 +17,6 @@ type PedometerState = {
   setLiveSteps: (stepsToday: number, updatedAtISO?: string) => void;
   hydrateStepsTodayPreference: () => Promise<void>;
   resetStepsToday: () => Promise<void>;
-  syncSteps: () => Promise<void>;
 };
 
 function getLocalDayKey(date = new Date()): string {
@@ -89,9 +88,5 @@ export const usePedometerStore = create<PedometerState>((set, get) => ({
       lastSyncISO: null,
     });
     await persistStepsToday(0, null);
-  },
-  syncSteps: async () => {
-    const snapshot = await readStepsToday(get().stepsToday);
-    get().setLiveSteps(snapshot.stepsToday, snapshot.updatedAtISO);
   },
 }));

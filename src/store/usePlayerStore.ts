@@ -7,6 +7,7 @@ import { saveProgressionToCloud } from "../features/userCloud/service";
 import type { PlayerProgress } from "../features/progression/types";
 import { useAuthStore } from "./useAuthStore";
 import { useBrandStore } from "./useBrandStore";
+import { usePedometerStore } from "./usePedometerStore";
 
 const initialProgress: PlayerProgress = buildProgressFromSteps(0, 0, new Date(0).toISOString());
 const PERMANENT_TRACKING_STORAGE_KEY = "marche-du-faucon:permanent-tracking-enabled";
@@ -69,7 +70,8 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
     set({ isPermanentTrackingEnabled: storedValue === "true" });
   },
   syncFromSteps: async (totalSteps, streakDays, lastActiveDateISO) => {
-    const progress = buildProgressFromSteps(totalSteps, streakDays, lastActiveDateISO);
+    const stepsToday = usePedometerStore.getState().stepsToday;
+    const progress = buildProgressFromSteps(totalSteps, streakDays, lastActiveDateISO, stepsToday);
     const unlockedCheckpoints = resolveUnlockedCheckpoints(progress.totalDistanceKm, get().unlockedCheckpoints);
 
     set({ progress, unlockedCheckpoints });

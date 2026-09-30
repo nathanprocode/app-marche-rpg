@@ -32,6 +32,7 @@ export function buildProgressFromSteps(
   totalSteps: number,
   streakDays: number,
   lastActiveDateISO: string,
+  stepsToday = 0,
 ): PlayerProgress {
   const distanceKm = (totalSteps * GAME_CONFIG.metersPerStep) / 1000;
   const currentStage = resolveCurrentStage(distanceKm);
@@ -43,7 +44,7 @@ export function buildProgressFromSteps(
     currentStageId: currentStage.id,
     currentStageProgressPct: computeStageProgressPct(distanceKm, currentStage),
     streakDays,
-    brandState: deriveBrandState(totalSteps),
+    brandState: deriveBrandState(stepsToday),
     lastActiveDateISO,
   };
 }

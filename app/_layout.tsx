@@ -1,8 +1,9 @@
 import { Redirect, Stack, useSegments } from "expo-router";
 import { useEffect, useState } from "react";
-import { Text, View } from "react-native";
+import { AppState, Text, View } from "react-native";
 import { useAppFonts } from "../src/core/fonts";
 import { usePedometer } from "../src/features/pedometer/usePedometer";
+import { runDailySync } from "../src/features/runtime/dailySync";
 import { ensureUserDocAndLoad } from "../src/features/userCloud/service";
 import { useAuthStore } from "../src/store/useAuthStore";
 import { useBrandStore } from "../src/store/useBrandStore";
@@ -21,6 +22,7 @@ export default function RootLayout() {
   const userName = useAuthStore((s) => s.userName);
   const bindAuthListener = useAuthStore((s) => s.bindAuthListener);
   const hydrateStepsTodayPreference = usePedometerStore((s) => s.hydrateStepsTodayPreference);
+  const stepsToday = usePedometerStore((s) => s.stepsToday);
   const hydratePermanentTrackingPreference = usePlayerStore((s) => s.hydratePermanentTrackingPreference);
   const setProgress = usePlayerStore((s) => s.setProgress);
   const setUnlockedCheckpoints = usePlayerStore((s) => s.setUnlockedCheckpoints);
@@ -41,6 +43,23 @@ export default function RootLayout() {
   useEffect(() => {
     bindAuthListener();
   }, [bindAuthListener]);
+
+  // Série et Marque : recalculées dès que l'état est chargé, puis à chaque changement de pas.
+  useEffect(() => {
+    if (isCloudStateLoaded && isLocalStateLoaded) {
+      void runDailySync();
+    }
+  }, [isCloudStateLoaded, isLocalStateLoaded, stepsToday]);
+
+  // Au retour au premier plan : on remet les pas à zéro si on a changé de jour, puis on recalcule.
+  useEffect(() => {
+    const subscription = AppState.addEventListener("change", (nextState) => {
+      if (nextState !== "active") return;
+      void hydrateStepsTodayPreference().then(() => runDailySync());
+    });
+
+    return () => subscription.remove();
+  }, [hydrateStepsTodayPreference]);
 
   useEffect(() => {
     let isMounted = true;
