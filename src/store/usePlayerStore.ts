@@ -80,10 +80,16 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
   },
   addDevSteps: async (stepsToAdd = 500) => {
     const current = get().progress;
+    // Comme un vrai pas : on compte aussi les pas du jour, sinon la Marque et la série ne réagissent jamais.
+    const pedometer = usePedometerStore.getState();
+    const nextStepsToday = pedometer.stepsToday + stepsToAdd;
+    pedometer.setLiveSteps(nextStepsToday);
+
     const updated = buildProgressFromSteps(
       current.totalSteps + stepsToAdd,
       current.streakDays,
       current.lastActiveDateISO,
+      nextStepsToday,
     );
     const unlockedCheckpoints = resolveUnlockedCheckpoints(updated.totalDistanceKm, get().unlockedCheckpoints);
 
