@@ -1,58 +1,21 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Tabs } from "expo-router";
-import { useEffect, useRef } from "react";
-import { Animated, Easing, Platform, StyleSheet, View } from "react-native";
+import { Platform, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { theme } from "../../src/core/theme";
 
-type TabIconProps = {
-  name: keyof typeof Ionicons.glyphMap;
-  color: string;
-  size: number;
-  focused: boolean;
+type IconName = keyof typeof Ionicons.glyphMap;
+
+const ICONS: Record<string, { on: IconName; off: IconName }> = {
+  index: { on: "footsteps", off: "footsteps-outline" },
+  map: { on: "map", off: "map-outline" },
+  quests: { on: "book", off: "book-outline" },
+  profile: { on: "person", off: "person-outline" },
 };
-
-function TabIcon({ name, color, size, focused }: TabIconProps) {
-  const scale = useRef(new Animated.Value(focused ? 1.1 : 1)).current;
-  const glow = useRef(new Animated.Value(focused ? 1 : 0)).current;
-
-  useEffect(() => {
-    Animated.parallel([
-      Animated.timing(scale, {
-        toValue: focused ? 1.12 : 1,
-        duration: 180,
-        easing: Easing.out(Easing.quad),
-        useNativeDriver: false,
-      }),
-      Animated.timing(glow, {
-        toValue: focused ? 1 : 0,
-        duration: 200,
-        easing: Easing.out(Easing.quad),
-        useNativeDriver: false,
-      }),
-    ]).start();
-  }, [focused, glow, scale]);
-
-  return (
-    <Animated.View
-      style={[
-        styles.iconWrap,
-        {
-          transform: [{ scale }],
-          shadowOpacity: glow.interpolate({ inputRange: [0, 1], outputRange: [0, 0.55] }),
-          shadowRadius: glow.interpolate({ inputRange: [0, 1], outputRange: [0, 8] }),
-        },
-      ]}
-    >
-      <Ionicons name={name} size={size} color={color} />
-      {focused ? <View style={styles.dot} /> : null}
-    </Animated.View>
-  );
-}
 
 export default function TabsLayout() {
   const insets = useSafeAreaInsets();
-  const minimumBottomPadding = Platform.OS === "android" ? 36 : 14;
+  const minimumBottomPadding = Platform.OS === "android" ? 16 : 8;
   const bottomPadding = Math.max(insets.bottom, minimumBottomPadding);
 
   return (
@@ -60,51 +23,45 @@ export default function TabsLayout() {
       screenOptions={({ route }) => ({
         headerShown: false,
         tabBarShowLabel: true,
-        tabBarActiveTintColor: theme.colors.blood.glow,
-        tabBarInactiveTintColor: theme.colors.text.muted,
+        tabBarActiveTintColor: theme.colors.bloodEmber,
+        tabBarInactiveTintColor: theme.colors.boneDim,
         tabBarStyle: {
-          backgroundColor: theme.colors.bg.secondary,
-          borderTopColor: theme.colors.metal,
-          borderTopWidth: 0.5,
-          height: 72 + bottomPadding,
-          paddingTop: 10,
+          backgroundColor: theme.colors.inkRaised,
+          borderTopColor: theme.colors.ash,
+          borderTopWidth: 1,
+          height: 56 + bottomPadding,
+          paddingTop: theme.space[8],
           paddingBottom: bottomPadding,
         },
-        tabBarLabelStyle: {
-          fontSize: 12,
-          fontWeight: "600",
-          marginBottom: 2,
-        },
+        tabBarLabelStyle: { ...theme.text.label },
         tabBarIcon: ({ color, size, focused }) => {
-          const iconByRoute: Record<string, keyof typeof Ionicons.glyphMap> = {
-            index: focused ? "bonfire" : "bonfire-outline",
-            map: focused ? "map" : "map-outline",
-            profile: focused ? "person" : "person-outline",
-          };
+          const icon = ICONS[route.name] ?? { on: "ellipse", off: "ellipse-outline" };
 
-          return <TabIcon name={iconByRoute[route.name] ?? "ellipse"} color={color} size={size} focused={focused} />;
+          return (
+            <View style={styles.iconWrap}>
+              {focused ? <View style={styles.indicator} /> : null}
+              <Ionicons name={focused ? icon.on : icon.off} size={size} color={color} />
+            </View>
+          );
         },
       })}
     >
-      <Tabs.Screen name="index" options={{ title: "Feu de camp" }} />
+      <Tabs.Screen name="index" options={{ title: "Marche" }} />
       <Tabs.Screen name="map" options={{ title: "Carte" }} />
+      <Tabs.Screen name="quests" options={{ title: "Quêtes" }} />
       <Tabs.Screen name="profile" options={{ title: "Profil" }} />
     </Tabs>
   );
 }
 
 const styles = StyleSheet.create({
-  iconWrap: {
-    alignItems: "center",
-    justifyContent: "center",
-    shadowColor: theme.colors.blood.glow,
-    shadowOffset: { width: 0, height: 0 },
-  },
-  dot: {
-    marginTop: 3,
-    width: 5,
-    height: 5,
-    borderRadius: theme.radius.sm,
-    backgroundColor: theme.colors.blood.glow,
+  iconWrap: { alignItems: "center", justifyContent: "center" },
+  /** Repère de l'onglet actif, au-dessus de l'icône. */
+  indicator: {
+    position: "absolute",
+    top: -theme.space[8] - 2,
+    width: 24,
+    height: 2,
+    backgroundColor: theme.colors.bloodGlow,
   },
 });

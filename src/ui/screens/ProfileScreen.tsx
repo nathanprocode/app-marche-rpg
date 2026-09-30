@@ -1,99 +1,114 @@
-import { useRouter } from "expo-router";
-import { Pressable, StyleSheet, Switch, Text, View } from "react-native";
-import { Screen } from "../components/Screen";
-import { useBrandStore } from "../../store/useBrandStore";
-import { BrandBadge } from "../components/BrandBadge";
+import { StyleSheet, Switch, Text, View } from "react-native";
+import { formatDecimal, formatInt } from "../../core/format";
 import { theme } from "../../core/theme";
+import { BERSERK_CHECKPOINTS } from "../../data/map/berserk-checkpoints";
 import { useAuthStore } from "../../store/useAuthStore";
+import { useBrandStore } from "../../store/useBrandStore";
 import { usePlayerStore } from "../../store/usePlayerStore";
+import { BrandMark } from "../components/BrandMark";
+import { Button } from "../components/Button";
+import { InkCard } from "../components/InkCard";
+import { Screen } from "../components/Screen";
 
 export function ProfileScreen() {
-  const router = useRouter();
   const status = useBrandStore((state) => state.status);
+  const progress = usePlayerStore((state) => state.progress);
   const unlockedCount = usePlayerStore((state) => state.unlockedCheckpoints.length);
   const isPermanentTrackingEnabled = usePlayerStore((state) => state.isPermanentTrackingEnabled);
   const setPermanentTrackingEnabled = usePlayerStore((state) => state.setPermanentTrackingEnabled);
-  const userName = useAuthStore((s) => s.userName);
-  const logout = useAuthStore((s) => s.logout);
+  const userName = useAuthStore((state) => state.userName);
+  const logout = useAuthStore((state) => state.logout);
+
+  const previous =
+    BERSERK_CHECKPOINTS.find((checkpoint) => checkpoint.id === progress.currentCheckpointId) ?? BERSERK_CHECKPOINTS[0];
+  const streakLabel = `${status.streakDays} ${status.streakDays > 1 ? "jours" : "jour"}`;
 
   return (
-    <Screen>
-      <Text style={styles.title}>Profil du Traqué</Text>
-      <Text style={styles.meta}>Traqué: {userName ?? "Inconnu"}</Text>
-      <Text style={styles.meta}>Série: {status.streakDays} jours</Text>
-      <Text style={styles.meta}>Jours sédentaires: {status.sedentaryDays}</Text>
-      <Text style={styles.meta}>Souvenirs débloqués: {unlockedCount}</Text>
-      <BrandBadge visual={status.visual} />
-
-      <View style={styles.settingRow}>
-        <View style={styles.settingText}>
-          <Text style={styles.settingTitle}>Suivi permanent</Text>
-          <Text style={styles.settingDesc}>Garde la marche active et la notification visible.</Text>
+    <Screen scroll>
+      <View style={styles.header}>
+        <View style={styles.headerText}>
+          <Text style={styles.label}>Profil</Text>
+          <Text accessibilityRole="header" style={styles.name}>
+            {userName ?? "Le Traqué"}
+          </Text>
+          <Text style={styles.subtitle}>{`${previous.arc} · point ${unlockedCount} sur ${BERSERK_CHECKPOINTS.length}`}</Text>
         </View>
-        <Switch
-          value={isPermanentTrackingEnabled}
-          onValueChange={setPermanentTrackingEnabled}
-          thumbColor={isPermanentTrackingEnabled ? theme.colors.blood.glow : theme.colors.metal}
-          trackColor={{ false: "#2A2D34", true: "rgba(193,18,31,0.42)" }}
-        />
+        <BrandMark visual={status.visual} width={44} />
       </View>
 
-      <Pressable style={styles.galleryButton} onPress={() => router.push("/gallery")}>
-        <Text style={styles.galleryButtonText}>Galerie des Souvenirs</Text>
-      </Pressable>
+      <View style={styles.stats}>
+        <View style={styles.statsRow}>
+          <Stat label="Série" value={streakLabel} />
+          <Stat label="Pas au total" value={formatInt(progress.totalSteps)} />
+        </View>
+        <View style={styles.statsRow}>
+          <Stat label="Distance" value={`${formatDecimal(progress.totalDistanceKm)} km`} />
+          <Stat label="Chroniques" value={`${unlockedCount} / ${BERSERK_CHECKPOINTS.length}`} />
+        </View>
+      </View>
 
-      <Text style={styles.logout} onPress={logout}>
-        Se déconnecter
-      </Text>
+      <View style={styles.settings}>
+        <View style={styles.settingRow}>
+          <View style={styles.settingText}>
+            <Text style={styles.settingTitle}>Suivi permanent</Text>
+            <Text style={styles.small}>Garde le décompte des pas en arrière-plan grâce à une notification permanente.</Text>
+          </View>
+          <Switch
+            accessibilityLabel="Suivi permanent"
+            value={isPermanentTrackingEnabled}
+            onValueChange={setPermanentTrackingEnabled}
+            thumbColor={theme.colors.bone}
+            trackColor={{ false: theme.colors.ash, true: theme.colors.blood }}
+          />
+        </View>
+        <View style={[styles.settingRow, styles.settingRowLast]}>
+          <View style={styles.settingText}>
+            <Text style={styles.settingTitle}>Compte Google</Text>
+            <Text style={styles.small}>Ta progression est sauvegardée dans le cloud.</Text>
+          </View>
+          <Text style={styles.connected}>Connecté</Text>
+        </View>
+      </View>
+
+      <View style={styles.logout}>
+        <Button label="Se déconnecter" variant="danger" onPress={() => void logout()} />
+      </View>
     </Screen>
   );
 }
 
+function Stat({ label, value }: { label: string; value: string }) {
+  return (
+    <InkCard style={styles.stat}>
+      <Text style={styles.label}>{label}</Text>
+      <Text style={styles.statValue}>{value}</Text>
+    </InkCard>
+  );
+}
+
 const styles = StyleSheet.create({
-  title: {
-    color: theme.colors.text.primary,
-    fontFamily: theme.typography.fontFamily.heading,
-    fontSize: theme.typography.size.xl,
-    fontWeight: theme.typography.weight.extraBold,
-    marginBottom: theme.spacing.sm,
-  },
-  meta: { color: theme.colors.text.muted, marginBottom: theme.spacing.xs },
+  header: { flexDirection: "row", alignItems: "flex-start", justifyContent: "space-between", gap: theme.space[16] },
+  headerText: { flex: 1 },
+  label: { ...theme.text.label, color: theme.colors.boneDim },
+  name: { ...theme.text.displayL, color: theme.colors.bone },
+  subtitle: { ...theme.text.body, color: theme.colors.boneDim },
+  stats: { marginTop: theme.space[24], gap: theme.space[16] },
+  statsRow: { flexDirection: "row", gap: theme.space[16] },
+  stat: { flex: 1 },
+  statValue: { ...theme.text.displayM, color: theme.colors.bone, marginTop: theme.space[4] },
+  settings: { marginTop: theme.space[24] },
   settingRow: {
-    marginTop: theme.spacing.lg,
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
-    gap: theme.spacing.md,
-    borderRadius: theme.radius.md,
-    borderWidth: 1,
-    borderColor: theme.colors.metal,
-    backgroundColor: theme.colors.bg.secondary,
-    padding: theme.spacing.md,
+    gap: theme.space[16],
+    paddingVertical: theme.space[16],
+    borderTopWidth: 1,
+    borderTopColor: theme.colors.ash,
   },
-  settingText: {
-    flex: 1,
-  },
-  settingTitle: {
-    color: theme.colors.text.primary,
-    fontFamily: theme.typography.fontFamily.heading,
-    fontWeight: theme.typography.weight.extraBold,
-  },
-  settingDesc: {
-    color: theme.colors.text.muted,
-    marginTop: theme.spacing.xs,
-  },
-  galleryButton: {
-    marginTop: theme.spacing.lg,
-    borderRadius: theme.radius.md,
-    borderWidth: 1,
-    borderColor: theme.colors.blood.glow,
-    backgroundColor: "rgba(138,3,3,0.18)",
-    padding: theme.spacing.md,
-  },
-  galleryButtonText: {
-    color: theme.colors.text.primary,
-    textAlign: "center",
-    fontWeight: "700",
-  },
-  logout: { color: theme.colors.blood.glow, marginTop: theme.spacing.lg, fontWeight: "700" },
+  settingRowLast: { borderBottomWidth: 1, borderBottomColor: theme.colors.ash },
+  settingText: { flex: 1 },
+  settingTitle: { ...theme.text.bodyStrong, color: theme.colors.bone },
+  small: { ...theme.text.small, color: theme.colors.boneDim },
+  connected: { ...theme.text.label, color: theme.colors.boneDim },
+  logout: { marginTop: theme.space[24] },
 });

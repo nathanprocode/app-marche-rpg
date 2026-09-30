@@ -7,10 +7,11 @@
       "com.natha.marchedufaucon"
     ],
     "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#000000"
+      "backgroundColor": "#0C0A09"
     },
     "plugins": [
       "expo-router",
@@ -39,7 +40,7 @@
       "package": "com.natha.marchedufaucon",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#000000"
+        "backgroundColor": "#0C0A09"
       },
       "permissions": [
         "ACTIVITY_RECOGNITION",

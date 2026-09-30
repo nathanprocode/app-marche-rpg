@@ -2,44 +2,45 @@ import { Ionicons } from "@expo/vector-icons";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ImageBackground,
-  Image,
   PanResponder,
   Pressable,
-  ScrollView,
   StyleSheet,
   Text,
   View,
   type LayoutChangeEvent,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import Svg, { Polyline } from "react-native-svg";
+import { GAME_CONFIG } from "../../core/constants/game";
+import { formatDecimal, formatInt } from "../../core/format";
+import { theme } from "../../core/theme";
 import { BERSERK_CHECKPOINTS } from "../../data/map/berserk-checkpoints";
 import { calculateGutsPosition } from "../../features/mapJourney/interpolation";
 import { usePlayerStore } from "../../store/usePlayerStore";
-import { theme } from "../../core/theme";
 import { GutsMarker } from "../components/GutsMarker";
-import { Screen } from "../components/Screen";
-import { SteelCard } from "../components/SteelCard";
 
 const worldMapAsset = require("../../../assets/map/world-map.png");
-const checkpointMarkerAsset = require("../../../assets/images/icon_marker.png");
-const finalCheckpointAsset = require("../../../assets/images/icon_final.png");
 const MAP_WIDTH = 1448;
 const MAP_HEIGHT = 1086;
-const MIN_ZOOM = 0.65;
-const BASE_ZOOM = 1;
+const MIN_ZOOM = 0.8;
+const BASE_ZOOM = 0.9;
 const MAX_ZOOM = 1.8;
 const ZOOM_STEP = 0.18;
-const NEXT_STEP_PROGRESS_LABEL = "Progression jusqu'\u00e0 la prochaine \u00e9tape";
-const NEXT_STEP_TITLE = "Prochaine \u00e9tape";
-const JOURNEY_COMPLETE_TITLE = "P\u00e9riple accompli";
-const JOURNEY_COMPLETE_DESCRIPTION = "Tu as atteint le dernier souvenir de la Traque.";
+const REACHED_TOLERANCE_KM = 0.0001;
 
 type MapOffset = {
   x: number;
   y: number;
 };
 
+function toMapPoint(xPct: number, yPct: number): string {
+  return `${(xPct / 100) * MAP_WIDTH},${(yPct / 100) * MAP_HEIGHT}`;
+}
+
 export function MapScreen() {
+  const insets = useSafeAreaInsets();
   const [viewport, setViewport] = useState({ width: 0, height: 0 });
+  const [sheetHeight, setSheetHeight] = useState(0);
   const [zoom, setZoom] = useState(BASE_ZOOM);
   const [mapOffset, setMapOffset] = useState<MapOffset>({ x: 0, y: 0 });
   const mapOffsetRef = useRef<MapOffset>({ x: 0, y: 0 });
@@ -50,6 +51,15 @@ export function MapScreen() {
   const remainingKm = Math.max(0, position.next.kmThreshold - progress.totalDistanceKm);
   const contentWidth = MAP_WIDTH * zoom;
   const contentHeight = MAP_HEIGHT * zoom;
+
+  const reachedCheckpoints = BERSERK_CHECKPOINTS.filter(
+    (checkpoint) => checkpoint.kmThreshold <= progress.totalDistanceKm + REACHED_TOLERANCE_KM,
+  );
+  const walkedPath = [...reachedCheckpoints.map((checkpoint) => toMapPoint(checkpoint.x, checkpoint.y)), toMapPoint(position.x, position.y)].join(" ");
+  const nextLegPath = `${toMapPoint(position.x, position.y)} ${toMapPoint(position.next.x, position.next.y)}`;
+
+  /** La fiche du bas masque une partie de la carte : on centre le Traqué dans la zone visible. */
+  const visibleHeight = Math.max(0, viewport.height - sheetHeight);
 
   function clampOffset(nextOffset: MapOffset, zoomValue = zoom): MapOffset {
     const scaledWidth = MAP_WIDTH * zoomValue;
@@ -80,7 +90,7 @@ export function MapScreen() {
     return clampOffset(
       {
         x: viewport.width / 2 - markerX,
-        y: viewport.height / 2 - markerY,
+        y: visibleHeight / 2 - markerY,
       },
       zoomValue,
     );
@@ -123,227 +133,211 @@ export function MapScreen() {
     }
 
     recenterOnGuts();
-  }, [position.x, position.y, viewport.height, viewport.width]);
+  }, [position.x, position.y, viewport.height, viewport.width, sheetHeight]);
 
-  function handleMapViewportLayout(event: LayoutChangeEvent): void {
+  function handleViewportLayout(event: LayoutChangeEvent): void {
     const { width, height } = event.nativeEvent.layout;
     setViewport({ width, height });
   }
 
+  function handleSheetLayout(event: LayoutChangeEvent): void {
+    setSheetHeight(event.nativeEvent.layout.height);
+  }
+
   return (
-    <Screen>
-      <ScrollView contentContainerStyle={styles.content} nestedScrollEnabled showsVerticalScrollIndicator={false}>
-        <SteelCard>
-          <Text style={styles.title}>Carte de la Traque</Text>
-          <Text style={styles.meta}>Distance totale parcourue : {progress.totalDistanceKm.toFixed(2)} km</Text>
-          <Text style={styles.meta}>
-            {NEXT_STEP_PROGRESS_LABEL} : {position.segmentProgressPct.toFixed(1)}%
-          </Text>
-        </SteelCard>
-
-        <View style={styles.mapViewport} onLayout={handleMapViewportLayout}>
-          <View
-            {...mapPanResponder.panHandlers}
-            style={[
-              styles.mapContent,
-              {
-                width: contentWidth,
-                height: contentHeight,
-                transform: [{ translateX: mapOffset.x }, { translateY: mapOffset.y }],
-              },
-            ]}
+    <View style={styles.root}>
+      <View style={styles.mapViewport} onLayout={handleViewportLayout}>
+        <View
+          {...mapPanResponder.panHandlers}
+          style={[
+            styles.mapContent,
+            {
+              width: contentWidth,
+              height: contentHeight,
+              transform: [{ translateX: mapOffset.x }, { translateY: mapOffset.y }],
+            },
+          ]}
+        >
+          <ImageBackground
+            accessibilityLabel="Carte du monde de Berserk"
+            source={worldMapAsset}
+            style={{ width: contentWidth, height: contentHeight }}
+            imageStyle={styles.mapImage}
           >
-            <ImageBackground
-              source={worldMapAsset}
-              style={[styles.mapBackground, { width: contentWidth, height: contentHeight }]}
-              imageStyle={styles.mapImage}
-            >
-              {BERSERK_CHECKPOINTS.map((checkpoint, index) => {
-                const isReached = checkpoint.kmThreshold <= progress.totalDistanceKm + 0.0001;
-                const isFinalCheckpoint = index === BERSERK_CHECKPOINTS.length - 1;
+            <Svg width={contentWidth} height={contentHeight} viewBox={`0 0 ${MAP_WIDTH} ${MAP_HEIGHT}`} style={StyleSheet.absoluteFill}>
+              <Polyline points={walkedPath} fill="none" stroke={theme.colors.ink} strokeOpacity={0.4} strokeWidth={9} strokeLinecap="round" strokeLinejoin="round" />
+              <Polyline points={walkedPath} fill="none" stroke={theme.colors.bloodGlow} strokeWidth={5} strokeLinecap="round" strokeLinejoin="round" />
+              {isJourneyComplete ? null : (
+                <Polyline points={nextLegPath} fill="none" stroke={theme.colors.ink} strokeWidth={5} strokeLinecap="round" strokeDasharray="1 12" />
+              )}
+            </Svg>
 
-                return (
-                  <View
-                    key={checkpoint.id}
-                    style={[
-                      styles.checkpointMarker,
-                      isReached && styles.checkpointMarkerReached,
-                      { left: `${checkpoint.x}%`, top: `${checkpoint.y}%` },
-                    ]}
-                  >
-                    <Image
-                      source={isFinalCheckpoint ? finalCheckpointAsset : checkpointMarkerAsset}
-                      style={[styles.checkpointIcon, isFinalCheckpoint && styles.finalCheckpointIcon]}
-                      resizeMode="contain"
-                    />
-                  </View>
-                );
-              })}
-              <GutsMarker xPct={position.x} yPct={position.y} />
-            </ImageBackground>
-          </View>
+            {BERSERK_CHECKPOINTS.map((checkpoint) => {
+              const isReached = checkpoint.kmThreshold <= progress.totalDistanceKm + REACHED_TOLERANCE_KM;
+              const isNext = !isJourneyComplete && checkpoint.id === position.next.id;
+              const isPrevious = checkpoint.id === position.previous.id;
 
-          <View style={styles.mapControls}>
-            <Pressable style={styles.mapControlButton} onPress={() => handleZoom(zoom + ZOOM_STEP)}>
-              <Ionicons name="add" size={20} color={theme.colors.text.primary} />
-            </Pressable>
-            <Pressable style={styles.mapControlButton} onPress={() => handleZoom(zoom - ZOOM_STEP)}>
-              <Ionicons name="remove" size={20} color={theme.colors.text.primary} />
-            </Pressable>
-            <Pressable style={styles.mapControlButton} onPress={() => handleZoom(BASE_ZOOM)}>
-              <Ionicons name="locate" size={20} color={theme.colors.blood.glow} />
-            </Pressable>
-          </View>
+              return (
+                <View key={checkpoint.id} pointerEvents="none" style={[styles.markerSlot, { left: `${checkpoint.x}%`, top: `${checkpoint.y}%` }]}>
+                  <View style={[styles.diamond, isReached ? styles.diamondReached : styles.diamondAhead]} />
+                  {isPrevious || isNext ? (
+                    <View style={styles.markerChip}>
+                      <Text numberOfLines={1} style={styles.markerChipText}>
+                        {checkpoint.title}
+                      </Text>
+                    </View>
+                  ) : null}
+                </View>
+              );
+            })}
+
+            <GutsMarker xPct={position.x} yPct={position.y} />
+          </ImageBackground>
         </View>
+      </View>
 
-        <SteelCard>
-          <Text style={styles.nextEyebrow}>{NEXT_STEP_TITLE}</Text>
-          <Text style={styles.cpTitle}>{isJourneyComplete ? JOURNEY_COMPLETE_TITLE : position.next.title}</Text>
-          <Text style={styles.meta}>
-            {isJourneyComplete
-              ? JOURNEY_COMPLETE_DESCRIPTION
-              : `${remainingKm.toFixed(2)} km avant le prochain souvenir`}
-          </Text>
-          <View style={styles.progressTrack}>
-            <View style={[styles.progressFill, { width: `${position.segmentProgressPct}%` }]} />
-          </View>
-          <Text style={styles.progressCaption}>
-            {NEXT_STEP_PROGRESS_LABEL} : {position.segmentProgressPct.toFixed(1)}%
-          </Text>
-        </SteelCard>
+      <View pointerEvents="none" style={[styles.topScrim, { height: insets.top + theme.space[96] }]} />
 
-        <View style={styles.currentCheckpointCard}>
-          <SteelCard>
-            <Text style={styles.arc}>{position.previous.arc}</Text>
-            <Text style={styles.cpTitle}>{position.previous.title}</Text>
-            <Text style={styles.cpDesc}>{position.previous.description}</Text>
-          </SteelCard>
+      <View style={[styles.hud, { top: insets.top + theme.space[8] }]}>
+        <View style={styles.distancePill} accessible accessibilityLabel={`${formatDecimal(progress.totalDistanceKm)} kilomètres sur ${GAME_CONFIG.totalGoalKm}`}>
+          <Text style={styles.distanceValue}>{`${formatDecimal(progress.totalDistanceKm)} km`}</Text>
+          <Text style={styles.distanceGoal}>{`sur ${formatInt(GAME_CONFIG.totalGoalKm)}`}</Text>
         </View>
-      </ScrollView>
-    </Screen>
+        <View style={styles.controls}>
+          <MapButton label="Agrandir la carte" icon="add" onPress={() => handleZoom(zoom + ZOOM_STEP)} />
+          <MapButton label="Réduire la carte" icon="remove" onPress={() => handleZoom(zoom - ZOOM_STEP)} />
+          <MapButton label="Recentrer sur ma position" icon="locate" onPress={() => handleZoom(BASE_ZOOM)} />
+        </View>
+      </View>
+
+      <View style={styles.sheet} onLayout={handleSheetLayout}>
+        <View accessibilityElementsHidden importantForAccessibility="no" style={styles.grabber} />
+        <Text style={styles.kicker}>
+          {`Point franchi · ${formatInt(position.previous.kmThreshold)} km · ${position.previous.arc}`}
+        </Text>
+        <Text accessibilityRole="header" style={styles.title}>
+          {position.previous.title}
+        </Text>
+        <Text style={styles.description}>{position.previous.description}</Text>
+
+        <View style={styles.nextRow}>
+          <View style={styles.nextText}>
+            <Text style={styles.nextLabel}>{isJourneyComplete ? "Périple accompli" : "Prochain point"}</Text>
+            <Text style={styles.nextTitle}>
+              {isJourneyComplete ? "Tu as atteint le dernier souvenir de la Traque." : position.next.title}
+            </Text>
+          </View>
+          {isJourneyComplete ? null : <Text style={styles.nextKm}>{`${formatDecimal(remainingKm)} km`}</Text>}
+        </View>
+      </View>
+    </View>
+  );
+}
+
+type MapButtonProps = {
+  label: string;
+  icon: keyof typeof Ionicons.glyphMap;
+  onPress: () => void;
+};
+
+function MapButton({ label, icon, onPress }: MapButtonProps) {
+  return (
+    <Pressable accessibilityRole="button" accessibilityLabel={label} onPress={onPress} style={styles.mapButton}>
+      <Ionicons name={icon} size={20} color={theme.colors.bone} />
+    </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
-  content: {
-    paddingBottom: theme.spacing.xl,
+  root: { flex: 1, backgroundColor: theme.colors.ink },
+  mapViewport: { ...StyleSheet.absoluteFillObject, overflow: "hidden", backgroundColor: theme.colors.ink },
+  mapContent: { position: "absolute", top: 0, left: 0 },
+  mapImage: { resizeMode: "stretch" },
+  topScrim: { position: "absolute", top: 0, left: 0, right: 0, backgroundColor: "rgba(12,10,9,0.55)" },
+  markerSlot: { position: "absolute", width: 16, height: 16, marginLeft: -8, marginTop: -8 },
+  diamond: {
+    width: 16,
+    height: 16,
+    borderWidth: 2,
+    transform: [{ rotate: "45deg" }],
   },
-  title: {
-    color: theme.colors.text.primary,
-    fontFamily: theme.typography.fontFamily.heading,
-    fontSize: theme.typography.size.lg,
-    fontWeight: theme.typography.weight.extraBold,
-  },
-  meta: {
-    color: theme.colors.text.muted,
-    marginTop: theme.spacing.xs,
-  },
-  mapViewport: {
-    marginTop: theme.spacing.lg,
-    marginBottom: theme.spacing.lg,
-    height: 390,
-    borderRadius: theme.radius.lg,
-    borderWidth: 1,
-    borderColor: theme.colors.metal,
-    overflow: "hidden",
-  },
-  mapContent: {
+  diamondReached: { backgroundColor: theme.colors.bloodGlow, borderColor: theme.colors.bone },
+  diamondAhead: { backgroundColor: theme.colors.bone, borderColor: theme.colors.bloodGlow },
+  markerChip: {
     position: "absolute",
-    top: 0,
+    top: 20,
     left: 0,
+    paddingHorizontal: theme.space[8],
+    paddingVertical: 2,
+    backgroundColor: "rgba(12,10,9,0.88)",
   },
-  mapBackground: {
-    backgroundColor: "#101014",
-  },
-  mapImage: {
-    resizeMode: "stretch",
-    opacity: 0.92,
-  },
-  mapControls: {
+  markerChipText: { ...theme.text.displayS, fontSize: 16, lineHeight: 24, color: theme.colors.bone },
+  hud: {
     position: "absolute",
-    right: theme.spacing.sm,
-    bottom: theme.spacing.sm,
-    gap: theme.spacing.xs,
+    left: theme.space[24],
+    right: theme.space[24],
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
   },
-  mapControlButton: {
-    width: 38,
-    height: 38,
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: theme.radius.sm,
+  distancePill: {
+    flexDirection: "row",
+    alignItems: "baseline",
+    gap: theme.space[8],
+    paddingVertical: theme.space[8],
+    paddingHorizontal: theme.space[16],
+    backgroundColor: "rgba(12,10,9,0.9)",
     borderWidth: 1,
-    borderColor: theme.colors.metal,
-    backgroundColor: "rgba(10,10,12,0.82)",
+    borderColor: theme.colors.ash,
+    borderRadius: theme.radius[4],
   },
-  checkpointMarker: {
-    position: "absolute",
+  distanceValue: { ...theme.text.displayM, color: theme.colors.bone },
+  distanceGoal: { ...theme.text.small, color: theme.colors.boneDim },
+  controls: { gap: theme.space[8] },
+  mapButton: {
     width: 44,
     height: 44,
-    marginLeft: -22,
-    marginTop: -22,
     alignItems: "center",
     justifyContent: "center",
+    backgroundColor: "rgba(12,10,9,0.9)",
+    borderWidth: 1,
+    borderColor: theme.colors.ash,
+    borderRadius: theme.radius[4],
   },
-  checkpointMarkerReached: {
-    shadowColor: theme.colors.blood.glow,
-    shadowOpacity: 0.8,
-    shadowRadius: 8,
-    elevation: 5,
+  sheet: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    bottom: 0,
+    paddingHorizontal: theme.space[24],
+    paddingTop: theme.space[16],
+    paddingBottom: theme.space[24],
+    backgroundColor: theme.colors.bone,
+    borderTopWidth: 1,
+    borderTopColor: theme.colors.ink,
   },
-  checkpointIcon: {
-    width: 30,
-    height: 30,
+  grabber: {
+    alignSelf: "center",
+    width: 32,
+    height: 4,
+    marginBottom: theme.space[16],
+    backgroundColor: "rgba(12,10,9,0.25)",
   },
-  finalCheckpointIcon: {
-    width: 40,
-    height: 40,
+  kicker: { ...theme.text.label, color: theme.colors.blood },
+  title: { ...theme.text.displayM, color: theme.colors.ink },
+  description: { ...theme.text.small, color: theme.colors.umber, marginTop: theme.space[8] },
+  nextRow: {
+    marginTop: theme.space[16],
+    paddingTop: theme.space[16],
+    borderTopWidth: 1,
+    borderTopColor: "rgba(12,10,9,0.25)",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: theme.space[16],
   },
-  nextEyebrow: {
-    color: theme.colors.blood.glow,
-    fontFamily: theme.typography.fontFamily.heading,
-    fontSize: theme.typography.size.sm,
-    fontWeight: theme.typography.weight.extraBold,
-    marginBottom: theme.spacing.xs,
-  },
-  progressTrack: {
-    height: 16,
-    marginTop: theme.spacing.md,
-    borderRadius: theme.radius.sm,
-    overflow: "hidden",
-    backgroundColor: "#000000",
-    shadowColor: "red",
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.5,
-    shadowRadius: 10,
-    elevation: 8,
-  },
-  progressFill: {
-    height: "100%",
-    borderRadius: theme.radius.sm,
-    backgroundColor: "#8B0000",
-  },
-  progressCaption: {
-    color: theme.colors.text.muted,
-    fontSize: theme.typography.size.xs,
-    marginTop: theme.spacing.sm,
-  },
-  currentCheckpointCard: {
-    marginTop: theme.spacing.lg,
-  },
-  arc: {
-    color: theme.colors.blood.glow,
-    fontFamily: theme.typography.fontFamily.heading,
-    fontWeight: theme.typography.weight.extraBold,
-    marginBottom: theme.spacing.xs,
-  },
-  cpTitle: {
-    color: theme.colors.text.primary,
-    fontFamily: theme.typography.fontFamily.heading,
-    fontSize: theme.typography.size.md,
-    fontWeight: theme.typography.weight.extraBold,
-  },
-  cpDesc: {
-    color: theme.colors.text.muted,
-    marginTop: theme.spacing.sm,
-  },
+  nextText: { flex: 1 },
+  nextLabel: { ...theme.text.label, color: theme.colors.umber },
+  nextTitle: { ...theme.text.bodyStrong, color: theme.colors.ink },
+  nextKm: { ...theme.text.displayM, color: theme.colors.blood },
 });

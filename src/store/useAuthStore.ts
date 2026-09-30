@@ -22,7 +22,6 @@ export const useAuthStore = create<AuthState>((set) => ({
     isBound = true;
 
     subscribeFirebaseAuthState((user) => {
-      console.log("🔥 [AUTH STORE] onAuthStateChanged user:", user?.uid ?? null);
       if (user) {
         set({
           isAuthenticated: true,

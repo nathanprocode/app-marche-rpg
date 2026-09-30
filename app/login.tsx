@@ -2,15 +2,22 @@ import { useEffect, useState } from "react";
 import { useLocalSearchParams } from "expo-router";
 import * as WebBrowser from "expo-web-browser";
 import * as Google from "expo-auth-session/providers/google";
-import { ActivityIndicator, Alert, Pressable, StyleSheet, Text, View } from "react-native";
-import { theme } from "../src/core/theme";
-import { Screen } from "../src/ui/components/Screen";
+import { Alert, StyleSheet, Text, View } from "react-native";
 import { signInFirebaseWithGoogleIdToken } from "../src/core/firebase";
+import { theme } from "../src/core/theme";
+import { BrandMark } from "../src/ui/components/BrandMark";
+import { Button } from "../src/ui/components/Button";
+import { Screen } from "../src/ui/components/Screen";
 
 WebBrowser.maybeCompleteAuthSession();
 
 const GOOGLE_WEB_CLIENT_ID = "577122324982-dj909v3204i73sun7itrfkqm5icmb90a.apps.googleusercontent.com";
 const GOOGLE_ANDROID_CLIENT_ID = "577122324982-lst2maukmq6e6jjme8c2phfpkp9p2760.apps.googleusercontent.com";
+
+function showFirebaseError(error: unknown): void {
+  const message = error instanceof Error ? error.message : JSON.stringify(error);
+  Alert.alert("Connexion impossible", message);
+}
 
 export default function LoginRoute() {
   const [loading, setLoading] = useState(false);
@@ -24,14 +31,11 @@ export default function LoginRoute() {
 
   useEffect(() => {
     async function handleGoogleResponse() {
-      if (!response) return;
-
-      Alert.alert("Type de réponse", response.type);
-      if (response.type !== "success") return;
+      if (!response || response.type !== "success") return;
 
       const idToken = response.params?.id_token;
       if (!idToken) {
-        Alert.alert("Token manquant", JSON.stringify(response.params, null, 2));
+        Alert.alert("Connexion impossible", "Google n'a pas renvoyé de jeton d'identité.");
         return;
       }
 
@@ -39,8 +43,7 @@ export default function LoginRoute() {
       try {
         await signInFirebaseWithGoogleIdToken(idToken);
       } catch (error) {
-        const message = error instanceof Error ? error.message : JSON.stringify(error);
-        Alert.alert("Erreur Firebase", message);
+        showFirebaseError(error);
       } finally {
         setLoading(false);
       }
@@ -53,8 +56,6 @@ export default function LoginRoute() {
     async function handleForwardedOAuthParams() {
       if (response || !Object.keys(forwardedParams).length) return;
 
-      Alert.alert("Params OAuth transmis", JSON.stringify(forwardedParams, null, 2));
-
       const idTokenParam = forwardedParams.id_token;
       const idToken = Array.isArray(idTokenParam) ? idTokenParam[0] : idTokenParam;
 
@@ -66,8 +67,7 @@ export default function LoginRoute() {
       try {
         await signInFirebaseWithGoogleIdToken(idToken);
       } catch (error) {
-        const message = error instanceof Error ? error.message : JSON.stringify(error);
-        Alert.alert("Erreur Firebase", message);
+        showFirebaseError(error);
       } finally {
         setLoading(false);
       }
@@ -77,66 +77,30 @@ export default function LoginRoute() {
   }, [forwardedParams, response]);
 
   return (
-    <Screen>
+    <Screen edges={["top", "bottom"]}>
       <View style={styles.container}>
-        <Text style={styles.title}>Marche du Faucon</Text>
+        <BrandMark visual={{ state: "active", intensity: 0.5 }} width={64} />
+        <Text accessibilityRole="header" style={styles.title}>
+          Marche du Faucon
+        </Text>
         <Text style={styles.subtitle}>Le serment d'acier commence ici.</Text>
 
-        <Pressable
-          disabled={!request || loading}
-          style={[styles.googleBtn, (!request || loading) && styles.googleBtnDisabled]}
-          onPress={() => void promptAsync()}
-        >
-          {loading ? (
-            <ActivityIndicator color={theme.colors.text.primary} />
-          ) : (
-            <Text style={styles.googleBtnText}>Se connecter avec Google</Text>
-          )}
-        </Pressable>
+        <View style={styles.action}>
+          <Button label="Se connecter avec Google" onPress={() => void promptAsync()} disabled={!request} loading={loading} />
+        </View>
       </View>
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: "center",
-    gap: theme.spacing.lg,
-  },
-  title: {
-    color: theme.colors.text.primary,
-    fontFamily: theme.typography.fontFamily.heading,
-    fontSize: 38,
-    fontWeight: theme.typography.weight.extraBold,
-    textAlign: "center",
-    letterSpacing: 0.5,
-  },
+  container: { flex: 1, justifyContent: "center", alignItems: "center", gap: theme.space[16] },
+  title: { ...theme.text.displayL, color: theme.colors.bone, textAlign: "center", marginTop: theme.space[16] },
   subtitle: {
-    color: theme.colors.text.muted,
-    fontSize: theme.typography.size.md,
+    ...theme.text.body,
+    fontFamily: theme.fontFamily.bodyItalic,
+    color: theme.colors.boneDim,
     textAlign: "center",
   },
-  googleBtn: {
-    marginTop: theme.spacing.lg,
-    borderWidth: 1,
-    borderColor: theme.colors.blood.glow,
-    backgroundColor: theme.colors.bg.secondary,
-    borderRadius: theme.radius.lg,
-    paddingVertical: 16,
-    paddingHorizontal: 18,
-    shadowColor: theme.colors.blood.glow,
-    shadowOpacity: 0.25,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 0 },
-  },
-  googleBtnDisabled: {
-    opacity: 0.5,
-  },
-  googleBtnText: {
-    color: theme.colors.text.primary,
-    fontWeight: "700",
-    fontSize: theme.typography.size.md,
-    textAlign: "center",
-  },
+  action: { alignSelf: "stretch", marginTop: theme.space[32] },
 });

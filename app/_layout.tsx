@@ -10,10 +10,11 @@ import { useAuthStore } from "../src/store/useAuthStore";
 import { useBrandStore } from "../src/store/useBrandStore";
 import { usePedometerStore } from "../src/store/usePedometerStore";
 import { usePlayerStore } from "../src/store/usePlayerStore";
-import { CheckpointUnlockToast } from "../src/ui/components/CheckpointUnlockToast";
+import { theme } from "../src/core/theme";
+import { CheckpointUnlockModal } from "../src/ui/components/CheckpointUnlockModal";
 
 export default function RootLayout() {
-  useAppFonts();
+  const fontsLoaded = useAppFonts();
 
   const [isCloudStateLoaded, setIsCloudStateLoaded] = useState(false);
   const [isLocalStateLoaded, setIsLocalStateLoaded] = useState(false);
@@ -80,14 +81,12 @@ export default function RootLayout() {
   }, [hydratePermanentTrackingPreference, hydrateStepsTodayPreference]);
 
   useEffect(() => {
-    console.log("🔥 [LAYOUT] Cloud load effect", { isAuthenticated, userId, userName });
     async function loadCloudState() {
       if (!isAuthenticated || !userId) {
         setIsCloudStateLoaded(false);
         return;
       }
       const cloudDoc = await ensureUserDocAndLoad(userId, userName ?? "Traqué");
-      console.log("🔥 [LAYOUT] Cloud doc loaded", cloudDoc);
       // On reconstruit la progression : les anciens documents ne contiennent pas les mêmes champs.
       const saved = cloudDoc.progression;
       setProgress(
@@ -112,10 +111,10 @@ export default function RootLayout() {
     void loadCloudState();
   }, [isAuthenticated, userId, userName, setProgress, setUnlockedCheckpoints]);
 
-  if (!isAuthResolved) {
+  if (!fontsLoaded || !isAuthResolved) {
     return (
-      <View style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "#0B0B0D" }}>
-        <Text style={{ color: "#E5E7EB" }}>Chargement de la session...</Text>
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: theme.colors.ink }}>
+        <Text style={{ ...theme.text.body, color: theme.colors.boneDim }}>Chargement de la session...</Text>
       </View>
     );
   }
@@ -129,10 +128,8 @@ export default function RootLayout() {
         <Stack.Screen name="login" />
         <Stack.Screen name="oauthredirect" />
         <Stack.Screen name="(tabs)" />
-        <Stack.Screen name="quests" />
-        <Stack.Screen name="gallery" />
       </Stack>
-      <CheckpointUnlockToast enabled={isAuthenticated && isCloudStateLoaded} />
+      <CheckpointUnlockModal enabled={isAuthenticated && isCloudStateLoaded} />
     </>
   );
 }
