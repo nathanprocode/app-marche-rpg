@@ -95,7 +95,7 @@ export default function LoginRoute() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, justifyContent: "center", alignItems: "center", gap: theme.space[16] },
-  title: { ...theme.text.displayL, color: theme.colors.bone, textAlign: "center", marginTop: theme.space[16] },
+  title: { ...theme.text.displayL, color: theme.colors.bone, textAlign: "center", marginTop: theme.space[16], alignSelf: "stretch" },
   subtitle: {
     ...theme.text.body,
     fontFamily: theme.fontFamily.bodyItalic,

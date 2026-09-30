@@ -189,30 +189,31 @@ function ChronicleCard({ checkpoint, onOpenPanel }: ChronicleCardProps) {
   const panel = BERSERK_PANEL_IMAGES[checkpoint.id];
 
   return (
-    <PaperCard style={styles.chronicle}>
-      <Pressable
-        accessibilityRole="imagebutton"
-        accessibilityLabel={`Agrandir la planche : ${checkpoint.title}`}
-        disabled={!panel}
-        onPress={() => panel && onOpenPanel(panel)}
-        style={styles.chronicleThumb}
-      >
-        {panel ? (
-          <View style={styles.thumbBlend}>
-            <Image source={panel} style={styles.thumbImage} resizeMode="cover" accessibilityIgnoresInvertColors />
-          </View>
-        ) : (
-          <Ionicons name="book-outline" size={32} color={theme.colors.umber} />
-        )}
-      </Pressable>
-      <View style={styles.chronicleText}>
-        <Text style={styles.chronicleKicker}>{`${formatInt(checkpoint.kmThreshold)} km · ${checkpoint.arc}`}</Text>
-        <Text style={styles.chronicleTitle}>{checkpoint.title}</Text>
-        <Text numberOfLines={2} style={styles.chronicleDescription}>
-          {checkpoint.description}
-        </Text>
-      </View>
-    </PaperCard>
+    <Pressable
+      accessibilityRole={panel ? "imagebutton" : undefined}
+      accessibilityLabel={panel ? `Agrandir la planche : ${checkpoint.title}` : undefined}
+      disabled={!panel}
+      onPress={() => panel && onOpenPanel(panel)}
+    >
+      <PaperCard style={styles.chronicle}>
+        <View style={styles.chronicleThumb}>
+          {panel ? (
+            <View pointerEvents="none" style={styles.thumbBlend}>
+              <Image source={panel} style={styles.thumbImage} resizeMode="cover" accessibilityIgnoresInvertColors />
+            </View>
+          ) : (
+            <Ionicons name="book-outline" size={32} color={theme.colors.umber} />
+          )}
+        </View>
+        <View style={styles.chronicleText}>
+          <Text style={styles.chronicleKicker}>{`${formatInt(checkpoint.kmThreshold)} km · ${checkpoint.arc}`}</Text>
+          <Text style={styles.chronicleTitle}>{checkpoint.title}</Text>
+          <Text numberOfLines={2} style={styles.chronicleDescription}>
+            {checkpoint.description}
+          </Text>
+        </View>
+      </PaperCard>
+    </Pressable>
   );
 }
 

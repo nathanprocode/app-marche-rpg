@@ -90,7 +90,7 @@ const styles = StyleSheet.create({
   header: { flexDirection: "row", alignItems: "flex-start", justifyContent: "space-between", gap: theme.space[16] },
   headerText: { flex: 1 },
   label: { ...theme.text.label, color: theme.colors.boneDim },
-  name: { ...theme.text.displayL, color: theme.colors.bone },
+  name: { ...theme.text.displayL, color: theme.colors.bone, alignSelf: "stretch" },
   subtitle: { ...theme.text.body, color: theme.colors.boneDim },
   stats: { marginTop: theme.space[24], gap: theme.space[16] },
   statsRow: { flexDirection: "row", gap: theme.space[16] },

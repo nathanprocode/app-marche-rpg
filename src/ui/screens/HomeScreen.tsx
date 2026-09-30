@@ -51,7 +51,7 @@ export function HomeScreen() {
   return (
     <Screen scroll>
       <View style={styles.header}>
-        <Text accessibilityRole="header" style={styles.appName}>
+        <Text accessibilityRole="header" numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} style={styles.appName}>
           Marche du Faucon
         </Text>
         <Pressable
@@ -160,7 +160,7 @@ function Total({ label, value }: { label: string; value: string }) {
 
 const styles = StyleSheet.create({
   header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", minHeight: 44 },
-  appName: { ...theme.text.displayM, color: theme.colors.bone },
+  appName: { ...theme.text.displayM, color: theme.colors.bone, flex: 1 },
   iconButton: {
     width: 44,
     height: 44,
