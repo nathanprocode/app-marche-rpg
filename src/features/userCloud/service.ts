@@ -1,6 +1,7 @@
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { firestoreDb } from "../../core/firebase";
 import { BERSERK_CHECKPOINTS } from "../../data/map/berserk-checkpoints";
+import { buildProgressFromSteps } from "../progression/engine";
 import type { PlayerProgress } from "../progression/types";
 
 export type UserCloudDoc = {
@@ -21,16 +22,7 @@ function resolveUnlockedCheckpoints(totalDistanceKm: number, savedIds: string[] 
 }
 
 export function buildDefaultUserCloudDoc(uid: string, displayName: string): UserCloudDoc {
-  const progression: PlayerProgress = {
-    totalSteps: 0,
-    totalDistanceKm: 0,
-    progressPct: 0,
-    currentStageId: "stage-001",
-    currentStageProgressPct: 0,
-    streakDays: 0,
-    brandState: "idle",
-    lastActiveDateISO: new Date(0).toISOString(),
-  };
+  const progression: PlayerProgress = buildProgressFromSteps(0, 0, new Date(0).toISOString());
 
   return {
     uid,

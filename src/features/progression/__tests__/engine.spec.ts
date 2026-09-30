@@ -34,3 +34,25 @@ describe("buildProgressFromSteps", () => {
     expect(buildProgressFromSteps(100, 0, NEVER, 2000).brandState).toBe("active");
   });
 });
+
+describe("checkpoints de la Traque", () => {
+  it("place un joueur qui débute sur le premier checkpoint", () => {
+    const progress = buildProgressFromSteps(0, 0, NEVER);
+    expect(progress.currentCheckpointId).toBe("cp-001");
+    expect(progress.currentSegmentProgressPct).toBe(0);
+  });
+
+  it("place 61,4 km entre le Briseur d'Ours (52 km) et la Rencontre avec le Faucon (85 km)", () => {
+    const progress = buildProgressFromSteps(81_866, 12, NEVER);
+    expect(progress.totalDistanceKm).toBeCloseTo(61.4, 1);
+    expect(progress.currentCheckpointId).toBe("cp-003");
+    expect(progress.currentSegmentProgressPct).toBeCloseTo(28.5, 0);
+  });
+
+  it("termine sur le dernier checkpoint à 1000 km", () => {
+    const progress = buildProgressFromSteps(1_400_000, 0, NEVER);
+    expect(progress.currentCheckpointId).toBe("cp-015");
+    expect(progress.currentSegmentProgressPct).toBe(100);
+    expect(progress.progressPct).toBe(100);
+  });
+});

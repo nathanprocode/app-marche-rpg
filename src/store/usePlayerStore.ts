@@ -111,16 +111,7 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
     await saveCurrentProgress(updated, unlockedCheckpoints);
   },
   resetProgressionDev: async () => {
-    const resetProgress: PlayerProgress = {
-      totalSteps: 0,
-      totalDistanceKm: 0,
-      progressPct: 0,
-      currentStageId: "stage-001",
-      currentStageProgressPct: 0,
-      streakDays: 0,
-      brandState: "idle",
-      lastActiveDateISO: new Date(0).toISOString(),
-    };
+    const resetProgress: PlayerProgress = buildProgressFromSteps(0, 0, new Date(0).toISOString());
     const unlockedCheckpoints = resolveUnlockedCheckpoints(resetProgress.totalDistanceKm);
 
     set({ progress: resetProgress, unlockedCheckpoints });

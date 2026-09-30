@@ -1,29 +1,17 @@
 import { GAME_CONFIG } from "../../core/constants/game";
-import stages from "../../data/map/stages.json";
-import type { JourneyStage, PlayerProgress, BrandState } from "./types";
+import { BERSERK_CHECKPOINTS } from "../../data/map/berserk-checkpoints";
+import { calculateGutsPosition } from "../mapJourney/interpolation";
+import type { BrandState, PlayerProgress } from "./types";
 
 function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
-}
-
-export function getStages(): JourneyStage[] {
-  return stages as JourneyStage[];
-}
-
-export function resolveCurrentStage(distanceKm: number, journeyStages = getStages()): JourneyStage {
-  const found = journeyStages.find((stage) => distanceKm >= stage.startKm && distanceKm < stage.endKm);
-  return found ?? journeyStages[journeyStages.length - 1];
-}
-
-export function computeStageProgressPct(distanceKm: number, stage: JourneyStage): number {
-  const stageSpan = Math.max(0.0001, stage.endKm - stage.startKm);
-  return clamp(((distanceKm - stage.startKm) / stageSpan) * 100, 0, 100);
 }
 
 export function computeGlobalProgressPct(distanceKm: number): number {
   return clamp((distanceKm / GAME_CONFIG.totalGoalKm) * 100, 0, 100);
 }
 
+/** La Marque est apaisée ("active") dès que le seuil de pas du jour est atteint, sinon elle saigne. */
 export function deriveBrandState(stepsToday: number): BrandState {
   return stepsToday >= GAME_CONFIG.sedentaryThresholdStepsPerDay ? "active" : "bleeding";
 }
@@ -35,14 +23,15 @@ export function buildProgressFromSteps(
   stepsToday = 0,
 ): PlayerProgress {
   const distanceKm = (totalSteps * GAME_CONFIG.metersPerStep) / 1000;
-  const currentStage = resolveCurrentStage(distanceKm);
+  // Un seul système de repères : les checkpoints de la Traque (berserk-checkpoints.ts).
+  const position = calculateGutsPosition(distanceKm, BERSERK_CHECKPOINTS);
 
   return {
     totalSteps,
     totalDistanceKm: distanceKm,
     progressPct: computeGlobalProgressPct(distanceKm),
-    currentStageId: currentStage.id,
-    currentStageProgressPct: computeStageProgressPct(distanceKm, currentStage),
+    currentCheckpointId: position.previous.id,
+    currentSegmentProgressPct: position.segmentProgressPct,
     streakDays,
     brandState: deriveBrandState(stepsToday),
     lastActiveDateISO,

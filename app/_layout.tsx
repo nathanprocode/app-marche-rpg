@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { AppState, Text, View } from "react-native";
 import { useAppFonts } from "../src/core/fonts";
 import { usePedometer } from "../src/features/pedometer/usePedometer";
+import { buildProgressFromSteps } from "../src/features/progression/engine";
 import { runDailySync } from "../src/features/runtime/dailySync";
 import { ensureUserDocAndLoad } from "../src/features/userCloud/service";
 import { useAuthStore } from "../src/store/useAuthStore";
@@ -87,7 +88,16 @@ export default function RootLayout() {
       }
       const cloudDoc = await ensureUserDocAndLoad(userId, userName ?? "Traqué");
       console.log("🔥 [LAYOUT] Cloud doc loaded", cloudDoc);
-      setProgress(cloudDoc.progression);
+      // On reconstruit la progression : les anciens documents ne contiennent pas les mêmes champs.
+      const saved = cloudDoc.progression;
+      setProgress(
+        buildProgressFromSteps(
+          saved.totalSteps ?? 0,
+          saved.streakDays ?? 0,
+          saved.lastActiveDateISO ?? new Date(0).toISOString(),
+          usePedometerStore.getState().stepsToday,
+        ),
+      );
       setUnlockedCheckpoints(cloudDoc.unlockedCheckpoints);
 
       useBrandStore.setState((prev) => ({
@@ -119,7 +129,6 @@ export default function RootLayout() {
         <Stack.Screen name="login" />
         <Stack.Screen name="oauthredirect" />
         <Stack.Screen name="(tabs)" />
-        <Stack.Screen name="onboarding" />
         <Stack.Screen name="quests" />
         <Stack.Screen name="gallery" />
       </Stack>
