@@ -8,6 +8,7 @@ import { clearPersistentTrackingNotificationAsync, updatePersistentTrackingNotif
 import {
   loadPermanentPedometerModule,
   safeAcknowledgeSteps,
+  safeGetDailySteps,
   safeGetSteps,
   safeStartTracking,
   safeStopTracking,
@@ -25,12 +26,20 @@ type UsePedometerState = {
   error: string | null;
 };
 
-const ENABLE_NATIVE_FOREGROUND_SERVICE = false;
+const ENABLE_NATIVE_FOREGROUND_SERVICE = Platform.OS === "android";
 
 function getStartOfToday(): Date {
   const start = new Date();
   start.setHours(0, 0, 0, 0);
   return start;
+}
+
+function getLocalDayKey(date = new Date()): string {
+  const year = date.getFullYear();
+  const month = `${date.getMonth() + 1}`.padStart(2, "0");
+  const day = `${date.getDate()}`.padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
 }
 
 function shouldRefreshNotification(previousBucket: number | null, totalSteps: number): boolean {
@@ -92,7 +101,7 @@ async function requestAndroidNotificationPermission(): Promise<boolean> {
   return notificationPermission === PermissionsAndroid.RESULTS.GRANTED;
 }
 
-export function usePedometer(enabled = true): UsePedometerState {
+export function usePedometer(enabled: boolean | null = true): UsePedometerState {
   const [state, setState] = useState<UsePedometerState>({
     isAvailable: null,
     permission: "undetermined",
@@ -107,18 +116,27 @@ export function usePedometer(enabled = true): UsePedometerState {
     let intervalId: ReturnType<typeof setInterval> | null = null;
     let subscription: { remove: () => void } | null = null;
 
-    async function syncNativeSteps(nativeSteps: number): Promise<void> {
-      const deltaSteps = Math.max(0, Math.round(nativeSteps));
-      if (deltaSteps <= 0) {
+    async function syncNativeSteps(nativeSteps: number, nativeDailySteps: Record<string, number> | null): Promise<void> {
+      const fallbackDeltaSteps = Math.max(0, Math.round(nativeSteps));
+      const dailyStepDeltas =
+        nativeDailySteps && Object.keys(nativeDailySteps).length > 0
+          ? nativeDailySteps
+          : { [getLocalDayKey()]: fallbackDeltaSteps };
+      const totalDeltaSteps = Object.values(dailyStepDeltas).reduce(
+        (sum, deltaSteps) => sum + Math.max(0, Math.round(deltaSteps)),
+        0,
+      );
+
+      if (totalDeltaSteps <= 0) {
         return;
       }
 
       const progress = usePlayerStore.getState().progress;
-      const currentStepsToday = usePedometerStore.getState().stepsToday;
-      const nextTotalSteps = progress.totalSteps + deltaSteps;
-      const nextStepsToday = currentStepsToday + deltaSteps;
+      const appliedDeltaSteps = usePedometerStore.getState().applyDailyStepDeltas(dailyStepDeltas);
+      const pedometerState = usePedometerStore.getState();
+      const nextTotalSteps = progress.totalSteps + appliedDeltaSteps;
+      const nextStepsToday = pedometerState.stepsToday;
 
-      usePedometerStore.getState().setLiveSteps(nextStepsToday);
       await usePlayerStore
         .getState()
         .syncFromSteps(nextTotalSteps, progress.streakDays, progress.lastActiveDateISO);
@@ -183,12 +201,12 @@ export function usePedometer(enabled = true): UsePedometerState {
       lastNativeStepsRef.current = 0;
       lastNotifiedDistanceBucketRef.current = Math.floor(stepsToKm(progress.totalSteps) * 100);
 
-      await syncNativeSteps(initialNativeSteps);
+      await syncNativeSteps(initialNativeSteps, safeGetDailySteps(permanentPedometer));
 
       intervalId = setInterval(() => {
         const nativeSteps = safeGetSteps(permanentPedometer);
         if (nativeSteps !== null) {
-          void syncNativeSteps(nativeSteps);
+          void syncNativeSteps(nativeSteps, safeGetDailySteps(permanentPedometer));
         }
       }, 5000);
 
@@ -293,7 +311,13 @@ export function usePedometer(enabled = true): UsePedometerState {
     }
 
     async function startPedometer(): Promise<void> {
+      if (enabled === null) {
+        return;
+      }
+
       if (!enabled) {
+        await safeStopTracking();
+        lastNativeStepsRef.current = null;
         await clearPersistentTrackingNotificationAsync();
         return;
       }
@@ -327,7 +351,7 @@ export function usePedometer(enabled = true): UsePedometerState {
         clearInterval(intervalId);
       }
       if (lastNativeStepsRef.current !== null) {
-        void safeStopTracking();
+        return;
       }
       void clearPersistentTrackingNotificationAsync();
     };

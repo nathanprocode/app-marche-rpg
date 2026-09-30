@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Tabs } from "expo-router";
 import { useEffect, useRef } from "react";
-import { Animated, Easing, Platform, StyleSheet, View } from "react-native";
+import { Animated, Easing, Platform, StyleSheet } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { theme } from "../../src/core/theme";
 
@@ -45,14 +45,13 @@ function TabIcon({ name, color, size, focused }: TabIconProps) {
       ]}
     >
       <Ionicons name={name} size={size} color={color} />
-      {focused ? <View style={styles.dot} /> : null}
     </Animated.View>
   );
 }
 
 export default function TabsLayout() {
   const insets = useSafeAreaInsets();
-  const minimumBottomPadding = Platform.OS === "android" ? 36 : 14;
+  const minimumBottomPadding = Platform.OS === "android" ? 14 : 10;
   const bottomPadding = Math.max(insets.bottom, minimumBottomPadding);
 
   return (
@@ -66,8 +65,8 @@ export default function TabsLayout() {
           backgroundColor: theme.colors.bg.secondary,
           borderTopColor: theme.colors.metal,
           borderTopWidth: 0.5,
-          height: 72 + bottomPadding,
-          paddingTop: 10,
+          height: 66 + bottomPadding,
+          paddingTop: 8,
           paddingBottom: bottomPadding,
         },
         tabBarLabelStyle: {
@@ -99,12 +98,5 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     shadowColor: theme.colors.blood.glow,
     shadowOffset: { width: 0, height: 0 },
-  },
-  dot: {
-    marginTop: 3,
-    width: 5,
-    height: 5,
-    borderRadius: theme.radius.sm,
-    backgroundColor: theme.colors.blood.glow,
   },
 });

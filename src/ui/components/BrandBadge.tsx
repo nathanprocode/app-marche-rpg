@@ -21,6 +21,11 @@ const BRAND_MARK_LOWER_PATH =
   "M62.19 252.31q7.75 6.07 18.02 8.01a.44.43-83.8 0 0 .51-.42c.22-6.9.57-14.68-1.39-21.37-2.07-7.09-2.12-12.55.85-20.21 1.39-3.57-.77-9.61-1.68-13.2-1.6-6.38-.18-13.19 1.56-19.36.32-1.17.28-3.12.01-4.08q-3.2-11.48-2.12-23.38.05-.5-.33-.18-16.24 13.73-31.23 28.81c-4.4 4.43-10 7.26-14.09 11.71q-5 5.44-6.65 9.3-1.49 3.5 1.38 7.06c6.58 8.13 13.3 18.31 19.65 21.63 7.27 3.81 9.58 11.05 15.51 15.68m85.52-47.38c-8.85-5.27-15.02-11.22-23.16-19.26-7.29-7.22-17.38-15.73-25.02-25.78q-1.38-1.81-2.4.22-3.05 6.05-.76 13.92c.75 2.57-1.78 7.86-2.06 10.89-.45 4.81 1.79 10.23 2.34 15.09q1.57 13.9-.5 28.79c-.99 7.12-.74 11.57 1.45 17.8 1.7 4.82-.25 12.24-1.43 17.16q-.12.49.27.18 6.99-5.56 14-11.13c5.71-4.53 9.37-9.33 13.33-15.11 4.18-6.11 8.34-7.97 15.91-11.78 1.93-.97 3.07-1.81 3.57-4.11q1.84-8.43 4.65-16.37a.43.42 25.2 0 0-.19-.51";
 const INTENSITY_LABEL = "Intensit\u00e9";
 
+type BrandCycleState = {
+  state: string;
+  description: string;
+};
+
 function resolveTimeIntensity(): number {
   const hour = new Date().getHours();
   if (hour >= 22 || hour < 6) return 1;
@@ -28,8 +33,28 @@ function resolveTimeIntensity(): number {
   return 0.48;
 }
 
+function resolveBrandCycleState(): BrandCycleState {
+  const hour = new Date().getHours();
+  const isNight = hour >= 18 || hour < 6;
+
+  if (isNight) {
+    return {
+      state: "Saignement et Palpitations",
+      description:
+        "Les t\u00e9n\u00e8bres s'\u00e9paississent. La Marque br\u00fble d'une douleur aigu\u00eb et palpite au rythme de tes pas : ils savent que tu es l\u00e0. Les esprits vengeurs se massent dans ton sillage, attir\u00e9s par ton sang. Ce n'est plus une simple marche, c'est une question de survie physique et mentale. Ne t'arr\u00eate sous aucun pr\u00e9texte, garde le feu de camp en vue.",
+    };
+  }
+
+  return {
+    state: "Cicatrice silencieuse",
+    description:
+      "La lumi\u00e8re du jour repousse les ombres et maintient la fronti\u00e8re ferm\u00e9e. Pour l'instant, la Marque n'est qu'une br\u00fblure sourde sur ta peau, un simple rappel de ta condition. C'est le moment d'avaler les kilom\u00e8tres et de forger ton endurance. Profite de ce r\u00e9pit pr\u00e9caire pour avancer, Traqu\u00e9, car le soleil finit toujours par se coucher.",
+  };
+}
+
 export function BrandBadge({ visual }: { visual: BrandVisualState }) {
   const timeIntensity = useMemo(resolveTimeIntensity, []);
+  const brandCycleState = useMemo(resolveBrandCycleState, []);
   const resolvedIntensity = Math.max(0.25, Math.min(1, visual.intensity * 0.35 + timeIntensity * 0.65));
   const brandIntensity = useSharedValue(resolvedIntensity);
   const pulse = useSharedValue(0);
@@ -92,6 +117,10 @@ export function BrandBadge({ visual }: { visual: BrandVisualState }) {
           </Text>
         </View>
       </View>
+      <View style={styles.loreBlock}>
+        <Text style={styles.stateLabel}>{brandCycleState.state}</Text>
+        <Text style={styles.description}>{brandCycleState.description}</Text>
+      </View>
     </View>
   );
 }
@@ -134,4 +163,20 @@ const styles = StyleSheet.create({
     fontWeight: theme.typography.weight.extraBold,
   },
   meta: { color: theme.colors.text.muted, marginTop: theme.spacing.xs },
+  loreBlock: {
+    marginTop: theme.spacing.md,
+    borderTopWidth: 1,
+    borderTopColor: "rgba(111,114,133,0.35)",
+    paddingTop: theme.spacing.md,
+  },
+  stateLabel: {
+    color: theme.colors.blood.glow,
+    fontFamily: theme.typography.fontFamily.heading,
+    fontWeight: theme.typography.weight.extraBold,
+    marginBottom: theme.spacing.xs,
+  },
+  description: {
+    color: theme.colors.text.muted,
+    lineHeight: 20,
+  },
 });

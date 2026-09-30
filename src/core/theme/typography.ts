@@ -16,6 +16,6 @@ export const typography = {
     regular: "400",
     medium: "500",
     bold: "700",
-    extraBold: "800",
+    extraBold: "400",
   },
 } as const;

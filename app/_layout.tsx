@@ -11,7 +11,7 @@ import { usePlayerStore } from "../src/store/usePlayerStore";
 import { CheckpointUnlockToast } from "../src/ui/components/CheckpointUnlockToast";
 
 export default function RootLayout() {
-  useAppFonts();
+  const areFontsLoaded = useAppFonts();
 
   const [isCloudStateLoaded, setIsCloudStateLoaded] = useState(false);
   const [isLocalStateLoaded, setIsLocalStateLoaded] = useState(false);
@@ -29,14 +29,9 @@ export default function RootLayout() {
   const isOnLogin = segments[0] === "login";
   const isOnOAuthRedirect = segments[0] === "oauthredirect";
   const isOnPublicAuthRoute = isOnLogin || isOnOAuthRedirect;
+  const isTrackingStateReady = isAuthResolved && isAuthenticated && isCloudStateLoaded && isLocalStateLoaded;
 
-  usePedometer(
-    isAuthResolved &&
-      isAuthenticated &&
-      isCloudStateLoaded &&
-      isLocalStateLoaded &&
-      isPermanentTrackingEnabled,
-  );
+  usePedometer(isTrackingStateReady ? isPermanentTrackingEnabled : null);
 
   useEffect(() => {
     bindAuthListener();
@@ -83,7 +78,7 @@ export default function RootLayout() {
     void loadCloudState();
   }, [isAuthenticated, userId, userName, setProgress, setUnlockedCheckpoints]);
 
-  if (!isAuthResolved) {
+  if (!areFontsLoaded || !isAuthResolved) {
     return (
       <View style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "#0B0B0D" }}>
         <Text style={{ color: "#E5E7EB" }}>Chargement de la session...</Text>

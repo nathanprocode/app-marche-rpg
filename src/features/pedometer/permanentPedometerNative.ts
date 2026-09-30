@@ -1,10 +1,17 @@
 import { Platform } from "react-native";
 
 type PermanentPedometerModule = {
-  startTracking(title: string, text: string, baseTotalSteps: number, baseStepsToday: number, metersPerStep: number): void;
-  stopTracking(): void;
-  updateNotification(title: string, text: string, baseTotalSteps: number, baseStepsToday: number, metersPerStep: number): void;
+  startTracking(title: string, text: string, baseTotalSteps: number, baseStepsToday: number, metersPerStep: number): boolean;
+  stopTracking(): boolean;
+  updateNotification(
+    title: string,
+    text: string,
+    baseTotalSteps: number,
+    baseStepsToday: number,
+    metersPerStep: number,
+  ): boolean;
   getSteps(): number;
+  getDailySteps(): string;
   acknowledgeSteps(): void;
 };
 
@@ -40,8 +47,7 @@ export async function safeStartTracking(
       return false;
     }
 
-    permanentPedometer.startTracking(title, text, baseTotalSteps, baseStepsToday, metersPerStep);
-    return true;
+    return permanentPedometer.startTracking(title, text, baseTotalSteps, baseStepsToday, metersPerStep) !== false;
   } catch (error) {
     console.log("[PermanentPedometer] startTracking failed", error);
     return false;
@@ -74,8 +80,7 @@ export async function safeUpdateNotification(
       return false;
     }
 
-    permanentPedometer.updateNotification(title, text, baseTotalSteps, baseStepsToday, metersPerStep);
-    return true;
+    return permanentPedometer.updateNotification(title, text, baseTotalSteps, baseStepsToday, metersPerStep) !== false;
   } catch (error) {
     console.log("[PermanentPedometer] updateNotification failed", error);
     return false;
@@ -104,6 +109,30 @@ export function safeGetSteps(permanentPedometer: PermanentPedometerModule | null
     return permanentPedometer.getSteps();
   } catch (error) {
     console.log("[PermanentPedometer] getSteps failed", error);
+    return null;
+  }
+}
+
+export function safeGetDailySteps(permanentPedometer: PermanentPedometerModule | null): Record<string, number> | null {
+  try {
+    if (!permanentPedometer?.getDailySteps) {
+      return null;
+    }
+
+    const rawDailySteps = permanentPedometer.getDailySteps();
+    const parsedDailySteps = JSON.parse(rawDailySteps) as Record<string, unknown>;
+    const normalizedDailySteps: Record<string, number> = {};
+
+    Object.entries(parsedDailySteps).forEach(([dayKey, steps]) => {
+      const normalizedSteps = Math.max(0, Math.round(Number(steps) || 0));
+      if (normalizedSteps > 0) {
+        normalizedDailySteps[dayKey] = normalizedSteps;
+      }
+    });
+
+    return normalizedDailySteps;
+  } catch (error) {
+    console.log("[PermanentPedometer] getDailySteps failed", error);
     return null;
   }
 }

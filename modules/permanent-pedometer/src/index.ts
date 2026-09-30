@@ -1,14 +1,21 @@
-import { requireNativeModule } from "expo-modules-core";
+import { requireOptionalNativeModule } from "expo-modules-core";
 
 type PermanentPedometerModule = {
-  startTracking(title: string, text: string, baseTotalSteps: number, baseStepsToday: number, metersPerStep: number): void;
-  stopTracking(): void;
-  updateNotification(title: string, text: string, baseTotalSteps: number, baseStepsToday: number, metersPerStep: number): void;
+  startTracking(title: string, text: string, baseTotalSteps: number, baseStepsToday: number, metersPerStep: number): boolean;
+  stopTracking(): boolean;
+  updateNotification(
+    title: string,
+    text: string,
+    baseTotalSteps: number,
+    baseStepsToday: number,
+    metersPerStep: number,
+  ): boolean;
   getSteps(): number;
+  getDailySteps(): string;
   acknowledgeSteps(): void;
 };
 
-const PermanentPedometer = requireNativeModule<PermanentPedometerModule>("PermanentPedometer");
+const PermanentPedometer = requireOptionalNativeModule<PermanentPedometerModule>("PermanentPedometer");
 
 export function startTracking(
   title: string,
@@ -16,12 +23,12 @@ export function startTracking(
   baseTotalSteps: number,
   baseStepsToday: number,
   metersPerStep: number,
-): void {
-  PermanentPedometer.startTracking(title, text, baseTotalSteps, baseStepsToday, metersPerStep);
+): boolean {
+  return PermanentPedometer?.startTracking(title, text, baseTotalSteps, baseStepsToday, metersPerStep) ?? false;
 }
 
-export function stopTracking(): void {
-  PermanentPedometer.stopTracking();
+export function stopTracking(): boolean {
+  return PermanentPedometer?.stopTracking() ?? false;
 }
 
 export function updateNotification(
@@ -30,16 +37,20 @@ export function updateNotification(
   baseTotalSteps: number,
   baseStepsToday: number,
   metersPerStep: number,
-): void {
-  PermanentPedometer.updateNotification(title, text, baseTotalSteps, baseStepsToday, metersPerStep);
+): boolean {
+  return PermanentPedometer?.updateNotification(title, text, baseTotalSteps, baseStepsToday, metersPerStep) ?? false;
 }
 
 export function getSteps(): number {
-  return PermanentPedometer.getSteps();
+  return PermanentPedometer?.getSteps() ?? 0;
+}
+
+export function getDailySteps(): string {
+  return PermanentPedometer?.getDailySteps() ?? "{}";
 }
 
 export function acknowledgeSteps(): void {
-  PermanentPedometer.acknowledgeSteps();
+  PermanentPedometer?.acknowledgeSteps();
 }
 
 export default PermanentPedometer;

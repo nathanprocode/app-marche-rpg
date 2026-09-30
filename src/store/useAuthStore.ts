@@ -5,6 +5,7 @@ type AuthState = {
   isAuthenticated: boolean;
   userName: string | null;
   userId: string | null;
+  userCreatedAtISO: string | null;
   isAuthResolved: boolean;
   bindAuthListener: () => void;
   logout: () => Promise<void>;
@@ -16,27 +17,41 @@ export const useAuthStore = create<AuthState>((set) => ({
   isAuthenticated: false,
   userName: null,
   userId: null,
+  userCreatedAtISO: null,
   isAuthResolved: false,
   bindAuthListener: () => {
     if (isBound) return;
     isBound = true;
 
     subscribeFirebaseAuthState((user) => {
-      console.log("🔥 [AUTH STORE] onAuthStateChanged user:", user?.uid ?? null);
+      console.log("[AUTH STORE] onAuthStateChanged user:", user?.uid ?? null);
       if (user) {
         set({
           isAuthenticated: true,
-          userName: user.displayName ?? "Traqué",
+          userName: user.displayName ?? "Traqu\u00e9",
           userId: user.uid,
+          userCreatedAtISO: user.metadata.creationTime ? new Date(user.metadata.creationTime).toISOString() : null,
           isAuthResolved: true,
         });
       } else {
-        set({ isAuthenticated: false, userName: null, userId: null, isAuthResolved: true });
+        set({
+          isAuthenticated: false,
+          userName: null,
+          userId: null,
+          userCreatedAtISO: null,
+          isAuthResolved: true,
+        });
       }
     });
   },
   logout: async () => {
     await signOutFirebase();
-    set({ isAuthenticated: false, userName: null, userId: null, isAuthResolved: true });
+    set({
+      isAuthenticated: false,
+      userName: null,
+      userId: null,
+      userCreatedAtISO: null,
+      isAuthResolved: true,
+    });
   },
 }));
