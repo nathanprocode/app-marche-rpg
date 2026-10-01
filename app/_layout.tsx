@@ -1,33 +1,34 @@
 import { Redirect, Stack, useSegments } from "expo-router";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { AppState, Text, View } from "react-native";
 import { useAppFonts } from "../src/core/fonts";
 import { usePedometer } from "../src/features/pedometer/usePedometer";
-import { buildProgressFromSteps } from "../src/features/progression/engine";
+import { parseSavedProgress } from "../src/features/progression/savedProgress";
 import { runDailySync } from "../src/features/runtime/dailySync";
 import { ensureUserDocAndLoad } from "../src/features/userCloud/service";
 import { useAuthStore } from "../src/store/useAuthStore";
-import { useBrandStore } from "../src/store/useBrandStore";
 import { usePedometerStore } from "../src/store/usePedometerStore";
-import { usePlayerStore } from "../src/store/usePlayerStore";
+import { flushCloudSave, usePlayerStore } from "../src/store/usePlayerStore";
 import { theme } from "../src/core/theme";
+import { Button } from "../src/ui/components/Button";
 import { CheckpointUnlockModal } from "../src/ui/components/CheckpointUnlockModal";
 
 export default function RootLayout() {
   const fontsLoaded = useAppFonts();
 
-  const [isCloudStateLoaded, setIsCloudStateLoaded] = useState(false);
+  const [isProgressLoaded, setIsProgressLoaded] = useState(false);
+  const [progressLoadError, setProgressLoadError] = useState<string | null>(null);
+  const [loadAttempt, setLoadAttempt] = useState(0);
   const [isLocalStateLoaded, setIsLocalStateLoaded] = useState(false);
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const isAuthResolved = useAuthStore((s) => s.isAuthResolved);
   const userId = useAuthStore((s) => s.userId);
-  const userName = useAuthStore((s) => s.userName);
   const bindAuthListener = useAuthStore((s) => s.bindAuthListener);
   const hydrateStepsTodayPreference = usePedometerStore((s) => s.hydrateStepsTodayPreference);
   const stepsToday = usePedometerStore((s) => s.stepsToday);
   const hydratePermanentTrackingPreference = usePlayerStore((s) => s.hydratePermanentTrackingPreference);
-  const setProgress = usePlayerStore((s) => s.setProgress);
-  const setUnlockedCheckpoints = usePlayerStore((s) => s.setUnlockedCheckpoints);
+  const hydrateLocalProgress = usePlayerStore((s) => s.hydrateLocalProgress);
+  const mergeCloudProgress = usePlayerStore((s) => s.mergeCloudProgress);
   const isPermanentTrackingEnabled = usePlayerStore((s) => s.isPermanentTrackingEnabled);
   const segments = useSegments();
   const isOnLogin = segments[0] === "login";
@@ -36,7 +37,7 @@ export default function RootLayout() {
 
   // Les pas sont comptés dès la connexion ; l'interrupteur « Suivi permanent » ajoute le service en arrière-plan.
   usePedometer(
-    isAuthResolved && isAuthenticated && isCloudStateLoaded && isLocalStateLoaded,
+    isAuthResolved && isAuthenticated && isProgressLoaded && isLocalStateLoaded,
     isPermanentTrackingEnabled,
   );
 
@@ -46,14 +47,19 @@ export default function RootLayout() {
 
   // Série et Marque : recalculées dès que l'état est chargé, puis à chaque changement de pas.
   useEffect(() => {
-    if (isCloudStateLoaded && isLocalStateLoaded) {
+    if (isProgressLoaded && isLocalStateLoaded) {
       void runDailySync();
     }
-  }, [isCloudStateLoaded, isLocalStateLoaded, stepsToday]);
+  }, [isProgressLoaded, isLocalStateLoaded, stepsToday]);
 
   // Au retour au premier plan : on remet les pas à zéro si on a changé de jour, puis on recalcule.
+  // En arrière-plan : on envoie la sauvegarde cloud en attente, l'app peut être tuée à tout moment.
   useEffect(() => {
     const subscription = AppState.addEventListener("change", (nextState) => {
+      if (nextState === "background") {
+        flushCloudSave();
+        return;
+      }
       if (nextState !== "active") return;
       void hydrateStepsTodayPreference().then(() => runDailySync());
     });
@@ -78,47 +84,65 @@ export default function RootLayout() {
     };
   }, [hydratePermanentTrackingPreference, hydrateStepsTodayPreference]);
 
+  // Progression : la sauvegarde locale d'abord (démarrage immédiat, même hors ligne),
+  // puis Firestore en arrière-plan, fusionné avec ce qui a été compté entre-temps.
   useEffect(() => {
-    async function loadCloudState() {
-      if (!isAuthenticated || !userId) {
-        setIsCloudStateLoaded(false);
-        return;
-      }
-      const cloudDoc = await ensureUserDocAndLoad(userId, userName ?? "Traqué");
-      // On reconstruit la progression : les anciens documents ne contiennent pas les mêmes champs.
-      const saved = cloudDoc.progression;
-      setProgress(
-        buildProgressFromSteps(
-          saved.totalSteps ?? 0,
-          saved.streakDays ?? 0,
-          saved.lastActiveDateISO ?? new Date(0).toISOString(),
-          usePedometerStore.getState().stepsToday,
-        ),
-      );
-      setUnlockedCheckpoints(cloudDoc.unlockedCheckpoints);
+    let isCurrent = true;
 
-      useBrandStore.setState((prev) => ({
-        status: {
-          ...prev.status,
-          visual: { ...prev.status.visual, intensity: cloudDoc.brandIntensity },
-        },
-      }));
-      setIsCloudStateLoaded(true);
+    async function loadProgress(): Promise<void> {
+      setIsProgressLoaded(false);
+      setProgressLoadError(null);
+      if (!isAuthenticated || !userId) return;
+
+      const hasLocal = await hydrateLocalProgress(userId);
+      if (!isCurrent) return;
+      if (hasLocal) setIsProgressLoaded(true);
+
+      try {
+        const userName = useAuthStore.getState().userName ?? "Traqué";
+        const cloudDoc = await ensureUserDocAndLoad(userId, userName);
+        if (!isCurrent) return;
+
+        const cloud = parseSavedProgress({
+          ...cloudDoc.progression,
+          unlockedCheckpoints: cloudDoc.unlockedCheckpoints,
+          updatedAtISO: cloudDoc.updatedAtISO,
+        });
+        if (cloud) await mergeCloudProgress(cloud);
+        if (isCurrent) setIsProgressLoaded(true);
+      } catch (error) {
+        console.log("[RootLayout] cloud progress unavailable", error);
+        // Avec une sauvegarde locale, on continue sans le cloud. Sans elle (première connexion sur
+        // ce téléphone), il faut le réseau : démarrer à zéro écraserait la progression du cloud.
+        if (isCurrent && !hasLocal) {
+          setProgressLoadError("Impossible de récupérer ta progression. Vérifie ta connexion.");
+        }
+      }
     }
 
-    void loadCloudState();
-  }, [isAuthenticated, userId, userName, setProgress, setUnlockedCheckpoints]);
+    void loadProgress();
+
+    return () => {
+      isCurrent = false;
+    };
+  }, [isAuthenticated, userId, loadAttempt, hydrateLocalProgress, mergeCloudProgress]);
 
   if (!fontsLoaded || !isAuthResolved) {
-    return (
-      <View style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: theme.colors.ink }}>
-        <Text style={{ ...theme.text.body, color: theme.colors.boneDim }}>Chargement de la session...</Text>
-      </View>
-    );
+    return <CenteredMessage message="Chargement de la session..." />;
   }
 
   if (!isAuthenticated && !isOnPublicAuthRoute) return <Redirect href="/login" />;
   if (isAuthenticated && isOnPublicAuthRoute) return <Redirect href="/(tabs)" />;
+
+  if (isAuthenticated && !isProgressLoaded) {
+    return (
+      <CenteredMessage message={progressLoadError ?? "Chargement de la progression..."}>
+        {progressLoadError ? (
+          <Button label="Réessayer" onPress={() => setLoadAttempt((attempt) => attempt + 1)} />
+        ) : null}
+      </CenteredMessage>
+    );
+  }
 
   return (
     <>
@@ -127,7 +151,25 @@ export default function RootLayout() {
         <Stack.Screen name="oauthredirect" />
         <Stack.Screen name="(tabs)" />
       </Stack>
-      <CheckpointUnlockModal enabled={isAuthenticated && isCloudStateLoaded} />
+      <CheckpointUnlockModal enabled={isAuthenticated && isProgressLoaded} />
     </>
+  );
+}
+
+function CenteredMessage({ message, children }: { message: string; children?: ReactNode }) {
+  return (
+    <View
+      style={{
+        flex: 1,
+        justifyContent: "center",
+        alignItems: "center",
+        gap: theme.space[24],
+        padding: theme.space[24],
+        backgroundColor: theme.colors.ink,
+      }}
+    >
+      <Text style={{ ...theme.text.body, color: theme.colors.boneDim, textAlign: "center" }}>{message}</Text>
+      {children}
+    </View>
   );
 }

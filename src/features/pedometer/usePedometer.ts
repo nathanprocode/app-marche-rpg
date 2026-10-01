@@ -123,9 +123,9 @@ export function usePedometer(enabled = true, permanent = false): UsePedometerSta
       const nextTotalSteps = progress.totalSteps + deltaSteps;
       const nextStepsToday = usePedometerStore.getState().addLiveSteps(deltaSteps);
 
-      // syncFromSteps met l'état local à jour tout de suite, puis attend Firestore, qui peut tarder
-      // (réseau faible) ou ne jamais répondre (hors ligne). On confirme donc les pas au service avant
-      // cette attente : sinon le passage suivant (5 s plus tard) relit les mêmes pas et les compte deux fois.
+      // syncFromSteps met l'état à jour tout de suite, puis attend la sauvegarde. On confirme les pas au
+      // service sans attendre : tant qu'ils ne sont pas confirmés, le passage suivant (5 s plus tard)
+      // les relirait et les compterait deux fois.
       const cloudSave = usePlayerStore
         .getState()
         .syncFromSteps(nextTotalSteps, progress.streakDays, progress.lastActiveDateISO);

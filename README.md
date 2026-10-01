@@ -36,8 +36,10 @@ L'app contient du code natif (`modules/permanent-pedometer/`) : Expo Go ne suffi
 - `src/features/` : logique métier. Pure et testée : `progression`, `brandOfSacrifice`, `mapJourney`.
   Liée à l'appareil (non testée) : `pedometer` (capteur, service natif, notification), `runtime` (série et Marque du jour),
   `userCloud` (Firestore).
-- `src/store/` : états Zustand. Les pas du jour sont stockés en local (AsyncStorage) ; la progression totale ne l'est
-  que dans Firestore (`users/{uid}`).
+- `src/store/` : états Zustand. La progression est sauvegardée en local (AsyncStorage, une clé par compte) à chaque
+  pas, et dans Firestore (`users/{uid}`) au plus toutes les 30 s et au passage en arrière-plan. Au démarrage, le local
+  est lu d'abord (l'app marche hors ligne), puis fusionné avec Firestore : la sauvegarde qui a le plus de pas l'emporte
+  (`src/features/progression/savedProgress.ts`).
 - `src/ui/` : composants et écrans.
 - `docs/` : notes de développement, jour par jour (`day1-setup.md` à `day7-stabilization.md`).
 - `src/data/map/berserk-checkpoints.ts` : la seule source des checkpoints (km, texte, position sur la carte).

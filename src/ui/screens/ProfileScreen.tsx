@@ -4,7 +4,7 @@ import { theme } from "../../core/theme";
 import { BERSERK_CHECKPOINTS } from "../../data/map/berserk-checkpoints";
 import { useAuthStore } from "../../store/useAuthStore";
 import { useBrandStore } from "../../store/useBrandStore";
-import { usePlayerStore } from "../../store/usePlayerStore";
+import { flushCloudSave, usePlayerStore } from "../../store/usePlayerStore";
 import { BrandMark } from "../components/BrandMark";
 import { Button } from "../components/Button";
 import { InkCard } from "../components/InkCard";
@@ -71,7 +71,15 @@ export function ProfileScreen() {
       </View>
 
       <View style={styles.logout}>
-        <Button label="Se déconnecter" variant="danger" onPress={() => void logout()} />
+        <Button
+          label="Se déconnecter"
+          variant="danger"
+          onPress={() => {
+            // La sauvegarde cloud en attente part avant la déconnexion (le local, lui, est déjà à jour).
+            flushCloudSave();
+            void logout();
+          }}
+        />
       </View>
     </Screen>
   );
