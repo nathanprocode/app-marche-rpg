@@ -157,8 +157,11 @@ function TabButton({ label, selected, onPress }: TabButtonProps) {
 }
 
 function QuestRow({ quest }: { quest: Quest }) {
+  // Une seule phrase pour TalkBack : la coche seule ne dit pas que la quête est accomplie.
+  const status = quest.done ? "accomplie" : `en cours, ${quest.right}`;
+
   return (
-    <InkCard style={styles.quest}>
+    <InkCard style={styles.quest} accessible accessibilityLabel={`${quest.title}, ${status}. ${quest.description}`}>
       {quest.done ? (
         <View style={styles.questDone}>
           <Ionicons name="checkmark" size={16} color={theme.colors.bone} />
@@ -222,15 +225,15 @@ const styles = StyleSheet.create({
   tabs: {
     marginTop: theme.space[16],
     flexDirection: "row",
-    height: 48,
+    minHeight: 48,
     borderWidth: 1,
     borderColor: theme.colors.ash,
     borderRadius: theme.radius[4],
     overflow: "hidden",
   },
-  tabButton: { flex: 1, alignItems: "center", justifyContent: "center" },
+  tabButton: { flex: 1, alignItems: "center", justifyContent: "center", paddingVertical: theme.space[8] },
   tabButtonSelected: { backgroundColor: theme.colors.bone },
-  tabLabel: { ...theme.text.label, fontSize: 14, lineHeight: 20, color: theme.colors.boneDim },
+  tabLabel: { ...theme.text.label, fontSize: 14, lineHeight: 20, color: theme.colors.boneDim, textAlign: "center" },
   tabLabelSelected: { color: theme.colors.ink },
   list: { marginTop: theme.space[24], gap: theme.space[16] },
   small: { ...theme.text.small, color: theme.colors.boneDim },

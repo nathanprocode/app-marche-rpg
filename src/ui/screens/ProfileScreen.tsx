@@ -87,9 +87,11 @@ export function ProfileScreen() {
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
-    <InkCard style={styles.stat}>
+    <InkCard style={styles.stat} accessible accessibilityLabel={`${label} : ${value}`}>
       <Text style={styles.label}>{label}</Text>
-      <Text style={styles.statValue}>{value}</Text>
+      <Text {...theme.fitDisplayText} style={styles.statValue}>
+        {value}
+      </Text>
     </InkCard>
   );
 }

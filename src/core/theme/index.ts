@@ -1,6 +1,6 @@
 import { colors } from "./colors";
 import { radius, space } from "./spacing";
-import { fontFamily, text } from "./typography";
+import { fitDisplayText, fontFamily, text } from "./typography";
 
 export const theme = {
   colors,
@@ -8,6 +8,7 @@ export const theme = {
   radius,
   fontFamily,
   text,
+  fitDisplayText,
 } as const;
 
 export type AppTheme = typeof theme;

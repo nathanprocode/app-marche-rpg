@@ -33,8 +33,10 @@ export function Button({ label, onPress, variant = "primary", disabled = false, 
 }
 
 const styles = StyleSheet.create({
+  // Hauteur minimale, pas fixe : avec une grande taille de police, le bouton grandit au lieu de couper le texte.
   base: {
-    height: 56,
+    minHeight: 56,
+    paddingVertical: theme.space[8],
     alignItems: "center",
     justifyContent: "center",
     borderRadius: theme.radius[4],
@@ -46,6 +48,6 @@ const styles = StyleSheet.create({
   danger: { backgroundColor: "transparent", borderColor: theme.colors.bloodGlow },
   pressed: { opacity: 0.8 },
   disabled: { opacity: 0.5 },
-  label: { ...theme.text.bodyStrong, color: theme.colors.bone },
+  label: { ...theme.text.bodyStrong, color: theme.colors.bone, textAlign: "center" },
   labelDanger: { color: theme.colors.bloodEmber },
 });

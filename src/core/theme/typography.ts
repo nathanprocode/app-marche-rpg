@@ -10,6 +10,13 @@ export const fontFamily = {
   label: "SpectralSC_600SemiBold",
 } as const;
 
+/**
+ * Pour les chiffres en Pirata One (pas du jour, totaux) : ils suivent le réglage « Taille de police »
+ * d'Android, mais plafonnés et réduits si besoin pour tenir sur une ligne, sans sortir de l'écran.
+ * À étaler sur le <Text> : `<Text {...fitDisplayText} style={...}>`.
+ */
+export const fitDisplayText = { numberOfLines: 1, adjustsFontSizeToFit: true, maxFontSizeMultiplier: 1.3 } as const;
+
 /** Échelle typographique : toutes les hauteurs de ligne sont des multiples de 4. */
 export const text = {
   displayXl: { fontFamily: fontFamily.display, fontSize: 96, lineHeight: 96 },

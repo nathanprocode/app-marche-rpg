@@ -7,11 +7,22 @@ type InkCardProps = {
   /** Bordure et fond rouges : état d'alerte (la Marque saigne). */
   alert?: boolean;
   style?: StyleProp<ViewStyle>;
+  /** Lue d'un seul tenant par TalkBack, avec ce libellé. */
+  accessible?: boolean;
+  accessibilityLabel?: string;
 };
 
 /** Carte sombre : fond « inkRaised », filet « ash ». */
-export function InkCard({ children, alert = false, style }: InkCardProps) {
-  return <View style={[styles.card, alert && styles.alert, style]}>{children}</View>;
+export function InkCard({ children, alert = false, style, accessible, accessibilityLabel }: InkCardProps) {
+  return (
+    <View
+      accessible={accessible}
+      accessibilityLabel={accessibilityLabel}
+      style={[styles.card, alert && styles.alert, style]}
+    >
+      {children}
+    </View>
+  );
 }
 
 const styles = StyleSheet.create({

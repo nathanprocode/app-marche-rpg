@@ -6,6 +6,7 @@ import Animated, {
   interpolateColor,
   useAnimatedProps,
   useAnimatedStyle,
+  useReducedMotion,
   useSharedValue,
   withRepeat,
   withTiming,
@@ -40,8 +41,16 @@ export function BrandMark({ visual, width = 48 }: BrandMarkProps) {
   const brandIntensity = useSharedValue(resolvedIntensity);
   const pulse = useSharedValue(0);
   const height = Math.round(width * MARK_RATIO);
+  const reduceMotion = useReducedMotion();
 
   useEffect(() => {
+    // Réglage Android « Supprimer les animations » : la Marque reste fixe, à mi-pulsation.
+    if (reduceMotion) {
+      brandIntensity.value = resolvedIntensity;
+      pulse.value = 0.5;
+      return;
+    }
+
     brandIntensity.value = withTiming(resolvedIntensity, { duration: 320 });
     pulse.value = 0;
     pulse.value = withRepeat(
@@ -51,7 +60,7 @@ export function BrandMark({ visual, width = 48 }: BrandMarkProps) {
       -1,
       true,
     );
-  }, [brandIntensity, pulse, resolvedIntensity]);
+  }, [brandIntensity, pulse, reduceMotion, resolvedIntensity]);
 
   const animatedMarkProps = useAnimatedProps(() => {
     const lowColor = interpolateColor(brandIntensity.value, [0, 1], ["#2A2930", "#7A0000"]);

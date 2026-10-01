@@ -64,9 +64,15 @@ export function HomeScreen() {
         </Pressable>
       </View>
 
-      <View style={styles.hero}>
+      <View
+        style={styles.hero}
+        accessible
+        accessibilityLabel={`Pas du jour : ${formatInt(stepsToday)}, soit ${formatDecimal(distanceTodayKm, 2)} kilomètres`}
+      >
         <Text style={styles.label}>Pas du jour</Text>
-        <Text style={styles.steps}>{formatInt(stepsToday)}</Text>
+        <Text {...theme.fitDisplayText} style={styles.steps}>
+          {formatInt(stepsToday)}
+        </Text>
         <Text style={styles.heroMeta}>{`soit ${formatDecimal(distanceTodayKm, 2)} km parcourus`}</Text>
       </View>
 
@@ -79,10 +85,16 @@ export function HomeScreen() {
               ? `Apaisée · seuil de ${formatInt(threshold)} pas franchi`
               : `Elle saigne · encore ${formatInt(stepsLeftToday)} pas`}
           </Text>
-          <ProgressBar pct={(stepsToday / threshold) * 100} calm={isCalm} />
+          <ProgressBar pct={(stepsToday / threshold) * 100} calm={isCalm} accessibilityLabel="Seuil de pas du jour" />
         </View>
-        <View style={styles.streak}>
-          <Text style={styles.streakValue}>{streakDays}</Text>
+        <View
+          style={styles.streak}
+          accessible
+          accessibilityLabel={`Série : ${streakDays} ${streakDays > 1 ? "jours" : "jour"}`}
+        >
+          <Text {...theme.fitDisplayText} style={styles.streakValue}>
+            {streakDays}
+          </Text>
           <Text style={styles.label}>{streakDays > 1 ? "jours" : "jour"}</Text>
         </View>
       </InkCard>
@@ -107,7 +119,12 @@ export function HomeScreen() {
               <Text style={styles.paperKicker}>{`Prochain point · ${formatInt(next.kmThreshold)} km`}</Text>
               <Text style={styles.paperTitle}>{next.title}</Text>
               <View style={styles.paperBar}>
-                <ProgressBar pct={progress.currentSegmentProgressPct} onPaper height={8} />
+                <ProgressBar
+                  pct={progress.currentSegmentProgressPct}
+                  onPaper
+                  height={8}
+                  accessibilityLabel={`Trajet vers ${next.title}`}
+                />
               </View>
               <View style={styles.paperRow}>
                 <Text style={styles.paperSmall}>{`${formatInt(previous.kmThreshold)} km`}</Text>
@@ -151,9 +168,11 @@ export function HomeScreen() {
 
 function Total({ label, value }: { label: string; value: string }) {
   return (
-    <View style={styles.total}>
+    <View style={styles.total} accessible accessibilityLabel={`${label} : ${value}`}>
       <Text style={styles.label}>{label}</Text>
-      <Text style={styles.totalValue}>{value}</Text>
+      <Text {...theme.fitDisplayText} style={styles.totalValue}>
+        {value}
+      </Text>
     </View>
   );
 }

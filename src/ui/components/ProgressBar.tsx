@@ -9,15 +9,18 @@ type ProgressBarProps = {
   /** Remplissage neutre (Marque apaisée) au lieu du rouge. */
   calm?: boolean;
   height?: number;
+  /** Ce que mesure la barre, lu par TalkBack avant le pourcentage (« Seuil de pas du jour, 30 % »). */
+  accessibilityLabel?: string;
 };
 
-export function ProgressBar({ pct, onPaper = false, calm = false, height = 4 }: ProgressBarProps) {
+export function ProgressBar({ pct, onPaper = false, calm = false, height = 4, accessibilityLabel }: ProgressBarProps) {
   const clamped = Math.max(0, Math.min(100, pct));
   const fillColor = calm ? theme.colors.boneDim : onPaper ? theme.colors.blood : theme.colors.bloodGlow;
 
   return (
     <View
       accessibilityRole="progressbar"
+      accessibilityLabel={accessibilityLabel}
       accessibilityValue={{ min: 0, max: 100, now: Math.round(clamped) }}
       style={[styles.track, { height }, onPaper ? styles.trackPaper : styles.trackInk]}
     >
