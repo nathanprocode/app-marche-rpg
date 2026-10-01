@@ -11,10 +11,14 @@ type StoredPedometerDay = {
 };
 
 type PedometerState = {
+  /** Jour local (AAAA-MM-JJ) auquel appartient `stepsToday`. */
+  dayKey: string;
   stepsToday: number;
   distanceTodayKm: number;
   lastSyncISO: string | null;
   setLiveSteps: (stepsToday: number, updatedAtISO?: string) => void;
+  /** Ajoute des pas au jour en cours, en repartant de 0 si minuit est passé. Renvoie les pas du jour. */
+  addLiveSteps: (deltaSteps: number) => number;
   hydrateStepsTodayPreference: () => Promise<void>;
   resetStepsToday: () => Promise<void>;
 };
@@ -42,6 +46,7 @@ async function persistStepsToday(stepsToday: number, lastSyncISO: string | null)
 }
 
 export const usePedometerStore = create<PedometerState>((set, get) => ({
+  dayKey: getLocalDayKey(),
   stepsToday: 0,
   distanceTodayKm: 0,
   lastSyncISO: null,
@@ -49,11 +54,21 @@ export const usePedometerStore = create<PedometerState>((set, get) => ({
     const normalizedSteps = normalizeSteps(stepsToday);
 
     set({
+      dayKey: getLocalDayKey(),
       stepsToday: normalizedSteps,
       distanceTodayKm: stepsToKm(normalizedSteps),
       lastSyncISO: updatedAtISO,
     });
     void persistStepsToday(normalizedSteps, updatedAtISO);
+  },
+  addLiveSteps: (deltaSteps) => {
+    // Avec le suivi permanent, l'app tourne encore en arrière-plan à minuit : sans ce test,
+    // les pas d'hier seraient enregistrés sous la date d'aujourd'hui.
+    const { dayKey, stepsToday } = get();
+    const base = dayKey === getLocalDayKey() ? stepsToday : 0;
+    const nextStepsToday = base + normalizeSteps(deltaSteps);
+    get().setLiveSteps(nextStepsToday);
+    return nextStepsToday;
   },
   hydrateStepsTodayPreference: async () => {
     const storedValue = await AsyncStorage.getItem(PEDOMETER_DAY_STORAGE_KEY);
@@ -68,6 +83,7 @@ export const usePedometerStore = create<PedometerState>((set, get) => ({
       const lastSyncISO = isToday ? storedDay.lastSyncISO ?? null : null;
 
       set({
+        dayKey: getLocalDayKey(),
         stepsToday,
         distanceTodayKm: stepsToKm(stepsToday),
         lastSyncISO,
@@ -83,6 +99,7 @@ export const usePedometerStore = create<PedometerState>((set, get) => ({
   },
   resetStepsToday: async () => {
     set({
+      dayKey: getLocalDayKey(),
       stepsToday: 0,
       distanceTodayKm: 0,
       lastSyncISO: null,

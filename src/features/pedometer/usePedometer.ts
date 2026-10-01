@@ -120,15 +120,19 @@ export function usePedometer(enabled = true, permanent = false): UsePedometerSta
       }
 
       const progress = usePlayerStore.getState().progress;
-      const currentStepsToday = usePedometerStore.getState().stepsToday;
       const nextTotalSteps = progress.totalSteps + deltaSteps;
-      const nextStepsToday = currentStepsToday + deltaSteps;
+      const nextStepsToday = usePedometerStore.getState().addLiveSteps(deltaSteps);
 
-      usePedometerStore.getState().setLiveSteps(nextStepsToday);
-      await usePlayerStore
+      // syncFromSteps met l'état local à jour tout de suite, puis attend Firestore, qui peut tarder
+      // (réseau faible) ou ne jamais répondre (hors ligne). On confirme donc les pas au service avant
+      // cette attente : sinon le passage suivant (5 s plus tard) relit les mêmes pas et les compte deux fois.
+      const cloudSave = usePlayerStore
         .getState()
         .syncFromSteps(nextTotalSteps, progress.streakDays, progress.lastActiveDateISO);
       await safeAcknowledgeSteps(nativeSteps);
+      cloudSave.catch((error) => {
+        console.log("[Pedometer] cloud save failed", error);
+      });
 
       const { title, text } = buildTrackingNotificationContent(nextStepsToday, nextTotalSteps);
       const didUpdateNativeNotification = await safeUpdateNotification(
@@ -259,11 +263,9 @@ export function usePedometer(enabled = true, permanent = false): UsePedometerSta
 
         lastSensorStepsToday = nextSensorStepsToday;
         const progress = usePlayerStore.getState().progress;
-        const currentStepsToday = usePedometerStore.getState().stepsToday;
-        const liveStepsToday = currentStepsToday + deltaSteps;
+        const liveStepsToday = usePedometerStore.getState().addLiveSteps(deltaSteps);
         const liveTotalSteps = progress.totalSteps + deltaSteps;
 
-        usePedometerStore.getState().setLiveSteps(liveStepsToday);
         await usePlayerStore.getState().syncFromSteps(liveTotalSteps, progress.streakDays, progress.lastActiveDateISO);
 
         if (shouldRefreshNotification(lastNotifiedDistanceBucketRef.current, liveTotalSteps)) {
