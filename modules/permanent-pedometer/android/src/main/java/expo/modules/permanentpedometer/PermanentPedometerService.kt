@@ -219,7 +219,8 @@ class PermanentPedometerService : Service(), SensorEventListener {
     }
 
     notificationTitle = resolveNotificationTitle(totalKm)
-    notificationText = String.format(Locale.US, "Aujourd'hui : %.2f km | Total : %.2f km", todayKm, totalKm)
+    // Même texte que l'app (trackingNotification.ts) : virgule décimale, espace entre les milliers.
+    notificationText = String.format(Locale.FRANCE, "Aujourd'hui : %,.2f km | Total : %,.2f km", todayKm, totalKm)
     prefs.edit()
       .putInt(KEY_LAST_NOTIFICATION_BUCKET, distanceBucket)
       .putString(KEY_TITLE, notificationTitle)
@@ -228,13 +229,14 @@ class PermanentPedometerService : Service(), SensorEventListener {
     updateNotification()
   }
 
+  // M\u00EAmes titres et seuils que l'app (ARC_TITLES dans trackingNotification.ts, arcs de berserk-checkpoints.ts).
   private fun resolveNotificationTitle(totalKm: Double): String {
     return when {
       totalKm >= 890.0 -> "\uD83C\uDF11 Arc Fantasia"
-      totalKm >= 590.0 -> "\uD83C\uDF11 Arc du Faucon Millenaire"
-      totalKm >= 460.0 -> "\uD83C\uDF11 Arc des Chatiments"
+      totalKm >= 590.0 -> "\uD83C\uDF11 Arc du Faucon Mill\u00E9naire"
+      totalKm >= 460.0 -> "\uD83C\uDF11 Arc des Ch\u00E2timents"
       totalKm >= 350.0 -> "\uD83C\uDF11 Arc du Guerrier Noir"
-      else -> "\uD83C\uDF11 Arc de l'Age d'Or"
+      else -> "\uD83C\uDF11 Arc de l'\u00C2ge d'Or"
     }
   }
 
@@ -316,7 +318,7 @@ class PermanentPedometerService : Service(), SensorEventListener {
     private const val CHANNEL_NAME = "Marche du Faucon"
     private const val NOTIFICATION_ID = 747
     private const val DEFAULT_METERS_PER_STEP = 0.75
-    private const val DEFAULT_TITLE = "Arc de l'Age d'Or"
-    private const val DEFAULT_TEXT = "Aujourd'hui : 0.00 km | Total : 0.00 km"
+    private const val DEFAULT_TITLE = "🌑 Arc de l'Âge d'Or"
+    private const val DEFAULT_TEXT = "Aujourd'hui : 0,00 km | Total : 0,00 km"
   }
 }
