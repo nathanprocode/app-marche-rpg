@@ -24,7 +24,7 @@
       [
         "expo-notifications",
         {
-          "icon": "./assets/icon.png",
+          "icon": "./assets/notification-icon.png",
           "color": "#C1121F",
           "defaultChannel": "marche-du-faucon-tracking"
         }

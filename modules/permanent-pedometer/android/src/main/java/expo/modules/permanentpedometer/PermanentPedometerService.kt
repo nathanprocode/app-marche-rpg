@@ -185,6 +185,7 @@ class PermanentPedometerService : Service(), SensorEventListener {
 
     return NotificationCompat.Builder(this, CHANNEL_ID)
       .setSmallIcon(resolveSmallIcon())
+      .setColor(BLOOD_GLOW)
       .setContentTitle(notificationTitle)
       .setContentText(notificationText)
       .setStyle(NotificationCompat.BigTextStyle().bigText(notificationText))
@@ -271,8 +272,10 @@ class PermanentPedometerService : Service(), SensorEventListener {
     }
   }
 
+  // La Marque, blanche sur fond transparent (Android n'utilise que la transparence de l'icône).
+  // Générée depuis le tracé de BrandMark.tsx : res/drawable-*/ic_stat_brand_mark.png.
   private fun resolveSmallIcon(): Int {
-    return android.R.drawable.ic_dialog_info
+    return R.drawable.ic_stat_brand_mark
   }
 
   private fun acquireWakeLock() {
@@ -317,6 +320,8 @@ class PermanentPedometerService : Service(), SensorEventListener {
     private const val CHANNEL_ID = "permanent-pedometer"
     private const val CHANNEL_NAME = "Marche du Faucon"
     private const val NOTIFICATION_ID = 747
+    /** bloodGlow (src/core/theme/colors.ts) : teinte de l'icône dans le volet des notifications. */
+    private const val BLOOD_GLOW = 0xFFC1121F.toInt()
     private const val DEFAULT_METERS_PER_STEP = 0.75
     private const val DEFAULT_TITLE = "🌑 Arc de l'Âge d'Or"
     private const val DEFAULT_TEXT = "Aujourd'hui : 0,00 km | Total : 0,00 km"
