@@ -34,12 +34,10 @@ export default function RootLayout() {
   const isOnOAuthRedirect = segments[0] === "oauthredirect";
   const isOnPublicAuthRoute = isOnLogin || isOnOAuthRedirect;
 
+  // Les pas sont comptés dès la connexion ; l'interrupteur « Suivi permanent » ajoute le service en arrière-plan.
   usePedometer(
-    isAuthResolved &&
-      isAuthenticated &&
-      isCloudStateLoaded &&
-      isLocalStateLoaded &&
-      isPermanentTrackingEnabled,
+    isAuthResolved && isAuthenticated && isCloudStateLoaded && isLocalStateLoaded,
+    isPermanentTrackingEnabled,
   );
 
   useEffect(() => {

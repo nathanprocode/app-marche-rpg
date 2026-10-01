@@ -25,7 +25,7 @@ type UsePedometerState = {
   error: string | null;
 };
 
-const ENABLE_NATIVE_FOREGROUND_SERVICE = false;
+const ENABLE_NATIVE_FOREGROUND_SERVICE = true;
 
 function getStartOfToday(): Date {
   const start = new Date();
@@ -92,7 +92,11 @@ async function requestAndroidNotificationPermission(): Promise<boolean> {
   return notificationPermission === PermissionsAndroid.RESULTS.GRANTED;
 }
 
-export function usePedometer(enabled = true): UsePedometerState {
+/**
+ * @param enabled   compte les pas (app ouverte).
+ * @param permanent suivi permanent : service Android avec notification, qui continue app fermée.
+ */
+export function usePedometer(enabled = true, permanent = false): UsePedometerState {
   const [state, setState] = useState<UsePedometerState>({
     isAvailable: null,
     permission: "undetermined",
@@ -100,6 +104,8 @@ export function usePedometer(enabled = true): UsePedometerState {
     error: null,
   });
   const lastNativeStepsRef = useRef<number | null>(null);
+  const permanentRef = useRef(permanent);
+  permanentRef.current = permanent;
   const lastNotifiedDistanceBucketRef = useRef<number | null>(null);
 
   useEffect(() => {
@@ -122,7 +128,7 @@ export function usePedometer(enabled = true): UsePedometerState {
       await usePlayerStore
         .getState()
         .syncFromSteps(nextTotalSteps, progress.streakDays, progress.lastActiveDateISO);
-      await safeAcknowledgeSteps();
+      await safeAcknowledgeSteps(nativeSteps);
 
       const { title, text } = buildTrackingNotificationContent(nextStepsToday, nextTotalSteps);
       const didUpdateNativeNotification = await safeUpdateNotification(
@@ -236,6 +242,8 @@ export function usePedometer(enabled = true): UsePedometerState {
       let lastSensorStepsToday = baseStepsToday;
 
       async function refreshTrackingNotification(stepsToday: number, totalSteps: number): Promise<void> {
+        // Sans suivi permanent, pas de notification.
+        if (!permanent) return;
         try {
           await updatePersistentTrackingNotificationAsync({ stepsToday, totalSteps });
         } catch (error) {
@@ -298,8 +306,13 @@ export function usePedometer(enabled = true): UsePedometerState {
         return;
       }
 
+      // Pas de capteur de pas dans un navigateur.
+      if (Platform.OS === "web") {
+        return;
+      }
+
       try {
-        if (ENABLE_NATIVE_FOREGROUND_SERVICE) {
+        if (permanent && ENABLE_NATIVE_FOREGROUND_SERVICE) {
           const didStartNative = await startNativePedometer();
           if (didStartNative) {
             return;
@@ -326,12 +339,13 @@ export function usePedometer(enabled = true): UsePedometerState {
       if (intervalId) {
         clearInterval(intervalId);
       }
-      if (lastNativeStepsRef.current !== null) {
+      // Le service ne s'arrête que si on désactive le suivi permanent : fermer l'app ne doit pas le couper.
+      if (lastNativeStepsRef.current !== null && !permanentRef.current) {
         void safeStopTracking();
       }
       void clearPersistentTrackingNotificationAsync();
     };
-  }, [enabled]);
+  }, [enabled, permanent]);
 
   return state;
 }

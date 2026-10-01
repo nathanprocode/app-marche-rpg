@@ -79,20 +79,25 @@ class PermanentPedometerService : Service(), SensorEventListener {
     }
 
     val counterSinceBoot = event.values.firstOrNull()?.toDouble() ?: return
-    prefs.edit().putFloat(KEY_LAST_COUNTER, counterSinceBoot.toFloat()).apply()
+    val previousCounter = if (prefs.contains(KEY_LAST_COUNTER)) prefs.getFloat(KEY_LAST_COUNTER, 0f).toDouble() else null
+    val savedBaseline = if (prefs.contains(KEY_STEP_COUNTER_BASELINE)) prefs.getFloat(KEY_STEP_COUNTER_BASELINE, 0f).toDouble() else null
 
-    val existingSavedSteps = prefs.getFloat(KEY_SAVED_STEPS, 0f).toDouble()
-    val baseline = if (prefs.contains(KEY_STEP_COUNTER_BASELINE)) {
-      prefs.getFloat(KEY_STEP_COUNTER_BASELINE, 0f).toDouble()
-    } else {
-      val initialBaseline = counterSinceBoot - existingSavedSteps
-      prefs.edit().putFloat(KEY_STEP_COUNTER_BASELINE, initialBaseline.toFloat()).apply()
-      initialBaseline
+    // Les pas en attente = dernier compteur - référence. On ne stocke jamais ce total :
+    // l'app n'écrit que la référence (acknowledgeSteps), le service que le dernier compteur.
+    val baseline = when {
+      savedBaseline == null -> counterSinceBoot
+      // Le capteur repart de zéro au redémarrage du téléphone : on garde les pas déjà en attente.
+      previousCounter != null && counterSinceBoot < previousCounter -> counterSinceBoot - max(0.0, previousCounter - savedBaseline)
+      else -> savedBaseline
     }
 
-    val savedSteps = max(0.0, counterSinceBoot - baseline)
-    prefs.edit().putFloat(KEY_SAVED_STEPS, savedSteps.toFloat()).apply()
-    updateNotificationFromSteps(savedSteps)
+    val editor = prefs.edit().putFloat(KEY_LAST_COUNTER, counterSinceBoot.toFloat())
+    if (baseline != savedBaseline) {
+      editor.putFloat(KEY_STEP_COUNTER_BASELINE, baseline.toFloat())
+    }
+    editor.apply()
+
+    updateNotificationFromSteps(max(0.0, counterSinceBoot - baseline))
   }
 
   override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) = Unit
@@ -270,7 +275,6 @@ class PermanentPedometerService : Service(), SensorEventListener {
     const val EXTRA_METERS_PER_STEP = "meters_per_step"
 
     const val PREFS_NAME = "permanent_pedometer"
-    const val KEY_SAVED_STEPS = "saved_steps"
     const val KEY_STEP_COUNTER_BASELINE = "step_counter_baseline"
     const val KEY_LAST_COUNTER = "last_counter"
     private const val KEY_BASE_TOTAL_STEPS = "base_total_steps"

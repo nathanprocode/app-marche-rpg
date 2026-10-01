@@ -60,22 +60,31 @@ class PermanentPedometerModule : Module() {
         Context.MODE_PRIVATE
       )
 
-      prefs.getFloat(PermanentPedometerService.KEY_SAVED_STEPS, 0f).toDouble()
+      if (!prefs.contains(PermanentPedometerService.KEY_LAST_COUNTER) ||
+        !prefs.contains(PermanentPedometerService.KEY_STEP_COUNTER_BASELINE)
+      ) {
+        0.0
+      } else {
+        val last = prefs.getFloat(PermanentPedometerService.KEY_LAST_COUNTER, 0f).toDouble()
+        val baseline = prefs.getFloat(PermanentPedometerService.KEY_STEP_COUNTER_BASELINE, 0f).toDouble()
+        maxOf(0.0, last - baseline)
+      }
     }
 
-    Function("acknowledgeSteps") {
+    // L'app confirme avoir pris en compte `consumedSteps` pas : on avance la référence d'autant.
+    // Les pas arrivés entre la lecture et la confirmation restent donc en attente (rien n'est perdu).
+    Function("acknowledgeSteps") { consumedSteps: Double ->
       val prefs = requireContext().getSharedPreferences(
         PermanentPedometerService.PREFS_NAME,
         Context.MODE_PRIVATE
       )
-      val lastCounter = prefs.getFloat(PermanentPedometerService.KEY_LAST_COUNTER, -1f)
-      val editor = prefs.edit().putFloat(PermanentPedometerService.KEY_SAVED_STEPS, 0f)
 
-      if (lastCounter >= 0f) {
-        editor.putFloat(PermanentPedometerService.KEY_STEP_COUNTER_BASELINE, lastCounter)
+      if (prefs.contains(PermanentPedometerService.KEY_STEP_COUNTER_BASELINE)) {
+        val baseline = prefs.getFloat(PermanentPedometerService.KEY_STEP_COUNTER_BASELINE, 0f).toDouble()
+        prefs.edit()
+          .putFloat(PermanentPedometerService.KEY_STEP_COUNTER_BASELINE, (baseline + consumedSteps).toFloat())
+          .apply()
       }
-
-      editor.apply()
     }
   }
 

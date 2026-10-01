@@ -5,7 +5,7 @@ type PermanentPedometerModule = {
   stopTracking(): void;
   updateNotification(title: string, text: string, baseTotalSteps: number, baseStepsToday: number, metersPerStep: number): void;
   getSteps(): number;
-  acknowledgeSteps(): void;
+  acknowledgeSteps(consumedSteps: number): void;
 };
 
 let nativeModulePromise: Promise<PermanentPedometerModule | null> | null = null;
@@ -82,14 +82,14 @@ export async function safeUpdateNotification(
   }
 }
 
-export async function safeAcknowledgeSteps(): Promise<void> {
+export async function safeAcknowledgeSteps(consumedSteps: number): Promise<void> {
   try {
     const permanentPedometer = await loadPermanentPedometerModule();
     if (!permanentPedometer?.acknowledgeSteps) {
       return;
     }
 
-    permanentPedometer.acknowledgeSteps();
+    permanentPedometer.acknowledgeSteps(consumedSteps);
   } catch (error) {
     console.log("[PermanentPedometer] acknowledgeSteps failed", error);
   }

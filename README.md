@@ -30,7 +30,7 @@ Test sur téléphone (sans câble) : `eas build --profile preview --platform and
 - `src/store/` : états Zustand.
 - `src/ui/` : composants et écrans.
 - `src/data/map/berserk-checkpoints.ts` : la seule source des checkpoints (km, texte, position sur la carte).
-- `modules/permanent-pedometer/` : module Android natif (service de suivi permanent), **désactivé** pour l'instant.
+- `modules/permanent-pedometer/` : module Android natif : service de suivi permanent (notification fixe), activé par l'interrupteur du Profil. Demande un build natif (pas de simple rechargement).
 
 ## Design system
 

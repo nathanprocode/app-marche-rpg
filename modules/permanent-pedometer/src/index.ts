@@ -5,7 +5,7 @@ type PermanentPedometerModule = {
   stopTracking(): void;
   updateNotification(title: string, text: string, baseTotalSteps: number, baseStepsToday: number, metersPerStep: number): void;
   getSteps(): number;
-  acknowledgeSteps(): void;
+  acknowledgeSteps(consumedSteps: number): void;
 };
 
 const PermanentPedometer = requireNativeModule<PermanentPedometerModule>("PermanentPedometer");
@@ -38,8 +38,8 @@ export function getSteps(): number {
   return PermanentPedometer.getSteps();
 }
 
-export function acknowledgeSteps(): void {
-  PermanentPedometer.acknowledgeSteps();
+export function acknowledgeSteps(consumedSteps: number): void {
+  PermanentPedometer.acknowledgeSteps(consumedSteps);
 }
 
 export default PermanentPedometer;
