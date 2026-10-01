@@ -2,6 +2,7 @@ package expo.modules.permanentpedometer
 
 import android.content.Context
 import android.content.Intent
+import android.content.SharedPreferences
 import androidx.core.content.ContextCompat
 import expo.modules.kotlin.modules.Module
 import expo.modules.kotlin.modules.ModuleDefinition
@@ -55,41 +56,27 @@ class PermanentPedometerModule : Module() {
     }
 
     Function("getSteps") {
-      val prefs = requireContext().getSharedPreferences(
-        PermanentPedometerService.PREFS_NAME,
-        Context.MODE_PRIVATE
-      )
+      PendingSteps.pending(prefs())
+    }
 
-      if (!prefs.contains(PermanentPedometerService.KEY_LAST_COUNTER) ||
-        !prefs.contains(PermanentPedometerService.KEY_STEP_COUNTER_BASELINE)
-      ) {
-        0.0
-      } else {
-        val last = prefs.getFloat(PermanentPedometerService.KEY_LAST_COUNTER, 0f).toDouble()
-        val baseline = prefs.getFloat(PermanentPedometerService.KEY_STEP_COUNTER_BASELINE, 0f).toDouble()
-        maxOf(0.0, last - baseline)
-      }
+    // Parmi les pas en attente, ceux d'avant minuit : ils comptent dans le total, pas dans les pas du jour.
+    Function("getStepsBeforeToday") {
+      PendingSteps.beforeToday(prefs())
     }
 
     // L'app confirme avoir pris en compte `consumedSteps` pas : on avance la référence d'autant.
     // Les pas arrivés entre la lecture et la confirmation restent donc en attente (rien n'est perdu).
     Function("acknowledgeSteps") { consumedSteps: Double ->
-      val prefs = requireContext().getSharedPreferences(
-        PermanentPedometerService.PREFS_NAME,
-        Context.MODE_PRIVATE
-      )
-
-      if (prefs.contains(PermanentPedometerService.KEY_STEP_COUNTER_BASELINE)) {
-        val baseline = prefs.getFloat(PermanentPedometerService.KEY_STEP_COUNTER_BASELINE, 0f).toDouble()
-        prefs.edit()
-          .putFloat(PermanentPedometerService.KEY_STEP_COUNTER_BASELINE, (baseline + consumedSteps).toFloat())
-          .apply()
-      }
+      PendingSteps.acknowledge(prefs(), consumedSteps)
     }
   }
 
   private fun requireContext(): Context {
     return appContext.reactContext
       ?: throw IllegalStateException("React context is not available yet.")
+  }
+
+  private fun prefs(): SharedPreferences {
+    return requireContext().getSharedPreferences(PendingSteps.PREFS_NAME, Context.MODE_PRIVATE)
   }
 }

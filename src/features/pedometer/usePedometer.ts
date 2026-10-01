@@ -9,6 +9,7 @@ import {
   loadPermanentPedometerModule,
   safeAcknowledgeSteps,
   safeGetSteps,
+  safeGetStepsBeforeToday,
   safeStartTracking,
   safeStopTracking,
   safeUpdateNotification,
@@ -113,15 +114,21 @@ export function usePedometer(enabled = true, permanent = false): UsePedometerSta
     let intervalId: ReturnType<typeof setInterval> | null = null;
     let subscription: { remove: () => void } | null = null;
 
-    async function syncNativeSteps(nativeSteps: number): Promise<void> {
+    /**
+     * @param nativeSteps      pas en attente dans le service.
+     * @param stepsBeforeToday parmi eux, ceux d'avant minuit (app fermée pendant la nuit) :
+     *                         ils comptent dans le total, pas dans les pas du jour.
+     */
+    async function syncNativeSteps(nativeSteps: number, stepsBeforeToday: number): Promise<void> {
       const deltaSteps = Math.max(0, Math.round(nativeSteps));
       if (deltaSteps <= 0) {
         return;
       }
 
+      const deltaToday = deltaSteps - Math.min(deltaSteps, Math.max(0, Math.round(stepsBeforeToday)));
       const progress = usePlayerStore.getState().progress;
       const nextTotalSteps = progress.totalSteps + deltaSteps;
-      const nextStepsToday = usePedometerStore.getState().addLiveSteps(deltaSteps);
+      const nextStepsToday = usePedometerStore.getState().addLiveSteps(deltaToday);
 
       // syncFromSteps met l'état à jour tout de suite, puis attend la sauvegarde. On confirme les pas au
       // service sans attendre : tant qu'ils ne sont pas confirmés, le passage suivant (5 s plus tard)
@@ -193,12 +200,12 @@ export function usePedometer(enabled = true, permanent = false): UsePedometerSta
       lastNativeStepsRef.current = 0;
       lastNotifiedDistanceBucketRef.current = Math.floor(stepsToKm(progress.totalSteps) * 100);
 
-      await syncNativeSteps(initialNativeSteps);
+      await syncNativeSteps(initialNativeSteps, safeGetStepsBeforeToday(permanentPedometer));
 
       intervalId = setInterval(() => {
         const nativeSteps = safeGetSteps(permanentPedometer);
         if (nativeSteps !== null) {
-          void syncNativeSteps(nativeSteps);
+          void syncNativeSteps(nativeSteps, safeGetStepsBeforeToday(permanentPedometer));
         }
       }, 5000);
 

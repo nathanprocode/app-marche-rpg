@@ -13,10 +13,13 @@ import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
 import android.os.Build
+import android.os.Handler
 import android.os.IBinder
+import android.os.Looper
 import android.os.PowerManager
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
+import java.util.Calendar
 import java.util.Locale
 import kotlin.math.floor
 import kotlin.math.max
@@ -27,6 +30,14 @@ class PermanentPedometerService : Service(), SensorEventListener {
   private var wakeLock: PowerManager.WakeLock? = null
   private var notificationTitle = DEFAULT_TITLE
   private var notificationText = DEFAULT_TEXT
+  private val handler = Handler(Looper.getMainLooper())
+  private val midnightRefresh = Runnable {
+    // Sans pas après minuit, aucun événement capteur : on remet « Aujourd'hui » à zéro nous-mêmes.
+    if (PendingSteps.rollOverDayIfNeeded(prefs)) {
+      updateNotificationFromSteps(PendingSteps.pending(prefs))
+    }
+    scheduleMidnightRefresh()
+  }
 
   private val prefs by lazy {
     getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
@@ -60,6 +71,7 @@ class PermanentPedometerService : Service(), SensorEventListener {
           return START_NOT_STICKY
         }
         startStepCounter()
+        scheduleMidnightRefresh()
         return START_STICKY
       }
     }
@@ -68,6 +80,7 @@ class PermanentPedometerService : Service(), SensorEventListener {
   override fun onBind(intent: Intent?): IBinder? = null
 
   override fun onDestroy() {
+    handler.removeCallbacks(midnightRefresh)
     sensorManager?.unregisterListener(this)
     releaseWakeLock()
     super.onDestroy()
@@ -97,6 +110,8 @@ class PermanentPedometerService : Service(), SensorEventListener {
     }
     editor.apply()
 
+    // Premier pas après minuit : les pas encore en attente sont ceux d'hier.
+    PendingSteps.rollOverDayIfNeeded(prefs)
     updateNotificationFromSteps(max(0.0, counterSinceBoot - baseline))
   }
 
@@ -127,6 +142,8 @@ class PermanentPedometerService : Service(), SensorEventListener {
     }
 
     if (intent?.hasExtra(EXTRA_BASE_STEPS_TODAY) == true) {
+      // L'app envoie ses pas d'aujourd'hui : il faut d'abord classer ceux en attente d'hier, s'il y en a.
+      PendingSteps.rollOverDayIfNeeded(prefs)
       editor.putFloat(KEY_BASE_STEPS_TODAY, intent.getDoubleExtra(EXTRA_BASE_STEPS_TODAY, 0.0).toFloat())
     }
 
@@ -190,9 +207,8 @@ class PermanentPedometerService : Service(), SensorEventListener {
   private fun updateNotificationFromSteps(savedSteps: Double) {
     val metersPerStep = prefs.getFloat(KEY_METERS_PER_STEP, DEFAULT_METERS_PER_STEP.toFloat()).toDouble()
     val baseTotalSteps = prefs.getFloat(KEY_BASE_TOTAL_STEPS, 0f).toDouble()
-    val baseStepsToday = prefs.getFloat(KEY_BASE_STEPS_TODAY, 0f).toDouble()
     val totalSteps = baseTotalSteps + savedSteps
-    val stepsToday = baseStepsToday + savedSteps
+    val stepsToday = PendingSteps.stepsToday(prefs)
     val totalKm = totalSteps * metersPerStep / 1000.0
     val todayKm = stepsToday * metersPerStep / 1000.0
     val distanceBucket = floor(totalKm * 100).toInt()
@@ -220,6 +236,18 @@ class PermanentPedometerService : Service(), SensorEventListener {
       totalKm >= 350.0 -> "\uD83C\uDF11 Arc du Guerrier Noir"
       else -> "\uD83C\uDF11 Arc de l'Age d'Or"
     }
+  }
+
+  private fun scheduleMidnightRefresh() {
+    handler.removeCallbacks(midnightRefresh)
+    val nextMidnight = Calendar.getInstance().apply {
+      add(Calendar.DAY_OF_YEAR, 1)
+      set(Calendar.HOUR_OF_DAY, 0)
+      set(Calendar.MINUTE, 0)
+      set(Calendar.SECOND, 1)
+      set(Calendar.MILLISECOND, 0)
+    }
+    handler.postDelayed(midnightRefresh, nextMidnight.timeInMillis - System.currentTimeMillis())
   }
 
   private fun startSafelyInForeground(): Boolean {
@@ -274,13 +302,13 @@ class PermanentPedometerService : Service(), SensorEventListener {
     const val EXTRA_BASE_STEPS_TODAY = "base_steps_today"
     const val EXTRA_METERS_PER_STEP = "meters_per_step"
 
-    const val PREFS_NAME = "permanent_pedometer"
-    const val KEY_STEP_COUNTER_BASELINE = "step_counter_baseline"
-    const val KEY_LAST_COUNTER = "last_counter"
+    const val PREFS_NAME = PendingSteps.PREFS_NAME
+    const val KEY_STEP_COUNTER_BASELINE = PendingSteps.KEY_STEP_COUNTER_BASELINE
+    const val KEY_LAST_COUNTER = PendingSteps.KEY_LAST_COUNTER
     private const val KEY_BASE_TOTAL_STEPS = "base_total_steps"
-    private const val KEY_BASE_STEPS_TODAY = "base_steps_today"
+    private const val KEY_BASE_STEPS_TODAY = PendingSteps.KEY_BASE_STEPS_TODAY
     private const val KEY_METERS_PER_STEP = "meters_per_step"
-    private const val KEY_LAST_NOTIFICATION_BUCKET = "last_notification_bucket"
+    private const val KEY_LAST_NOTIFICATION_BUCKET = PendingSteps.KEY_LAST_NOTIFICATION_BUCKET
     private const val KEY_TITLE = "title"
     private const val KEY_TEXT = "text"
 

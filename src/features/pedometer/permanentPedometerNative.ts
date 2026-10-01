@@ -5,6 +5,8 @@ type PermanentPedometerModule = {
   stopTracking(): void;
   updateNotification(title: string, text: string, baseTotalSteps: number, baseStepsToday: number, metersPerStep: number): void;
   getSteps(): number;
+  /** Absente des builds natifs antérieurs. */
+  getStepsBeforeToday?(): number;
   acknowledgeSteps(consumedSteps: number): void;
 };
 
@@ -92,6 +94,16 @@ export async function safeAcknowledgeSteps(consumedSteps: number): Promise<void>
     permanentPedometer.acknowledgeSteps(consumedSteps);
   } catch (error) {
     console.log("[PermanentPedometer] acknowledgeSteps failed", error);
+  }
+}
+
+/** Pas en attente datant d'avant minuit ; 0 si le build natif est trop ancien pour le savoir. */
+export function safeGetStepsBeforeToday(permanentPedometer: PermanentPedometerModule | null): number {
+  try {
+    return permanentPedometer?.getStepsBeforeToday?.() ?? 0;
+  } catch (error) {
+    console.log("[PermanentPedometer] getStepsBeforeToday failed", error);
+    return 0;
   }
 }
 

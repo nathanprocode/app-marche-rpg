@@ -5,6 +5,8 @@ type PermanentPedometerModule = {
   stopTracking(): void;
   updateNotification(title: string, text: string, baseTotalSteps: number, baseStepsToday: number, metersPerStep: number): void;
   getSteps(): number;
+  /** Absente des builds natifs antérieurs : l'appelant doit vérifier qu'elle existe. */
+  getStepsBeforeToday?(): number;
   acknowledgeSteps(consumedSteps: number): void;
 };
 
