@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Pedometer } from "expo-sensors";
 import { PermissionsAndroid, Platform } from "react-native";
 import { GAME_CONFIG } from "../../core/constants/game";
+import { shiftDay, toDayKey } from "../history/weekHistory";
 import { usePedometerStore } from "../../store/usePedometerStore";
 import { usePlayerStore } from "../../store/usePlayerStore";
 import { clearPersistentTrackingNotificationAsync, updatePersistentTrackingNotificationAsync } from "./persistentTracking";
@@ -129,6 +130,8 @@ export function usePedometer(enabled = true, permanent = false): UsePedometerSta
       const progress = usePlayerStore.getState().progress;
       const nextTotalSteps = progress.totalSteps + deltaSteps;
       const nextStepsToday = usePedometerStore.getState().addLiveSteps(deltaToday);
+      // Les pas d'avant minuit vont à la veille dans l'historique (au plus près : on ne sait pas de quel jour exact).
+      usePedometerStore.getState().addStepsToDay(toDayKey(shiftDay(new Date(), -1)), deltaSteps - deltaToday);
 
       // syncFromSteps met l'état à jour tout de suite, puis attend la sauvegarde. On confirme les pas au
       // service sans attendre : tant qu'ils ne sont pas confirmés, le passage suivant (5 s plus tard)

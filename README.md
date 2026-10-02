@@ -34,7 +34,8 @@ L'app contient du code natif (`modules/permanent-pedometer/`) : Expo Go ne suffi
 - `app/` : routes Expo Router (`(tabs)` : Marche, Carte, Quêtes, Profil ; `login`).
 - `src/core/theme/` : design system « Encre & Sang » (grille de 8, tokens nommés comme les maquettes).
 - `src/features/` : logique métier. Pure et testée : `progression`, `brandOfSacrifice`, `mapJourney`,
-  `companions` (qui marche avec Guts, placement autour de lui sur la carte), `camp` (vignette jour/nuit et phrase d'ambiance).
+  `companions` (qui marche avec Guts, placement autour de lui sur la carte), `camp` (vignette jour/nuit et phrase d'ambiance),
+  `history` (pas par jour, stats des 7 derniers jours du Profil), `zoom` (pincer et déplacer les planches des Chroniques).
   Liée à l'appareil (non testée) : `pedometer` (capteur, service natif, notification), `runtime` (série et Marque du jour),
   `userCloud` (Firestore).
 - `src/store/` : états Zustand. La progression est sauvegardée en local (AsyncStorage, une clé par compte) à chaque

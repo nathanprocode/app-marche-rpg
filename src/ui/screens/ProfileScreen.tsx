@@ -1,14 +1,18 @@
 import { StyleSheet, Switch, Text, View } from "react-native";
+import { GAME_CONFIG } from "../../core/constants/game";
 import { formatDecimal, formatInt } from "../../core/format";
 import { theme } from "../../core/theme";
 import { BERSERK_CHECKPOINTS } from "../../data/map/berserk-checkpoints";
+import { lastDays, summarizeDays } from "../../features/history/weekHistory";
 import { useAuthStore } from "../../store/useAuthStore";
 import { useBrandStore } from "../../store/useBrandStore";
+import { usePedometerStore } from "../../store/usePedometerStore";
 import { flushCloudSave, usePlayerStore } from "../../store/usePlayerStore";
 import { BrandMark } from "../components/BrandMark";
 import { Button } from "../components/Button";
 import { InkCard } from "../components/InkCard";
 import { Screen } from "../components/Screen";
+import { WeekChart } from "../components/WeekChart";
 
 export function ProfileScreen() {
   const status = useBrandStore((state) => state.status);
@@ -18,10 +22,14 @@ export function ProfileScreen() {
   const setPermanentTrackingEnabled = usePlayerStore((state) => state.setPermanentTrackingEnabled);
   const userName = useAuthStore((state) => state.userName);
   const logout = useAuthStore((state) => state.logout);
+  const history = usePedometerStore((state) => state.history);
 
   const previous =
     BERSERK_CHECKPOINTS.find((checkpoint) => checkpoint.id === progress.currentCheckpointId) ?? BERSERK_CHECKPOINTS[0];
   const streakLabel = `${status.streakDays} ${status.streakDays > 1 ? "jours" : "jour"}`;
+  const days = lastDays(history, new Date());
+  const week = summarizeDays(days);
+  const daysWithSteps = days.filter((day) => day.steps > 0).length;
 
   return (
     <Screen scroll>
@@ -45,6 +53,27 @@ export function ProfileScreen() {
           <Stat label="Distance" value={`${formatDecimal(progress.totalDistanceKm)} km`} />
           <Stat label="Chroniques" value={`${unlockedCount} / ${BERSERK_CHECKPOINTS.length}`} />
         </View>
+      </View>
+
+      <View style={styles.week}>
+        <Text accessibilityRole="header" style={styles.label}>
+          Les 7 derniers jours
+        </Text>
+        <InkCard style={styles.weekCard}>
+          <View style={styles.weekSummary}>
+            <WeekFigure label="Semaine" value={`${formatDecimal(week.totalKm)} km`} />
+            <WeekFigure
+              label="Record"
+              value={week.bestDay ? `${formatDecimal(week.bestDay.km)} km` : "—"}
+              hint={week.bestDay ? (week.bestDay.isToday ? "aujourd'hui" : `${week.bestDay.weekday} ${week.bestDay.dayOfMonth}`) : undefined}
+            />
+            <WeekFigure label="Apaisée" value={`${week.calmDays} / ${days.length} j`} />
+          </View>
+          <WeekChart days={days} thresholdSteps={GAME_CONFIG.sedentaryThresholdStepsPerDay} />
+          {daysWithSteps < 2 ? (
+            <Text style={styles.weekHint}>L'historique se remplit jour après jour sur ce téléphone.</Text>
+          ) : null}
+        </InkCard>
       </View>
 
       <View style={styles.settings}>
@@ -96,6 +125,18 @@ function Stat({ label, value }: { label: string; value: string }) {
   );
 }
 
+function WeekFigure({ label, value, hint }: { label: string; value: string; hint?: string }) {
+  return (
+    <View style={styles.weekFigure} accessible accessibilityLabel={`${label} : ${value}${hint ? `, ${hint}` : ""}`}>
+      <Text style={styles.label}>{label}</Text>
+      <Text {...theme.fitDisplayText} style={styles.weekValue}>
+        {value}
+      </Text>
+      {hint ? <Text style={styles.small}>{hint}</Text> : null}
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
   header: { flexDirection: "row", alignItems: "flex-start", justifyContent: "space-between", gap: theme.space[16] },
   headerText: { flex: 1 },
@@ -121,4 +162,10 @@ const styles = StyleSheet.create({
   small: { ...theme.text.small, color: theme.colors.boneDim },
   connected: { ...theme.text.label, color: theme.colors.boneDim },
   logout: { marginTop: theme.space[24] },
+  week: { marginTop: theme.space[24], gap: theme.space[8] },
+  weekCard: { gap: theme.space[16] },
+  weekSummary: { flexDirection: "row", gap: theme.space[16] },
+  weekFigure: { flex: 1 },
+  weekValue: { ...theme.text.displayS, color: theme.colors.bone },
+  weekHint: { ...theme.text.small, fontFamily: theme.fontFamily.bodyItalic, color: theme.colors.boneDim },
 });
