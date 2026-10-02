@@ -6,6 +6,7 @@ import { formatDecimal, formatInt } from "../../core/format";
 import { theme } from "../../core/theme";
 import { BERSERK_CHECKPOINTS } from "../../data/map/berserk-checkpoints";
 import { BERSERK_PANEL_IMAGES } from "../../data/map/berserk-panels";
+import { resolveCampScene } from "../../features/camp/campScene";
 import { deriveBrandState } from "../../features/progression/engine";
 import { runDailySync } from "../../features/runtime/dailySync";
 import { useBrandStore } from "../../store/useBrandStore";
@@ -13,6 +14,7 @@ import { usePedometerStore } from "../../store/usePedometerStore";
 import { usePlayerStore } from "../../store/usePlayerStore";
 import { BrandMark } from "../components/BrandMark";
 import { Button } from "../components/Button";
+import { CampVignette } from "../components/CampVignette";
 import { InkCard } from "../components/InkCard";
 import { PaperCard } from "../components/PaperCard";
 import { ProgressBar } from "../components/ProgressBar";
@@ -62,6 +64,10 @@ export function HomeScreen() {
         >
           <Ionicons name="refresh" size={20} color={theme.colors.bone} />
         </Pressable>
+      </View>
+
+      <View style={styles.camp}>
+        <CampVignette scene={resolveCampScene(new Date().getHours(), isCalm, previous.title)} />
       </View>
 
       <View
@@ -189,6 +195,7 @@ const styles = StyleSheet.create({
     borderColor: theme.colors.ash,
     borderRadius: theme.radius[4],
   },
+  camp: { marginTop: theme.space[16] },
   hero: { marginTop: theme.space[16] },
   label: { ...theme.text.label, color: theme.colors.boneDim },
   labelAlert: { color: theme.colors.bloodEmber },
