@@ -16,6 +16,7 @@ import { InkCard } from "../components/InkCard";
 import { PaperCard } from "../components/PaperCard";
 import { ProgressBar } from "../components/ProgressBar";
 import { Screen } from "../components/Screen";
+import { ZoomableImage } from "../components/ZoomableImage";
 
 type QuestsTab = "daily" | "chronicles" | "companions";
 
@@ -103,7 +104,7 @@ export function QuestsScreen() {
             <Ionicons name="close" size={24} color={theme.colors.bone} />
           </Pressable>
           {lightboxPanel ? (
-            <Image source={lightboxPanel} style={styles.lightboxImage} resizeMode="contain" accessibilityIgnoresInvertColors />
+            <ZoomableImage source={lightboxPanel} accessibilityLabel="Planche du manga, agrandissable en pinçant" />
           ) : null}
         </View>
       </Modal>
@@ -298,12 +299,13 @@ const styles = StyleSheet.create({
   lockedText: { flex: 1 },
   lockedTitle: { ...theme.text.body, color: theme.colors.bone },
   lockedKm: { ...theme.text.displayS, color: theme.colors.boneDim },
+  // En haut, la place du bouton Fermer ; la planche et ses boutons de zoom occupent le reste.
   lightbox: {
     flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
     backgroundColor: "rgba(12,10,9,0.96)",
-    padding: theme.space[16],
+    paddingHorizontal: theme.space[16],
+    paddingTop: theme.space[48] + 44 + theme.space[16],
+    paddingBottom: theme.space[32],
   },
   closeButton: {
     position: "absolute",
@@ -319,5 +321,4 @@ const styles = StyleSheet.create({
     borderRadius: theme.radius[4],
     backgroundColor: theme.colors.inkRaised,
   },
-  lightboxImage: { width: "100%", height: "86%" },
 });
