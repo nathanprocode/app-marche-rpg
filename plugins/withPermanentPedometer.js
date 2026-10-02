@@ -5,7 +5,6 @@ const PERMISSIONS = [
   "android.permission.POST_NOTIFICATIONS",
   "android.permission.FOREGROUND_SERVICE",
   "android.permission.FOREGROUND_SERVICE_HEALTH",
-  "android.permission.WAKE_LOCK",
 ];
 
 const SERVICE_NAME = "expo.modules.permanentpedometer.PermanentPedometerService";

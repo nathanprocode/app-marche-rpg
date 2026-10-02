@@ -46,8 +46,7 @@
         "ACTIVITY_RECOGNITION",
         "POST_NOTIFICATIONS",
         "FOREGROUND_SERVICE",
-        "FOREGROUND_SERVICE_HEALTH",
-        "WAKE_LOCK"
+        "FOREGROUND_SERVICE_HEALTH"
       ]
     },
     "web": {

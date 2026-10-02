@@ -5,8 +5,10 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.app.Service
+import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.content.pm.ServiceInfo
 import android.hardware.Sensor
 import android.hardware.SensorEvent
@@ -16,9 +18,9 @@ import android.os.Build
 import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
-import android.os.PowerManager
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
+import androidx.core.content.ContextCompat
 import java.util.Calendar
 import java.util.Locale
 import kotlin.math.floor
@@ -27,16 +29,21 @@ import kotlin.math.max
 class PermanentPedometerService : Service(), SensorEventListener {
   private var sensorManager: SensorManager? = null
   private var stepCounterSensor: Sensor? = null
-  private var wakeLock: PowerManager.WakeLock? = null
   private var notificationTitle = DEFAULT_TITLE
   private var notificationText = DEFAULT_TEXT
   private val handler = Handler(Looper.getMainLooper())
   private val midnightRefresh = Runnable {
-    // Sans pas après minuit, aucun événement capteur : on remet « Aujourd'hui » à zéro nous-mêmes.
-    if (PendingSteps.rollOverDayIfNeeded(prefs)) {
-      updateNotificationFromSteps(PendingSteps.pending(prefs))
-    }
+    refreshDayIfNeeded()
     scheduleMidnightRefresh()
+  }
+
+  // Pas de wake lock : le capteur de pas compte tout seul, téléphone endormi. Mais le minuteur de minuit
+  // ne compte pas le temps de sommeil profond et peut se déclencher en retard : on revérifie la date
+  // à chaque allumage de l'écran, c'est-à-dire dès que la notification peut être vue.
+  private val screenOnReceiver = object : BroadcastReceiver() {
+    override fun onReceive(context: Context?, intent: Intent?) {
+      refreshDayIfNeeded()
+    }
   }
 
   private val prefs by lazy {
@@ -46,7 +53,12 @@ class PermanentPedometerService : Service(), SensorEventListener {
   override fun onCreate() {
     super.onCreate()
     createNotificationChannel()
-    acquireWakeLock()
+    ContextCompat.registerReceiver(
+      this,
+      screenOnReceiver,
+      IntentFilter(Intent.ACTION_SCREEN_ON),
+      ContextCompat.RECEIVER_NOT_EXPORTED
+    )
     notificationTitle = prefs.getString(KEY_TITLE, DEFAULT_TITLE) ?: DEFAULT_TITLE
     notificationText = prefs.getString(KEY_TEXT, DEFAULT_TEXT) ?: DEFAULT_TEXT
     sensorManager = getSystemService(Context.SENSOR_SERVICE) as SensorManager
@@ -81,9 +93,20 @@ class PermanentPedometerService : Service(), SensorEventListener {
 
   override fun onDestroy() {
     handler.removeCallbacks(midnightRefresh)
+    try {
+      unregisterReceiver(screenOnReceiver)
+    } catch (error: IllegalArgumentException) {
+      // Déjà désinscrit.
+    }
     sensorManager?.unregisterListener(this)
-    releaseWakeLock()
     super.onDestroy()
+  }
+
+  /** Sans pas après minuit, aucun événement capteur : on remet « Aujourd'hui » à zéro nous-mêmes. */
+  private fun refreshDayIfNeeded() {
+    if (PendingSteps.rollOverDayIfNeeded(prefs)) {
+      updateNotificationFromSteps(PendingSteps.pending(prefs))
+    }
   }
 
   override fun onSensorChanged(event: SensorEvent?) {
@@ -278,25 +301,6 @@ class PermanentPedometerService : Service(), SensorEventListener {
     return R.drawable.ic_stat_brand_mark
   }
 
-  private fun acquireWakeLock() {
-    try {
-      val powerManager = getSystemService(Context.POWER_SERVICE) as PowerManager
-      wakeLock = powerManager.newWakeLock(
-        PowerManager.PARTIAL_WAKE_LOCK,
-        "$packageName:PermanentPedometerWakeLock"
-      ).apply {
-        setReferenceCounted(false)
-        acquire()
-      }
-    } catch (error: Exception) {
-      error.printStackTrace()
-    }
-  }
-
-  private fun releaseWakeLock() {
-    wakeLock?.takeIf { it.isHeld }?.release()
-    wakeLock = null
-  }
 
   companion object {
     const val ACTION_UPDATE_NOTIFICATION = "expo.modules.permanentpedometer.UPDATE_NOTIFICATION"
