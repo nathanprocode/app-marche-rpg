@@ -1,6 +1,8 @@
-import { Image, StyleSheet, Text, View } from "react-native";
+import { useState } from "react";
+import { Image, StyleSheet, Text, View, type LayoutChangeEvent } from "react-native";
 import { theme } from "../../core/theme";
 import type { CampScene } from "../../features/camp/campScene";
+import { CampAmbience } from "./CampAmbience";
 
 const CAMP_IMAGES = {
   day: require("../../../assets/camp/camp-day.jpg"),
@@ -21,11 +23,18 @@ type CampVignetteProps = {
  * La phrase d'ambiance suit l'heure et l'état de la Marque (voir features/camp/campScene).
  */
 export function CampVignette({ scene }: CampVignetteProps) {
+  const [size, setSize] = useState({ width: 0, height: 0 });
+
+  function handleWindowLayout(event: LayoutChangeEvent): void {
+    const { width, height } = event.nativeEvent.layout;
+    setSize({ width, height });
+  }
+
   return (
     <View style={styles.root}>
       <View style={styles.frame}>
         {/* Le ratio est porté par un conteneur : sur une image en largeur 100 %, le web l'ignore. */}
-        <View style={styles.window}>
+        <View style={styles.window} onLayout={handleWindowLayout}>
           <Image
             source={CAMP_IMAGES[scene.time]}
             style={styles.image}
@@ -34,6 +43,7 @@ export function CampVignette({ scene }: CampVignetteProps) {
             accessibilityLabel={CAMP_DESCRIPTIONS[scene.time]}
             accessibilityIgnoresInvertColors
           />
+          <CampAmbience time={scene.time} width={size.width} height={size.height} />
         </View>
       </View>
       <Text style={styles.line}>{scene.line}</Text>

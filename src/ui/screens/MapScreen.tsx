@@ -21,6 +21,7 @@ import { calculateGutsPosition } from "../../features/mapJourney/interpolation";
 import { usePlayerStore } from "../../store/usePlayerStore";
 import { COMPANION_SPRITE_SIZE, CompanionMarker } from "../components/CompanionMarker";
 import { GutsMarker } from "../components/GutsMarker";
+import { MapSheet } from "../components/MapSheet";
 
 const worldMapAsset = require("../../../assets/map/world-map.png");
 const MAP_WIDTH = 1448;
@@ -151,10 +152,6 @@ export function MapScreen() {
     setViewport({ width, height });
   }
 
-  function handleSheetLayout(event: LayoutChangeEvent): void {
-    setSheetHeight(event.nativeEvent.layout.height);
-  }
-
   return (
     <View style={styles.root}>
       <View style={styles.mapViewport} onLayout={handleViewportLayout}>
@@ -209,6 +206,7 @@ export function MapScreen() {
                 xPct={position.x}
                 yPct={position.y}
                 offsetX={troupeOffsets[index]}
+                index={index}
               />
             ))}
             <GutsMarker xPct={position.x} yPct={position.y} />
@@ -230,14 +228,19 @@ export function MapScreen() {
         </View>
       </View>
 
-      <View style={styles.sheet} onLayout={handleSheetLayout}>
-        <View accessibilityElementsHidden importantForAccessibility="no" style={styles.grabber} />
-        <Text style={styles.kicker}>
-          {`Point franchi · ${formatInt(position.previous.kmThreshold)} km · ${position.previous.arc}`}
-        </Text>
-        <Text accessibilityRole="header" style={styles.title}>
-          {position.previous.title}
-        </Text>
+      <MapSheet
+        onCoveredHeightChange={setSheetHeight}
+        header={
+          <>
+            <Text style={styles.kicker}>
+              {`Point franchi · ${formatInt(position.previous.kmThreshold)} km · ${position.previous.arc}`}
+            </Text>
+            <Text accessibilityRole="header" style={styles.title}>
+              {position.previous.title}
+            </Text>
+          </>
+        }
+      >
         <Text style={styles.description}>{position.previous.description}</Text>
 
         <View style={styles.nextRow}>
@@ -249,7 +252,7 @@ export function MapScreen() {
           </View>
           {isJourneyComplete ? null : <Text style={styles.nextKm}>{`${formatDecimal(remainingKm)} km`}</Text>}
         </View>
-      </View>
+      </MapSheet>
     </View>
   );
 }
@@ -269,7 +272,8 @@ function MapButton({ label, icon, onPress }: MapButtonProps) {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: theme.colors.ink },
+  // overflow hidden : la fiche baissée descend sous l'écran, elle ne doit pas déborder sur la barre d'onglets.
+  root: { flex: 1, overflow: "hidden", backgroundColor: theme.colors.ink },
   mapViewport: { ...StyleSheet.absoluteFillObject, overflow: "hidden", backgroundColor: theme.colors.ink },
   mapContent: { position: "absolute", top: 0, left: 0 },
   mapImage: { resizeMode: "stretch" },
@@ -325,25 +329,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: theme.colors.ash,
     borderRadius: theme.radius[4],
-  },
-  sheet: {
-    position: "absolute",
-    left: 0,
-    right: 0,
-    bottom: 0,
-    paddingHorizontal: theme.space[24],
-    paddingTop: theme.space[16],
-    paddingBottom: theme.space[24],
-    backgroundColor: theme.colors.bone,
-    borderTopWidth: 1,
-    borderTopColor: theme.colors.ink,
-  },
-  grabber: {
-    alignSelf: "center",
-    width: 32,
-    height: 4,
-    marginBottom: theme.space[16],
-    backgroundColor: "rgba(12,10,9,0.25)",
   },
   kicker: { ...theme.text.label, color: theme.colors.blood },
   title: { ...theme.text.displayM, color: theme.colors.ink },

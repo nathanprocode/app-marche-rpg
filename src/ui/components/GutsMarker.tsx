@@ -1,5 +1,5 @@
-import { useEffect, useRef } from "react";
-import { Animated, Easing, Image, StyleSheet, View } from "react-native";
+import { Animated, StyleSheet, View } from "react-native";
+import { useWalkStep } from "./useWalkStep";
 
 type GutsMarkerProps = {
   xPct: number;
@@ -10,42 +10,18 @@ const gutsMarkerAsset = require("../../../assets/map/guts-marker.png");
 const SPRITE_WIDTH = 96;
 const SPRITE_HEIGHT = 57;
 
-/** Sprite du Traqué : posé juste au-dessus de sa position sur la carte. */
+/** Sprite du Traqué : posé juste au-dessus de sa position sur la carte, il avance à petits pas. */
 export function GutsMarker({ xPct, yPct }: GutsMarkerProps) {
-  const pulse = useRef(new Animated.Value(1)).current;
-
-  useEffect(() => {
-    const loop = Animated.loop(
-      Animated.sequence([
-        Animated.timing(pulse, {
-          toValue: 1.06,
-          duration: 900,
-          easing: Easing.inOut(Easing.quad),
-          useNativeDriver: true,
-        }),
-        Animated.timing(pulse, {
-          toValue: 1,
-          duration: 900,
-          easing: Easing.inOut(Easing.quad),
-          useNativeDriver: true,
-        }),
-      ]),
-    );
-
-    loop.start();
-    return () => loop.stop();
-  }, [pulse]);
+  const step = useWalkStep();
 
   return (
     <View pointerEvents="none" style={[styles.marker, { left: `${xPct}%`, top: `${yPct}%` }]}>
-      <Animated.View style={{ transform: [{ scale: pulse }] }}>
-        <Image
-          accessibilityLabel="Position actuelle"
-          source={gutsMarkerAsset}
-          style={styles.image}
-          resizeMode="contain"
-        />
-      </Animated.View>
+      <Animated.Image
+        accessibilityLabel="Position actuelle"
+        source={gutsMarkerAsset}
+        style={[styles.image, { transform: [{ translateY: step }] }]}
+        resizeMode="contain"
+      />
     </View>
   );
 }

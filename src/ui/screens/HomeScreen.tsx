@@ -66,10 +66,6 @@ export function HomeScreen() {
         </Pressable>
       </View>
 
-      <View style={styles.camp}>
-        <CampVignette scene={resolveCampScene(new Date().getHours(), isCalm, previous.title)} />
-      </View>
-
       <View
         style={styles.hero}
         accessible
@@ -80,6 +76,10 @@ export function HomeScreen() {
           {formatInt(stepsToday)}
         </Text>
         <Text style={styles.heroMeta}>{`soit ${formatDecimal(distanceTodayKm, 2)} km parcourus`}</Text>
+      </View>
+
+      <View style={styles.camp}>
+        <CampVignette scene={resolveCampScene(new Date().getHours(), isCalm, previous.title)} />
       </View>
 
       <InkCard alert={!isCalm} style={styles.brandStrip}>
