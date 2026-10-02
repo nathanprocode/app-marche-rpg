@@ -33,7 +33,8 @@ L'app contient du code natif (`modules/permanent-pedometer/`) : Expo Go ne suffi
 
 - `app/` : routes Expo Router (`(tabs)` : Marche, Carte, Quêtes, Profil ; `login`).
 - `src/core/theme/` : design system « Encre & Sang » (grille de 8, tokens nommés comme les maquettes).
-- `src/features/` : logique métier. Pure et testée : `progression`, `brandOfSacrifice`, `mapJourney`.
+- `src/features/` : logique métier. Pure et testée : `progression`, `brandOfSacrifice`, `mapJourney`,
+  `companions` (qui marche avec Guts, placement autour de lui sur la carte), `camp` (vignette jour/nuit et phrase d'ambiance).
   Liée à l'appareil (non testée) : `pedometer` (capteur, service natif, notification), `runtime` (série et Marque du jour),
   `userCloud` (Firestore).
 - `src/store/` : états Zustand. La progression est sauvegardée en local (AsyncStorage, une clé par compte) à chaque
@@ -43,6 +44,8 @@ L'app contient du code natif (`modules/permanent-pedometer/`) : Expo Go ne suffi
 - `src/ui/` : composants et écrans.
 - `docs/` : notes de développement, jour par jour (`day1-setup.md` à `day7-stabilization.md`).
 - `src/data/map/berserk-checkpoints.ts` : la seule source des checkpoints (km, texte, position sur la carte).
+- `src/data/companions.ts` : les 7 compagnons (texte, sprite, checkpoint de rencontre, tronçons parcourus avec Guts).
+  Sprites dans `assets/companions/` (fond transparent, 192 px de haut), scènes de camp dans `assets/camp/`.
 - `modules/permanent-pedometer/` : module Android natif : service de suivi permanent (notification fixe), activé par l'interrupteur du Profil. Demande un build natif (pas de simple rechargement).
 
 ## Design system

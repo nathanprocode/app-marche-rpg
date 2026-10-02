@@ -14,9 +14,12 @@ import Svg, { Polyline } from "react-native-svg";
 import { GAME_CONFIG } from "../../core/constants/game";
 import { formatDecimal, formatInt } from "../../core/format";
 import { theme } from "../../core/theme";
+import { COMPANIONS } from "../../data/companions";
 import { BERSERK_CHECKPOINTS } from "../../data/map/berserk-checkpoints";
+import { getTravelingCompanions, layoutTroupe } from "../../features/companions/journey";
 import { calculateGutsPosition } from "../../features/mapJourney/interpolation";
 import { usePlayerStore } from "../../store/usePlayerStore";
+import { COMPANION_SPRITE_SIZE, CompanionMarker } from "../components/CompanionMarker";
 import { GutsMarker } from "../components/GutsMarker";
 
 const worldMapAsset = require("../../../assets/map/world-map.png");
@@ -47,10 +50,18 @@ export function MapScreen() {
   const dragStartRef = useRef<MapOffset>({ x: 0, y: 0 });
   const progress = usePlayerStore((state) => state.progress);
   const position = calculateGutsPosition(progress.totalDistanceKm, BERSERK_CHECKPOINTS);
+  const travelingCompanions = getTravelingCompanions(progress.totalDistanceKm, COMPANIONS, BERSERK_CHECKPOINTS);
   const isJourneyComplete = position.previous.id === position.next.id;
   const remainingKm = Math.max(0, position.next.kmThreshold - progress.totalDistanceKm);
   const contentWidth = MAP_WIDTH * zoom;
   const contentHeight = MAP_HEIGHT * zoom;
+  const gutsXPx = (position.x / 100) * contentWidth;
+  const troupeOffsets = layoutTroupe(
+    travelingCompanions.length,
+    gutsXPx,
+    contentWidth - gutsXPx,
+    COMPANION_SPRITE_SIZE / 2,
+  );
 
   const reachedCheckpoints = BERSERK_CHECKPOINTS.filter(
     (checkpoint) => checkpoint.kmThreshold <= progress.totalDistanceKm + REACHED_TOLERANCE_KM,
@@ -191,6 +202,15 @@ export function MapScreen() {
               );
             })}
 
+            {travelingCompanions.map((companion, index) => (
+              <CompanionMarker
+                key={companion.id}
+                companion={companion}
+                xPct={position.x}
+                yPct={position.y}
+                offsetX={troupeOffsets[index]}
+              />
+            ))}
             <GutsMarker xPct={position.x} yPct={position.y} />
           </ImageBackground>
         </View>

@@ -4,17 +4,20 @@ import { Image, Modal, Pressable, StyleSheet, Text, View, type ImageSourcePropTy
 import { GAME_CONFIG } from "../../core/constants/game";
 import { formatDecimal, formatInt } from "../../core/format";
 import { theme } from "../../core/theme";
+import { COMPANIONS } from "../../data/companions";
 import { BERSERK_CHECKPOINTS, type BerserkCheckpoint } from "../../data/map/berserk-checkpoints";
 import { BERSERK_PANEL_IMAGES } from "../../data/map/berserk-panels";
+import { isCompanionMet } from "../../features/companions/journey";
 import { useBrandStore } from "../../store/useBrandStore";
 import { usePedometerStore } from "../../store/usePedometerStore";
 import { usePlayerStore } from "../../store/usePlayerStore";
+import { CompanionCollection } from "../components/CompanionCollection";
 import { InkCard } from "../components/InkCard";
 import { PaperCard } from "../components/PaperCard";
 import { ProgressBar } from "../components/ProgressBar";
 import { Screen } from "../components/Screen";
 
-type QuestsTab = "daily" | "chronicles";
+type QuestsTab = "daily" | "chronicles" | "companions";
 
 const STREAK_MILESTONES = [3, 7, 14, 30, 60, 100, 365];
 
@@ -38,6 +41,7 @@ export function QuestsScreen() {
   const unlocked = BERSERK_CHECKPOINTS.filter((checkpoint) => unlockedIds.includes(checkpoint.id));
   const chronicles = [...unlocked].reverse();
   const nextLocked = BERSERK_CHECKPOINTS.find((checkpoint) => !unlockedIds.includes(checkpoint.id)) ?? null;
+  const metCount = COMPANIONS.filter((companion) => isCompanionMet(companion, unlockedIds)).length;
   const quests = buildQuests(stepsToday, streakDays, progress.totalDistanceKm, progress.currentSegmentProgressPct, nextLocked);
 
   return (
@@ -49,16 +53,25 @@ export function QuestsScreen() {
       <View accessibilityRole="tablist" style={styles.tabs}>
         <TabButton label="Du jour" selected={tab === "daily"} onPress={() => setTab("daily")} />
         <TabButton
-          label={`Chroniques · ${unlocked.length} / ${BERSERK_CHECKPOINTS.length}`}
+          label="Chroniques"
+          count={[unlocked.length, BERSERK_CHECKPOINTS.length]}
           selected={tab === "chronicles"}
           onPress={() => setTab("chronicles")}
+        />
+        <TabButton
+          label="Compagnons"
+          count={[metCount, COMPANIONS.length]}
+          selected={tab === "companions"}
+          onPress={() => setTab("companions")}
         />
       </View>
 
       <View style={styles.list}>
-        {tab === "daily"
-          ? quests.map((quest) => <QuestRow key={quest.id} quest={quest} />)
-          : (
+        {tab === "daily" ? (
+          quests.map((quest) => <QuestRow key={quest.id} quest={quest} />)
+        ) : tab === "companions" ? (
+          <CompanionCollection unlockedCheckpointIds={unlockedIds} />
+        ) : (
             <>
               {chronicles.map((checkpoint) => (
                 <ChronicleCard key={checkpoint.id} checkpoint={checkpoint} onOpenPanel={setLightboxPanel} />
@@ -141,17 +154,27 @@ function buildQuests(
   return quests;
 }
 
-type TabButtonProps = { label: string; selected: boolean; onPress: () => void };
+type TabButtonProps = {
+  label: string;
+  /** [débloqués, total] : affiché sous le libellé, sur sa propre ligne. */
+  count?: [number, number];
+  selected: boolean;
+  onPress: () => void;
+};
 
-function TabButton({ label, selected, onPress }: TabButtonProps) {
+function TabButton({ label, count, selected, onPress }: TabButtonProps) {
   return (
     <Pressable
       accessibilityRole="tab"
       accessibilityState={{ selected }}
+      accessibilityLabel={count ? `${label}, ${count[0]} sur ${count[1]}` : label}
       onPress={onPress}
       style={[styles.tabButton, selected && styles.tabButtonSelected]}
     >
       <Text style={[styles.tabLabel, selected && styles.tabLabelSelected]}>{label}</Text>
+      {count ? (
+        <Text style={[styles.tabCount, selected && styles.tabLabelSelected]}>{`${count[0]} / ${count[1]}`}</Text>
+      ) : null}
     </Pressable>
   );
 }
@@ -234,6 +257,7 @@ const styles = StyleSheet.create({
   tabButton: { flex: 1, alignItems: "center", justifyContent: "center", paddingVertical: theme.space[8] },
   tabButtonSelected: { backgroundColor: theme.colors.bone },
   tabLabel: { ...theme.text.label, fontSize: 14, lineHeight: 20, color: theme.colors.boneDim, textAlign: "center" },
+  tabCount: { ...theme.text.small, color: theme.colors.boneDim, textAlign: "center" },
   tabLabelSelected: { color: theme.colors.ink },
   list: { marginTop: theme.space[24], gap: theme.space[16] },
   small: { ...theme.text.small, color: theme.colors.boneDim },

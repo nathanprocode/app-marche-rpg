@@ -4,8 +4,10 @@ import { Image, Modal, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { theme } from "../../core/theme";
 import { formatInt } from "../../core/format";
+import { COMPANIONS } from "../../data/companions";
 import { BERSERK_CHECKPOINTS, type BerserkCheckpoint } from "../../data/map/berserk-checkpoints";
 import { BERSERK_PANEL_IMAGES } from "../../data/map/berserk-panels";
+import { getCompanionsMetAt } from "../../features/companions/journey";
 import { usePlayerStore } from "../../store/usePlayerStore";
 import { BrandMark } from "./BrandMark";
 import { Button } from "./Button";
@@ -87,6 +89,22 @@ export function CheckpointUnlockModal({ enabled }: CheckpointUnlockModalProps) {
               ) : null}
 
               <Text style={styles.description}>{checkpoint.description}</Text>
+
+              {getCompanionsMetAt(checkpoint.id, COMPANIONS).map((companion) => (
+                <View
+                  key={companion.id}
+                  style={styles.companion}
+                  accessible
+                  accessibilityLabel={`Nouveau compagnon : ${companion.name}, ${companion.title}`}
+                >
+                  <Image source={companion.image} style={styles.companionSprite} resizeMode="contain" />
+                  <View style={styles.companionText}>
+                    <Text style={styles.companionKicker}>Nouveau compagnon</Text>
+                    <Text style={styles.companionName}>{companion.name}</Text>
+                    <Text style={styles.companionTitle}>{companion.title}</Text>
+                  </View>
+                </View>
+              ))}
             </ScrollView>
 
             <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, theme.space[16]) + theme.space[16] }]}>
@@ -118,5 +136,21 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginTop: theme.space[16],
   },
+  companion: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: theme.space[16],
+    marginTop: theme.space[24],
+    padding: theme.space[16],
+    backgroundColor: theme.colors.inkRaised,
+    borderWidth: 1,
+    borderColor: theme.colors.ash,
+    borderRadius: theme.radius[4],
+  },
+  companionSprite: { width: 64, height: 64 },
+  companionText: { flex: 1 },
+  companionKicker: { ...theme.text.label, color: theme.colors.bloodEmber },
+  companionName: { ...theme.text.displayS, color: theme.colors.bone },
+  companionTitle: { ...theme.text.small, color: theme.colors.boneDim },
   footer: { paddingHorizontal: theme.space[24], paddingTop: theme.space[16], gap: theme.space[8] },
 });
