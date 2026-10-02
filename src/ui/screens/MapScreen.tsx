@@ -189,10 +189,12 @@ export function MapScreen() {
                 <View key={checkpoint.id} pointerEvents="none" style={[styles.markerSlot, { left: `${checkpoint.x}%`, top: `${checkpoint.y}%` }]}>
                   <View style={[styles.diamond, isReached ? styles.diamondReached : styles.diamondAhead]} />
                   {isPrevious || isNext ? (
-                    <View style={[styles.markerChip, isNext && styles.markerChipAbove]}>
-                      <Text numberOfLines={1} style={styles.markerChipText}>
-                        {checkpoint.title}
-                      </Text>
+                    <View style={[styles.markerChipLane, isNext && styles.markerChipAbove]}>
+                      <View style={styles.markerChip}>
+                        <Text numberOfLines={1} style={styles.markerChipText}>
+                          {checkpoint.title}
+                        </Text>
+                      </View>
                     </View>
                   ) : null}
                 </View>
@@ -287,10 +289,10 @@ const styles = StyleSheet.create({
   },
   diamondReached: { backgroundColor: theme.colors.bloodGlow, borderColor: theme.colors.bone },
   diamondAhead: { backgroundColor: theme.colors.bone, borderColor: theme.colors.bloodGlow },
+  // Couloir large où l'étiquette prend la largeur de son texte. Sans lui, sur Android, l'étiquette ne peut pas
+  // dépasser les 16 px du losange : le texte disparaît et il ne reste qu'un carré noir.
+  markerChipLane: { position: "absolute", top: 20, left: 0, width: 280, alignItems: "flex-start" },
   markerChip: {
-    position: "absolute",
-    top: 20,
-    left: 0,
     paddingHorizontal: theme.space[8],
     paddingVertical: 2,
     backgroundColor: "rgba(12,10,9,0.88)",

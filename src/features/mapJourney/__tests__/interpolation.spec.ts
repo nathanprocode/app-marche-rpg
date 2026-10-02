@@ -1,4 +1,5 @@
 import { BERSERK_CHECKPOINTS, type BerserkCheckpoint } from "../../../data/map/berserk-checkpoints";
+import { BERSERK_PANEL_IMAGES } from "../../../data/map/berserk-panels";
 import { calculateGutsPosition, interpolatePoint } from "../interpolation";
 
 function checkpoint(id: string, kmThreshold: number, x: number, y: number): BerserkCheckpoint {
@@ -63,6 +64,10 @@ describe("BERSERK_CHECKPOINTS", () => {
     expect(kms[0]).toBe(0);
     expect(kms[kms.length - 1]).toBe(1000);
     kms.slice(1).forEach((km, i) => expect(km).toBeGreaterThan(kms[i]));
+  });
+
+  it("a une planche du manga pour chaque checkpoint", () => {
+    BERSERK_CHECKPOINTS.forEach((checkpoint) => expect(BERSERK_PANEL_IMAGES[checkpoint.id]).toBeDefined());
   });
 
   it("a des identifiants uniques et des positions dans la carte (0 à 100)", () => {
