@@ -1,16 +1,21 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { create } from "zustand";
-import { GAME_CONFIG } from "../core/constants/game";
+import { GAME_CONFIG, STEPS_PER_LAP } from "../core/constants/game";
+import { findNewAchievements } from "../features/achievements/achievements";
+import { buildAchievementStats } from "../features/achievements/stats";
 import { BERSERK_CHECKPOINTS } from "../data/map/berserk-checkpoints";
 import { buildProgressFromSteps } from "../features/progression/engine";
 import { parseSavedProgress, pickSavedProgress, type SavedProgress } from "../features/progression/savedProgress";
 import { saveProgressionToCloud } from "../features/userCloud/service";
 import type { PlayerProgress } from "../features/progression/types";
 import { useAuthStore } from "./useAuthStore";
+import { isGoalReached } from "../features/progression/selectors";
 import { useBrandStore } from "./useBrandStore";
 import { usePedometerStore } from "./usePedometerStore";
+import { useSettingsStore } from "./useSettingsStore";
 
 const initialProgress: PlayerProgress = buildProgressFromSteps(0, 0, new Date(0).toISOString());
+const EMPTY_EXTRAS = { bestStreak: 0, bestDaySteps: 0, achievements: {} as Record<string, string> };
 const PERMANENT_TRACKING_STORAGE_KEY = "marche-du-faucon:permanent-tracking-enabled";
 const LOCAL_PROGRESS_KEY_PREFIX = "marche-du-faucon:progress:";
 /** Firestore reçoit au plus une écriture par période : le local, lui, est sauvegardé à chaque pas. */
@@ -19,6 +24,13 @@ const CLOUD_SAVE_DELAY_MS = 30_000;
 type PlayerState = {
   progress: PlayerProgress;
   unlockedCheckpoints: string[];
+  /** Records et succès : ils survivent aux tours de Traque. */
+  bestStreak: number;
+  bestDaySteps: number;
+  /** Succès débloqués : identifiant → date ISO. */
+  achievements: Record<string, string>;
+  /** Succès gagnés pendant cette session, pas encore montrés (le toast les vide). */
+  newAchievementIds: string[];
   isPermanentTrackingEnabled: boolean;
   /** Charge la sauvegarde locale du compte. Renvoie false s'il n'y en a pas (progression remise à zéro). */
   hydrateLocalProgress: (uid: string) => Promise<boolean>;
@@ -27,6 +39,9 @@ type PlayerState = {
   setPermanentTrackingEnabled: (enabled: boolean) => void;
   hydratePermanentTrackingPreference: () => Promise<void>;
   syncFromSteps: (totalSteps: number, streakDays: number, lastActiveDateISO: string) => Promise<void>;
+  /** Clôt la Traque terminée et en commence une autre (les pas en trop sont reportés). */
+  startNextLap: () => Promise<void>;
+  clearNewAchievements: () => void;
   addDevSteps: (stepsToAdd?: number) => Promise<void>;
   advanceToNextCheckpointDev: () => Promise<void>;
   resetProgressionDev: () => Promise<void>;
@@ -44,24 +59,71 @@ function resolveUnlockedCheckpoints(totalDistanceKm: number, currentIds: string[
   return Array.from(new Set([...currentIds, ...reachedIds]));
 }
 
-function toSavedProgress(progress: PlayerProgress, unlockedCheckpoints: string[]): SavedProgress {
+type Extras = Pick<PlayerState, "bestStreak" | "bestDaySteps" | "achievements">;
+
+function toSavedProgress(progress: PlayerProgress, unlockedCheckpoints: string[], extras: Extras): SavedProgress {
   return {
     totalSteps: progress.totalSteps,
     streakDays: progress.streakDays,
     lastActiveDateISO: progress.lastActiveDateISO,
     unlockedCheckpoints,
     updatedAtISO: new Date().toISOString(),
+    lap: progress.lap,
+    lapStartSteps: progress.lapStartSteps,
+    ...extras,
   };
 }
 
-function buildStateFromSaved(saved: SavedProgress): Pick<PlayerState, "progress" | "unlockedCheckpoints"> {
+function extrasOf(state: PlayerState): Extras {
+  return { bestStreak: state.bestStreak, bestDaySteps: state.bestDaySteps, achievements: state.achievements };
+}
+
+/** Pas du jour et objectif en vigueur : la Marque en dépend. */
+function progressOptions(lap: number, lapStartSteps: number) {
+  return { lap, lapStartSteps, dailyGoal: useSettingsStore.getState().dailyGoal };
+}
+
+function buildStateFromSaved(saved: SavedProgress): Pick<PlayerState, "progress" | "unlockedCheckpoints"> & Extras {
   const progress = buildProgressFromSteps(
     saved.totalSteps,
     saved.streakDays,
     saved.lastActiveDateISO,
     usePedometerStore.getState().stepsToday,
+    progressOptions(saved.lap, saved.lapStartSteps),
   );
-  return { progress, unlockedCheckpoints: resolveUnlockedCheckpoints(progress.totalDistanceKm, saved.unlockedCheckpoints) };
+  return {
+    progress,
+    unlockedCheckpoints: resolveUnlockedCheckpoints(progress.totalDistanceKm, saved.unlockedCheckpoints),
+    bestStreak: saved.bestStreak,
+    bestDaySteps: saved.bestDaySteps,
+    achievements: saved.achievements,
+  };
+}
+
+/**
+ * Met à jour records et succès à partir de l'état courant. Renvoie les champs à ajouter à l'état.
+ * `silent` : au chargement, on rattrape les succès déjà mérités sans les annoncer.
+ */
+function computeExtras(
+  progress: PlayerProgress,
+  unlockedCheckpoints: string[],
+  current: Pick<PlayerState, "bestStreak" | "bestDaySteps" | "achievements" | "newAchievementIds">,
+  silent = false,
+): Pick<PlayerState, "bestStreak" | "bestDaySteps" | "achievements" | "newAchievementIds"> {
+  const bestStreak = Math.max(current.bestStreak, progress.streakDays);
+  const bestDaySteps = Math.max(current.bestDaySteps, usePedometerStore.getState().stepsToday);
+  const newIds = findNewAchievements(
+    buildAchievementStats(progress, unlockedCheckpoints, bestStreak, bestDaySteps),
+    current.achievements,
+  );
+  const nowISO = new Date().toISOString();
+
+  return {
+    bestStreak,
+    bestDaySteps,
+    achievements: { ...current.achievements, ...Object.fromEntries(newIds.map((id) => [id, nowISO])) },
+    newAchievementIds: silent ? current.newAchievementIds : [...current.newAchievementIds, ...newIds],
+  };
 }
 
 let cloudSaveTimer: ReturnType<typeof setTimeout> | null = null;
@@ -71,11 +133,11 @@ async function saveToCloudNow(uid: string): Promise<void> {
   // Le compte a changé depuis la programmation : l'état en mémoire n'est plus le sien.
   if (useAuthStore.getState().userId !== uid) return;
 
-  const { progress, unlockedCheckpoints } = usePlayerStore.getState();
+  const state = usePlayerStore.getState();
   const brandIntensity = useBrandStore.getState().status.visual.intensity;
   try {
     // Hors ligne, Firestore garde l'écriture en file et ne répond qu'au retour du réseau.
-    await saveProgressionToCloud(uid, progress, brandIntensity, unlockedCheckpoints);
+    await saveProgressionToCloud(uid, state.progress, brandIntensity, state.unlockedCheckpoints, extrasOf(state));
   } catch (error) {
     console.log("[PlayerStore] cloud save failed", error);
   }
@@ -101,14 +163,18 @@ export function flushCloudSave(): void {
   void saveToCloudNow(cloudSaveUid);
 }
 
-async function saveCurrentProgress(progression: PlayerProgress, unlockedCheckpoints: string[]): Promise<void> {
+async function saveCurrentProgress(
+  progression: PlayerProgress,
+  unlockedCheckpoints: string[],
+  extras: Extras,
+): Promise<void> {
   const uid = useAuthStore.getState().userId;
   if (!uid) return;
 
   try {
     await AsyncStorage.setItem(
       LOCAL_PROGRESS_KEY_PREFIX + uid,
-      JSON.stringify(toSavedProgress(progression, unlockedCheckpoints)),
+      JSON.stringify(toSavedProgress(progression, unlockedCheckpoints, extras)),
     );
   } catch (error) {
     console.log("[PlayerStore] local save failed", error);
@@ -119,6 +185,8 @@ async function saveCurrentProgress(progression: PlayerProgress, unlockedCheckpoi
 export const usePlayerStore = create<PlayerState>((set, get) => ({
   progress: initialProgress,
   unlockedCheckpoints: resolveUnlockedCheckpoints(initialProgress.totalDistanceKm),
+  ...EMPTY_EXTRAS,
+  newAchievementIds: [],
   isPermanentTrackingEnabled: false,
   hydrateLocalProgress: async (uid) => {
     let saved: SavedProgress | null = null;
@@ -130,22 +198,29 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
     }
 
     if (!saved) {
-      set({ progress: initialProgress, unlockedCheckpoints: resolveUnlockedCheckpoints(initialProgress.totalDistanceKm) });
+      set({
+        progress: initialProgress,
+        unlockedCheckpoints: resolveUnlockedCheckpoints(initialProgress.totalDistanceKm),
+        ...EMPTY_EXTRAS,
+        newAchievementIds: [],
+      });
       return false;
     }
 
-    set(buildStateFromSaved(saved));
+    const next = buildStateFromSaved(saved);
+    set({ ...next, ...computeExtras(next.progress, next.unlockedCheckpoints, { ...next, newAchievementIds: [] }, true) });
     return true;
   },
   mergeCloudProgress: async (cloud) => {
-    const { progress, unlockedCheckpoints } = get();
-    const picked = pickSavedProgress(toSavedProgress(progress, unlockedCheckpoints), cloud);
+    const state = get();
+    const picked = pickSavedProgress(toSavedProgress(state.progress, state.unlockedCheckpoints, extrasOf(state)), cloud);
     if (!picked) return;
 
-    const next = buildStateFromSaved(picked);
+    const built = buildStateFromSaved(picked);
+    const next = { ...built, ...computeExtras(built.progress, built.unlockedCheckpoints, { ...built, newAchievementIds: get().newAchievementIds }, true) };
     set(next);
     // Une sauvegarde par démarrage : le local reçoit le cloud s'il gagne, et inversement.
-    await saveCurrentProgress(next.progress, next.unlockedCheckpoints);
+    await saveCurrentProgress(next.progress, next.unlockedCheckpoints, extrasOf({ ...get(), ...next }));
   },
   setPermanentTrackingEnabled: (enabled) => {
     set({ isPermanentTrackingEnabled: enabled });
@@ -161,13 +236,43 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
   },
   syncFromSteps: async (totalSteps, streakDays, lastActiveDateISO) => {
     const stepsToday = usePedometerStore.getState().stepsToday;
-    const progress = buildProgressFromSteps(totalSteps, streakDays, lastActiveDateISO, stepsToday);
+    const { lap, lapStartSteps } = get().progress;
+    const progress = buildProgressFromSteps(
+      totalSteps,
+      streakDays,
+      lastActiveDateISO,
+      stepsToday,
+      progressOptions(lap, lapStartSteps),
+    );
     const unlockedCheckpoints = resolveUnlockedCheckpoints(progress.totalDistanceKm, get().unlockedCheckpoints);
+    const extras = computeExtras(progress, unlockedCheckpoints, get());
 
-    set({ progress, unlockedCheckpoints });
+    set({ progress, unlockedCheckpoints, ...extras });
 
-    await saveCurrentProgress(progress, unlockedCheckpoints);
+    await saveCurrentProgress(progress, unlockedCheckpoints, extras);
   },
+  startNextLap: async () => {
+    const current = get().progress;
+    if (!isGoalReached(current)) return;
+
+    // Les pas au-delà de 1 000 km ne sont pas perdus : ils comptent déjà dans le nouveau tour.
+    const lapStartSteps = current.lapStartSteps + STEPS_PER_LAP;
+    const progress = buildProgressFromSteps(
+      current.totalSteps,
+      current.streakDays,
+      current.lastActiveDateISO,
+      usePedometerStore.getState().stepsToday,
+      progressOptions(current.lap + 1, lapStartSteps),
+    );
+    const unlockedCheckpoints = resolveUnlockedCheckpoints(progress.totalDistanceKm, get().unlockedCheckpoints);
+    const extras = computeExtras(progress, unlockedCheckpoints, get());
+
+    set({ progress, unlockedCheckpoints, ...extras });
+    await saveCurrentProgress(progress, unlockedCheckpoints, extras);
+    // Tout de suite : sinon un autre appareil, resté sur l'ancien tour, pourrait l'emporter à la fusion.
+    flushCloudSave();
+  },
+  clearNewAchievements: () => set({ newAchievementIds: [] }),
   addDevSteps: async (stepsToAdd = 500) => {
     const current = get().progress;
     // Comme un vrai pas : on compte aussi les pas du jour, sinon la Marque et la série ne réagissent jamais.
@@ -178,11 +283,13 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
       current.streakDays,
       current.lastActiveDateISO,
       nextStepsToday,
+      progressOptions(current.lap, current.lapStartSteps),
     );
     const unlockedCheckpoints = resolveUnlockedCheckpoints(updated.totalDistanceKm, get().unlockedCheckpoints);
+    const extras = computeExtras(updated, unlockedCheckpoints, get());
 
-    set({ progress: updated, unlockedCheckpoints });
-    await saveCurrentProgress(updated, unlockedCheckpoints);
+    set({ progress: updated, unlockedCheckpoints, ...extras });
+    await saveCurrentProgress(updated, unlockedCheckpoints, extras);
   },
   advanceToNextCheckpointDev: async () => {
     const current = get().progress;
@@ -195,21 +302,24 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
     }
 
     const updated = buildProgressFromSteps(
-      stepsForKm(nextCheckpoint.kmThreshold),
+      current.lapStartSteps + stepsForKm(nextCheckpoint.kmThreshold),
       current.streakDays,
       current.lastActiveDateISO,
+      usePedometerStore.getState().stepsToday,
+      progressOptions(current.lap, current.lapStartSteps),
     );
     const unlockedCheckpoints = resolveUnlockedCheckpoints(updated.totalDistanceKm, get().unlockedCheckpoints);
+    const extras = computeExtras(updated, unlockedCheckpoints, get());
 
-    set({ progress: updated, unlockedCheckpoints });
-    await saveCurrentProgress(updated, unlockedCheckpoints);
+    set({ progress: updated, unlockedCheckpoints, ...extras });
+    await saveCurrentProgress(updated, unlockedCheckpoints, extras);
   },
   resetProgressionDev: async () => {
     const resetProgress: PlayerProgress = buildProgressFromSteps(0, 0, new Date(0).toISOString());
     const unlockedCheckpoints = resolveUnlockedCheckpoints(resetProgress.totalDistanceKm);
 
-    set({ progress: resetProgress, unlockedCheckpoints });
-    await saveCurrentProgress(resetProgress, unlockedCheckpoints);
+    set({ progress: resetProgress, unlockedCheckpoints, ...EMPTY_EXTRAS, newAchievementIds: [] });
+    await saveCurrentProgress(resetProgress, unlockedCheckpoints, EMPTY_EXTRAS);
     // Tout de suite : sinon, au prochain démarrage, le cloud (plus de pas) l'emporterait sur le local remis à zéro.
     flushCloudSave();
   },

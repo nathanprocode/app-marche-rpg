@@ -12,6 +12,7 @@ import { runDailySync } from "../../features/runtime/dailySync";
 import { useBrandStore } from "../../store/useBrandStore";
 import { usePedometerStore } from "../../store/usePedometerStore";
 import { usePlayerStore } from "../../store/usePlayerStore";
+import { useSettingsStore } from "../../store/useSettingsStore";
 import { BrandMark } from "../components/BrandMark";
 import { Button } from "../components/Button";
 import { CampVignette } from "../components/CampVignette";
@@ -31,8 +32,8 @@ export function HomeScreen() {
   const resetProgressionDev = usePlayerStore((state) => state.resetProgressionDev);
   const streakDays = useBrandStore((state) => state.status.streakDays);
 
-  const threshold = GAME_CONFIG.sedentaryThresholdStepsPerDay;
-  const isCalm = deriveBrandState(stepsToday) === "active";
+  const threshold = useSettingsStore((state) => state.dailyGoal);
+  const isCalm = deriveBrandState(stepsToday, threshold) === "active";
   const stepsLeftToday = Math.max(0, threshold - stepsToday);
 
   const previousIndex = Math.max(
@@ -122,7 +123,7 @@ export function HomeScreen() {
         <View style={styles.journeyBody}>
           {next ? (
             <>
-              <Text style={styles.paperKicker}>{`Prochain point · ${formatInt(next.kmThreshold)} km`}</Text>
+              <Text style={styles.paperKicker}>{`${progress.lap > 1 ? `Tour ${progress.lap} · ` : ""}Prochain point · ${formatInt(next.kmThreshold)} km`}</Text>
               <Text style={styles.paperTitle}>{next.title}</Text>
               <View style={styles.paperBar}>
                 <ProgressBar

@@ -1,8 +1,8 @@
-import { GAME_CONFIG } from "../../core/constants/game";
 import { computeDayState } from "../brandOfSacrifice/streakEngine";
 import { useBrandStore } from "../../store/useBrandStore";
 import { usePedometerStore } from "../../store/usePedometerStore";
 import { usePlayerStore } from "../../store/usePlayerStore";
+import { useSettingsStore } from "../../store/useSettingsStore";
 
 /**
  * Met à jour la série et l'état de la Marque à partir des pas du jour.
@@ -21,7 +21,7 @@ export async function runDailySync(nowISO = new Date().toISOString()): Promise<v
     lastActiveDateISO: progress.lastActiveDateISO,
     stepsToday,
     nowISO,
-    minStepsForActiveDay: GAME_CONFIG.sedentaryThresholdStepsPerDay,
+    minStepsForActiveDay: useSettingsStore.getState().dailyGoal,
   });
 
   const hasChanged =

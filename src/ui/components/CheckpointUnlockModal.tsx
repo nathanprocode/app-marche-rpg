@@ -9,6 +9,7 @@ import { BERSERK_CHECKPOINTS, type BerserkCheckpoint } from "../../data/map/bers
 import { BERSERK_PANEL_IMAGES } from "../../data/map/berserk-panels";
 import { getCompanionsMetAt } from "../../features/companions/journey";
 import { usePlayerStore } from "../../store/usePlayerStore";
+import { useUIStore } from "../../store/useUIStore";
 import { BrandMark } from "./BrandMark";
 import { Button } from "./Button";
 import { PaperCard } from "./PaperCard";
@@ -49,6 +50,11 @@ export function CheckpointUnlockModal({ enabled }: CheckpointUnlockModalProps) {
       setCheckpoint(latest);
     }
   }, [enabled, unlockedCheckpoints]);
+
+  const setCheckpointModalOpen = useUIStore((state) => state.setCheckpointModalOpen);
+  useEffect(() => {
+    setCheckpointModalOpen(checkpoint !== null);
+  }, [checkpoint, setCheckpointModalOpen]);
 
   function dismiss(): void {
     setCheckpoint(null);

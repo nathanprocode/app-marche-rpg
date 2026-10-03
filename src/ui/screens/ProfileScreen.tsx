@@ -1,13 +1,19 @@
+import { useState } from "react";
 import { StyleSheet, Switch, Text, View } from "react-native";
-import { GAME_CONFIG } from "../../core/constants/game";
+import { DAILY_GOAL_OPTIONS } from "../../core/constants/game";
 import { formatDecimal, formatInt } from "../../core/format";
 import { theme } from "../../core/theme";
 import { BERSERK_CHECKPOINTS } from "../../data/map/berserk-checkpoints";
 import { lastDays, summarizeDays } from "../../features/history/weekHistory";
+import { isGoalReached } from "../../features/progression/selectors";
+import { REMINDER_HOUR_OPTIONS } from "../../features/reminders/eveningReminder";
+import { requestReminderPermission } from "../../features/reminders/reminderScheduler";
 import { useAuthStore } from "../../store/useAuthStore";
 import { useBrandStore } from "../../store/useBrandStore";
 import { usePedometerStore } from "../../store/usePedometerStore";
 import { flushCloudSave, usePlayerStore } from "../../store/usePlayerStore";
+import { useSettingsStore } from "../../store/useSettingsStore";
+import { ChoiceRow } from "../components/ChoiceRow";
 import { BrandMark } from "../components/BrandMark";
 import { Button } from "../components/Button";
 import { InkCard } from "../components/InkCard";
@@ -23,12 +29,30 @@ export function ProfileScreen() {
   const userName = useAuthStore((state) => state.userName);
   const logout = useAuthStore((state) => state.logout);
   const history = usePedometerStore((state) => state.history);
+  const bestStreak = usePlayerStore((state) => state.bestStreak);
+  const startNextLap = usePlayerStore((state) => state.startNextLap);
+  const dailyGoal = useSettingsStore((state) => state.dailyGoal);
+  const setDailyGoal = useSettingsStore((state) => state.setDailyGoal);
+  const reminderEnabled = useSettingsStore((state) => state.eveningReminderEnabled);
+  const reminderHour = useSettingsStore((state) => state.eveningReminderHour);
+  const setReminderEnabled = useSettingsStore((state) => state.setEveningReminderEnabled);
+  const setReminderHour = useSettingsStore((state) => state.setEveningReminderHour);
+  const [reminderDenied, setReminderDenied] = useState(false);
+
+  async function handleReminderToggle(enabled: boolean): Promise<void> {
+    if (enabled && !(await requestReminderPermission())) {
+      setReminderDenied(true);
+      return;
+    }
+    setReminderDenied(false);
+    setReminderEnabled(enabled);
+  }
 
   const previous =
     BERSERK_CHECKPOINTS.find((checkpoint) => checkpoint.id === progress.currentCheckpointId) ?? BERSERK_CHECKPOINTS[0];
   const streakLabel = `${status.streakDays} ${status.streakDays > 1 ? "jours" : "jour"}`;
   const days = lastDays(history, new Date());
-  const week = summarizeDays(days);
+  const week = summarizeDays(days, dailyGoal);
   const daysWithSteps = days.filter((day) => day.steps > 0).length;
 
   return (
@@ -39,7 +63,7 @@ export function ProfileScreen() {
           <Text accessibilityRole="header" style={styles.name}>
             {userName ?? "Le Traqué"}
           </Text>
-          <Text style={styles.subtitle}>{`${previous.arc} · point ${unlockedCount} sur ${BERSERK_CHECKPOINTS.length}`}</Text>
+          <Text style={styles.subtitle}>{`${previous.arc} · point ${unlockedCount} sur ${BERSERK_CHECKPOINTS.length}${progress.lap > 1 ? ` · tour ${progress.lap}` : ""}`}</Text>
         </View>
         <BrandMark visual={status.visual} width={44} />
       </View>
@@ -47,11 +71,15 @@ export function ProfileScreen() {
       <View style={styles.stats}>
         <View style={styles.statsRow}>
           <Stat label="Série" value={streakLabel} />
-          <Stat label="Pas au total" value={formatInt(progress.totalSteps)} />
+          <Stat label="Meilleure série" value={`${bestStreak} ${bestStreak > 1 ? "jours" : "jour"}`} />
         </View>
         <View style={styles.statsRow}>
-          <Stat label="Distance" value={`${formatDecimal(progress.totalDistanceKm)} km`} />
+          <Stat label="Pas au total" value={formatInt(progress.totalSteps)} />
+          <Stat label="Distance du tour" value={`${formatDecimal(progress.totalDistanceKm)} km`} />
+        </View>
+        <View style={styles.statsRow}>
           <Stat label="Chroniques" value={`${unlockedCount} / ${BERSERK_CHECKPOINTS.length}`} />
+          <Stat label="Tour" value={`${progress.lap}`} />
         </View>
       </View>
 
@@ -69,14 +97,57 @@ export function ProfileScreen() {
             />
             <WeekFigure label="Apaisée" value={`${week.calmDays} / ${days.length} j`} />
           </View>
-          <WeekChart days={days} thresholdSteps={GAME_CONFIG.sedentaryThresholdStepsPerDay} />
+          <WeekChart days={days} thresholdSteps={dailyGoal} />
           {daysWithSteps < 2 ? (
             <Text style={styles.weekHint}>L'historique se remplit jour après jour sur ce téléphone.</Text>
           ) : null}
         </InkCard>
       </View>
 
+      {isGoalReached(progress) ? (
+        <View style={styles.nextLap}>
+          <Button label={`Commencer le tour ${progress.lap + 1}`} onPress={() => void startNextLap()} />
+        </View>
+      ) : null}
+
       <View style={styles.settings}>
+        <View style={styles.settingBlock}>
+          <Text style={styles.settingTitle}>Objectif quotidien</Text>
+          <Text style={styles.small}>Les pas à faire chaque jour pour apaiser la Marque et garder ta série.</Text>
+          <ChoiceRow
+            options={DAILY_GOAL_OPTIONS.map((steps) => ({ value: steps, label: formatInt(steps) }))}
+            selected={dailyGoal}
+            onSelect={setDailyGoal}
+            accessibilityPrefix="Objectif quotidien en pas"
+          />
+        </View>
+        <View style={styles.settingRow}>
+          <View style={styles.settingText}>
+            <Text style={styles.settingTitle}>Rappel du soir</Text>
+            <Text style={styles.small}>
+              {reminderDenied
+                ? "Notifications refusées : autorise-les dans les réglages du téléphone."
+                : "Une notification si tu n'as pas atteint ton objectif."}
+            </Text>
+          </View>
+          <Switch
+            accessibilityLabel="Rappel du soir"
+            value={reminderEnabled}
+            onValueChange={(enabled) => void handleReminderToggle(enabled)}
+            thumbColor={theme.colors.bone}
+            trackColor={{ false: theme.colors.ash, true: theme.colors.blood }}
+          />
+        </View>
+        {reminderEnabled ? (
+          <View style={styles.settingBlockNoRule}>
+            <ChoiceRow
+              options={REMINDER_HOUR_OPTIONS.map((hour) => ({ value: hour, label: `${hour} h` }))}
+              selected={reminderHour}
+              onSelect={setReminderHour}
+              accessibilityPrefix="Heure du rappel"
+            />
+          </View>
+        ) : null}
         <View style={styles.settingRow}>
           <View style={styles.settingText}>
             <Text style={styles.settingTitle}>Suivi permanent</Text>
@@ -158,6 +229,9 @@ const styles = StyleSheet.create({
   },
   settingRowLast: { borderBottomWidth: 1, borderBottomColor: theme.colors.ash },
   settingText: { flex: 1 },
+  settingBlock: { gap: theme.space[8], paddingVertical: theme.space[16] },
+  settingBlockNoRule: { paddingBottom: theme.space[16] },
+  nextLap: { marginTop: theme.space[24] },
   settingTitle: { ...theme.text.bodyStrong, color: theme.colors.bone },
   small: { ...theme.text.small, color: theme.colors.boneDim },
   connected: { ...theme.text.label, color: theme.colors.boneDim },

@@ -28,6 +28,12 @@ L'app contient du code natif (`modules/permanent-pedometer/`) : Expo Go ne suffi
 - 1 pas = 0,75 m, objectif 1 000 km.
 - La Marque est apaisée dès 1 500 pas dans la journée, sinon elle saigne.
 - La série augmente chaque jour où le seuil est atteint et repart à 1 après un jour manqué.
+- L'objectif quotidien se règle dans le Profil (1 500, 3 000, 5 000 ou 8 000 pas ; 1 500 par défaut).
+- Arrivé à 1 000 km, un écran de fin propose un nouveau tour de Traque : la carte repart de zéro, mais les chroniques,
+  les compagnons, les succès et les records restent acquis. Les pas en trop sont reportés sur le nouveau tour.
+- 20 succès (distance, série, pas du jour, collections, tours) : onglet « Succès » des Quêtes.
+- Rappel du soir (Profil, désactivé par défaut) : une notification locale à l'heure choisie si l'objectif du jour n'est pas atteint.
+  Les 3 prochains soirs sont programmés à chaque ouverture de l'app ; il ne demande pas de nouveau build natif.
 
 ## Structure
 
@@ -36,6 +42,7 @@ L'app contient du code natif (`modules/permanent-pedometer/`) : Expo Go ne suffi
 - `src/features/` : logique métier. Pure et testée : `progression`, `brandOfSacrifice`, `mapJourney`,
   `companions` (qui marche avec Guts, placement autour de lui sur la carte), `camp` (vignette jour/nuit et phrase d'ambiance),
   `history` (pas par jour, stats des 7 derniers jours du Profil), `zoom` (pincer et déplacer les planches des Chroniques).
+  `achievements` (liste des succès et leur avancement), `reminders` (dates et texte du rappel du soir, programmation des notifications).
   Liée à l'appareil (non testée) : `pedometer` (capteur, service natif, notification), `runtime` (série et Marque du jour),
   `userCloud` (Firestore).
 - `src/store/` : états Zustand. La progression est sauvegardée en local (AsyncStorage, une clé par compte) à chaque

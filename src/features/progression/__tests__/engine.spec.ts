@@ -56,3 +56,21 @@ describe("checkpoints de la Traque", () => {
     expect(progress.progressPct).toBe(100);
   });
 });
+
+describe("tours de Traque", () => {
+  it("repart de zéro après les pas des tours terminés", () => {
+    const lapStart = 1_333_334;
+    const progress = buildProgressFromSteps(lapStart + 10_000, 0, NEVER, 0, { lap: 2, lapStartSteps: lapStart });
+    expect(progress.totalSteps).toBe(lapStart + 10_000);
+    expect(progress.lapSteps).toBe(10_000);
+    expect(progress.lap).toBe(2);
+    expect(progress.totalDistanceKm).toBeCloseTo(7.5, 5);
+    expect(progress.progressPct).toBeCloseTo(0.75, 5);
+  });
+
+  it("applique l'objectif quotidien choisi", () => {
+    expect(deriveBrandState(2999, 3000)).toBe("bleeding");
+    expect(deriveBrandState(3000, 3000)).toBe("active");
+    expect(buildProgressFromSteps(0, 0, NEVER, 2000, { dailyGoal: 3000 }).brandState).toBe("bleeding");
+  });
+});

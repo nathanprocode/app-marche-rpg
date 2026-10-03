@@ -57,7 +57,7 @@ export function lastDays(history: StepsHistory, today: Date, count = 7): History
   });
 }
 
-export function summarizeDays(days: HistoryDay[], thresholdSteps = GAME_CONFIG.sedentaryThresholdStepsPerDay): WeekSummary {
+export function summarizeDays(days: HistoryDay[], thresholdSteps: number = GAME_CONFIG.sedentaryThresholdStepsPerDay): WeekSummary {
   const bestDay = days.reduce<HistoryDay | null>((best, day) => (day.steps > (best?.steps ?? 0) ? day : best), null);
 
   return {

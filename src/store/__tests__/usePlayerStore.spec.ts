@@ -19,7 +19,18 @@ const saveToCloud = saveProgressionToCloud as jest.Mock;
 const NEVER = new Date(0).toISOString();
 
 function cloud(totalSteps: number, streakDays = 0): SavedProgress {
-  return { totalSteps, streakDays, lastActiveDateISO: NEVER, unlockedCheckpoints: [], updatedAtISO: NEVER };
+  return {
+    totalSteps,
+    streakDays,
+    lastActiveDateISO: NEVER,
+    unlockedCheckpoints: [],
+    updatedAtISO: NEVER,
+    lap: 1,
+    lapStartSteps: 0,
+    bestStreak: streakDays,
+    bestDaySteps: 0,
+    achievements: {},
+  };
 }
 
 function signIn(uid: string): void {
@@ -102,5 +113,72 @@ describe("sauvegarde cloud", () => {
 
     jest.advanceTimersByTime(30_000);
     expect(saveToCloud).not.toHaveBeenCalled();
+  });
+});
+
+const STEPS_FOR_THE_TRAQUE = 1_333_334; // 1 000 km à 0,75 m par pas
+
+describe("tours de Traque", () => {
+  it("ne démarre pas un nouveau tour avant l'arrivée", async () => {
+    await usePlayerStore.getState().syncFromSteps(10_000, 0, NEVER);
+    await usePlayerStore.getState().startNextLap();
+    expect(usePlayerStore.getState().progress.lap).toBe(1);
+  });
+
+  it("repart de zéro à l'arrivée en reportant les pas en trop", async () => {
+    await usePlayerStore.getState().syncFromSteps(STEPS_FOR_THE_TRAQUE + 5_000, 0, NEVER);
+    await usePlayerStore.getState().startNextLap();
+
+    const { progress } = usePlayerStore.getState();
+    expect(progress.lap).toBe(2);
+    expect(progress.totalSteps).toBe(STEPS_FOR_THE_TRAQUE + 5_000);
+    expect(progress.lapSteps).toBe(5_000);
+    expect(progress.totalDistanceKm).toBeCloseTo(3.75, 5);
+  });
+
+  it("garde chroniques et succès, et envoie le nouveau tour au cloud tout de suite", async () => {
+    await usePlayerStore.getState().syncFromSteps(STEPS_FOR_THE_TRAQUE, 0, NEVER);
+    saveToCloud.mockClear();
+    await usePlayerStore.getState().startNextLap();
+
+    expect(usePlayerStore.getState().unlockedCheckpoints).toContain("cp-015");
+    expect(usePlayerStore.getState().achievements["lap-1"]).toBeDefined();
+    expect(saveToCloud).toHaveBeenCalledTimes(1);
+    expect(saveToCloud.mock.calls[0][4]).toMatchObject({ achievements: expect.objectContaining({ "lap-1": expect.any(String) }) });
+  });
+
+  it("relit le tour après un redémarrage", async () => {
+    await usePlayerStore.getState().syncFromSteps(STEPS_FOR_THE_TRAQUE + 100, 0, NEVER);
+    await usePlayerStore.getState().startNextLap();
+    usePlayerStore.setState({ progress: { ...usePlayerStore.getState().progress, lap: 1, lapStartSteps: 0 } });
+
+    await usePlayerStore.getState().hydrateLocalProgress("guts");
+    expect(usePlayerStore.getState().progress.lap).toBe(2);
+    expect(usePlayerStore.getState().progress.lapSteps).toBe(100);
+  });
+});
+
+describe("records et succès", () => {
+  it("débloquent un succès et le signalent une seule fois", async () => {
+    await usePlayerStore.getState().syncFromSteps(14_000, 0, NEVER); // ≈ 10,5 km
+    expect(usePlayerStore.getState().newAchievementIds).toEqual(["km-10"]);
+
+    await usePlayerStore.getState().syncFromSteps(15_000, 0, NEVER);
+    expect(usePlayerStore.getState().newAchievementIds).toEqual(["km-10"]);
+
+    usePlayerStore.getState().clearNewAchievements();
+    expect(usePlayerStore.getState().newAchievementIds).toEqual([]);
+  });
+
+  it("garde la meilleure série même quand la série retombe", async () => {
+    await usePlayerStore.getState().syncFromSteps(1_000, 8, NEVER);
+    await usePlayerStore.getState().syncFromSteps(1_100, 1, NEVER);
+    expect(usePlayerStore.getState().bestStreak).toBe(8);
+  });
+
+  it("rattrape les succès déjà mérités au chargement sans les annoncer", async () => {
+    await usePlayerStore.getState().mergeCloudProgress(cloud(200_000, 4));
+    expect(usePlayerStore.getState().achievements["km-100"]).toBeDefined();
+    expect(usePlayerStore.getState().newAchievementIds).toEqual([]);
   });
 });

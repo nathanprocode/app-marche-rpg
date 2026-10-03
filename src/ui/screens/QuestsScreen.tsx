@@ -1,16 +1,19 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useState } from "react";
 import { Image, Modal, Pressable, StyleSheet, Text, View, type ImageSourcePropType } from "react-native";
-import { GAME_CONFIG } from "../../core/constants/game";
 import { formatDecimal, formatInt } from "../../core/format";
 import { theme } from "../../core/theme";
 import { COMPANIONS } from "../../data/companions";
 import { BERSERK_CHECKPOINTS, type BerserkCheckpoint } from "../../data/map/berserk-checkpoints";
 import { BERSERK_PANEL_IMAGES } from "../../data/map/berserk-panels";
+import { buildAchievementStats } from "../../features/achievements/stats";
+import { ACHIEVEMENTS } from "../../features/achievements/achievements";
 import { isCompanionMet } from "../../features/companions/journey";
 import { useBrandStore } from "../../store/useBrandStore";
 import { usePedometerStore } from "../../store/usePedometerStore";
 import { usePlayerStore } from "../../store/usePlayerStore";
+import { useSettingsStore } from "../../store/useSettingsStore";
+import { AchievementList } from "../components/AchievementList";
 import { CompanionCollection } from "../components/CompanionCollection";
 import { InkCard } from "../components/InkCard";
 import { PaperCard } from "../components/PaperCard";
@@ -18,7 +21,7 @@ import { ProgressBar } from "../components/ProgressBar";
 import { Screen } from "../components/Screen";
 import { ZoomableImage } from "../components/ZoomableImage";
 
-type QuestsTab = "daily" | "chronicles" | "companions";
+type QuestsTab = "daily" | "chronicles" | "companions" | "achievements";
 
 const STREAK_MILESTONES = [3, 7, 14, 30, 60, 100, 365];
 
@@ -38,12 +41,20 @@ export function QuestsScreen() {
   const progress = usePlayerStore((state) => state.progress);
   const unlockedIds = usePlayerStore((state) => state.unlockedCheckpoints);
   const streakDays = useBrandStore((state) => state.status.streakDays);
+  const dailyGoal = useSettingsStore((state) => state.dailyGoal);
+  const bestStreak = usePlayerStore((state) => state.bestStreak);
+  const bestDaySteps = usePlayerStore((state) => state.bestDaySteps);
+  const achievements = usePlayerStore((state) => state.achievements);
 
   const unlocked = BERSERK_CHECKPOINTS.filter((checkpoint) => unlockedIds.includes(checkpoint.id));
   const chronicles = [...unlocked].reverse();
   const nextLocked = BERSERK_CHECKPOINTS.find((checkpoint) => !unlockedIds.includes(checkpoint.id)) ?? null;
   const metCount = COMPANIONS.filter((companion) => isCompanionMet(companion, unlockedIds)).length;
-  const quests = buildQuests(stepsToday, streakDays, progress.totalDistanceKm, progress.currentSegmentProgressPct, nextLocked);
+  // Le prochain point se lit sur la distance du tour : au deuxième tour, toutes les chroniques sont déjà lues.
+  const nextOnRoute = BERSERK_CHECKPOINTS.find((checkpoint) => checkpoint.kmThreshold > progress.totalDistanceKm + 0.0001) ?? null;
+  const quests = buildQuests(stepsToday, streakDays, progress.totalDistanceKm, progress.currentSegmentProgressPct, nextOnRoute, dailyGoal);
+  const achievementStats = buildAchievementStats(progress, unlockedIds, bestStreak, bestDaySteps);
+  const achievementCount = ACHIEVEMENTS.filter((achievement) => achievements[achievement.id]).length;
 
   return (
     <Screen scroll>
@@ -65,6 +76,12 @@ export function QuestsScreen() {
           selected={tab === "companions"}
           onPress={() => setTab("companions")}
         />
+        <TabButton
+          label="Succès"
+          count={[achievementCount, ACHIEVEMENTS.length]}
+          selected={tab === "achievements"}
+          onPress={() => setTab("achievements")}
+        />
       </View>
 
       <View style={styles.list}>
@@ -72,6 +89,8 @@ export function QuestsScreen() {
           quests.map((quest) => <QuestRow key={quest.id} quest={quest} />)
         ) : tab === "companions" ? (
           <CompanionCollection unlockedCheckpointIds={unlockedIds} />
+        ) : tab === "achievements" ? (
+          <AchievementList stats={achievementStats} unlocked={achievements} />
         ) : (
             <>
               {chronicles.map((checkpoint) => (
@@ -118,8 +137,8 @@ function buildQuests(
   totalKm: number,
   segmentPct: number,
   nextLocked: BerserkCheckpoint | null,
+  threshold: number,
 ): Quest[] {
-  const threshold = GAME_CONFIG.sedentaryThresholdStepsPerDay;
   const streakTarget = STREAK_MILESTONES.find((milestone) => milestone > streakDays) ?? streakDays;
 
   const quests: Quest[] = [
@@ -249,13 +268,14 @@ const styles = StyleSheet.create({
   tabs: {
     marginTop: theme.space[16],
     flexDirection: "row",
+    flexWrap: "wrap",
     minHeight: 48,
     borderWidth: 1,
     borderColor: theme.colors.ash,
     borderRadius: theme.radius[4],
     overflow: "hidden",
   },
-  tabButton: { flex: 1, alignItems: "center", justifyContent: "center", paddingVertical: theme.space[8] },
+  tabButton: { width: "50%", alignItems: "center", justifyContent: "center", paddingVertical: theme.space[8] },
   tabButtonSelected: { backgroundColor: theme.colors.bone },
   tabLabel: { ...theme.text.label, fontSize: 14, lineHeight: 20, color: theme.colors.boneDim, textAlign: "center" },
   tabCount: { ...theme.text.small, color: theme.colors.boneDim, textAlign: "center" },

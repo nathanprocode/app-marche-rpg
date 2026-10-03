@@ -1,17 +1,22 @@
 import { Redirect, Stack, useSegments } from "expo-router";
-import { useEffect, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { AppState, Text, View } from "react-native";
 import { useAppFonts } from "../src/core/fonts";
+import { syncEveningReminder } from "../src/features/reminders/reminderScheduler";
 import { usePedometer } from "../src/features/pedometer/usePedometer";
 import { parseSavedProgress } from "../src/features/progression/savedProgress";
 import { runDailySync } from "../src/features/runtime/dailySync";
 import { ensureUserDocAndLoad } from "../src/features/userCloud/service";
 import { useAuthStore } from "../src/store/useAuthStore";
+import { useBrandStore } from "../src/store/useBrandStore";
 import { usePedometerStore } from "../src/store/usePedometerStore";
 import { flushCloudSave, usePlayerStore } from "../src/store/usePlayerStore";
+import { useSettingsStore } from "../src/store/useSettingsStore";
 import { theme } from "../src/core/theme";
 import { Button } from "../src/ui/components/Button";
+import { AchievementToast } from "../src/ui/components/AchievementToast";
 import { CheckpointUnlockModal } from "../src/ui/components/CheckpointUnlockModal";
+import { TraqueCompleteModal } from "../src/ui/components/TraqueCompleteModal";
 
 export default function RootLayout() {
   const fontsLoaded = useAppFonts();
@@ -30,6 +35,11 @@ export default function RootLayout() {
   const hydrateLocalProgress = usePlayerStore((s) => s.hydrateLocalProgress);
   const mergeCloudProgress = usePlayerStore((s) => s.mergeCloudProgress);
   const isPermanentTrackingEnabled = usePlayerStore((s) => s.isPermanentTrackingEnabled);
+  const hydrateSettings = useSettingsStore((s) => s.hydrateSettings);
+  const dailyGoal = useSettingsStore((s) => s.dailyGoal);
+  const reminderEnabled = useSettingsStore((s) => s.eveningReminderEnabled);
+  const reminderHour = useSettingsStore((s) => s.eveningReminderHour);
+  const streakDays = useBrandStore((s) => s.status.streakDays);
   const segments = useSegments();
   const isOnLogin = segments[0] === "login";
   const isOnOAuthRedirect = segments[0] === "oauthredirect";
@@ -50,7 +60,18 @@ export default function RootLayout() {
     if (isProgressLoaded && isLocalStateLoaded) {
       void runDailySync();
     }
-  }, [isProgressLoaded, isLocalStateLoaded, stepsToday]);
+  }, [isProgressLoaded, isLocalStateLoaded, stepsToday, dailyGoal]);
+
+  // Rappel du soir : reprogrammé quand un réglage change, quand l'objectif du jour est atteint
+  // (plus de rappel ce soir) et à chaque retour au premier plan.
+  const goalReachedToday = stepsToday >= dailyGoal;
+  const syncReminder = useCallback(() => {
+    void syncEveningReminder({ enabled: reminderEnabled, hour: reminderHour, goalReachedToday, streakDays });
+  }, [reminderEnabled, reminderHour, goalReachedToday, streakDays]);
+
+  useEffect(() => {
+    if (isProgressLoaded && isLocalStateLoaded) syncReminder();
+  }, [isProgressLoaded, isLocalStateLoaded, syncReminder]);
 
   // Au retour au premier plan : on remet les pas à zéro si on a changé de jour, puis on recalcule.
   // En arrière-plan : on envoie la sauvegarde cloud en attente, l'app peut être tuée à tout moment.
@@ -61,17 +82,20 @@ export default function RootLayout() {
         return;
       }
       if (nextState !== "active") return;
-      void hydrateStepsTodayPreference().then(() => runDailySync());
+      void hydrateStepsTodayPreference().then(() => {
+        void runDailySync();
+        syncReminder();
+      });
     });
 
     return () => subscription.remove();
-  }, [hydrateStepsTodayPreference]);
+  }, [hydrateStepsTodayPreference, syncReminder]);
 
   useEffect(() => {
     let isMounted = true;
 
     async function hydrateLocalState(): Promise<void> {
-      await Promise.all([hydratePermanentTrackingPreference(), hydrateStepsTodayPreference()]);
+      await Promise.all([hydratePermanentTrackingPreference(), hydrateStepsTodayPreference(), hydrateSettings()]);
       if (isMounted) {
         setIsLocalStateLoaded(true);
       }
@@ -82,7 +106,7 @@ export default function RootLayout() {
     return () => {
       isMounted = false;
     };
-  }, [hydratePermanentTrackingPreference, hydrateStepsTodayPreference]);
+  }, [hydratePermanentTrackingPreference, hydrateStepsTodayPreference, hydrateSettings]);
 
   // Progression : la sauvegarde locale d'abord (démarrage immédiat, même hors ligne),
   // puis Firestore en arrière-plan, fusionné avec ce qui a été compté entre-temps.
@@ -107,6 +131,7 @@ export default function RootLayout() {
           ...cloudDoc.progression,
           unlockedCheckpoints: cloudDoc.unlockedCheckpoints,
           updatedAtISO: cloudDoc.updatedAtISO,
+          ...cloudDoc.extras,
         });
         if (cloud) await mergeCloudProgress(cloud);
         if (isCurrent) setIsProgressLoaded(true);
@@ -152,6 +177,8 @@ export default function RootLayout() {
         <Stack.Screen name="(tabs)" />
       </Stack>
       <CheckpointUnlockModal enabled={isAuthenticated && isProgressLoaded} />
+      <TraqueCompleteModal enabled={isAuthenticated && isProgressLoaded} />
+      <AchievementToast enabled={isAuthenticated && isProgressLoaded} />
     </>
   );
 }
