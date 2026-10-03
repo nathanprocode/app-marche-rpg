@@ -10,7 +10,7 @@ Stack : Expo SDK 54, Expo Router, React Native 0.81, Zustand, Firebase (connexio
 ```bash
 npm install          # met aussi à jour package-lock.json : à committer
 npm test             # tests de la logique (progression, séries, carte, pas du jour, formats)
-npm run typecheck    # vérification TypeScript
+npm run typecheck    # vérification TypeScript (la CI GitHub lance ces deux commandes à chaque push)
 npx expo start --dev-client --tunnel
 ```
 
