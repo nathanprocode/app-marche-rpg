@@ -5,6 +5,14 @@ import { BERSERK_CHECKPOINTS } from "../../data/map/berserk-checkpoints";
 import { buildProgressFromSteps } from "../progression/engine";
 import type { PlayerProgress } from "../progression/types";
 
+/** Records, succès et tour de Traque : copiés dans Firestore à côté de la progression. */
+export type CloudExtras = {
+  bestStreak: number;
+  bestDaySteps: number;
+  achievements: Record<string, string>;
+  bossVictories: Record<string, string>;
+};
+
 export type UserCloudDoc = {
   uid: string;
   displayName: string;
@@ -12,6 +20,7 @@ export type UserCloudDoc = {
   unlockedCheckpoints: string[];
   brandIntensity: number;
   updatedAtISO: string;
+  extras?: Partial<CloudExtras>;
 };
 
 function resolveUnlockedCheckpoints(totalDistanceKm: number, savedIds: string[] = []): string[] {
@@ -79,6 +88,7 @@ export async function saveProgressionToCloud(
   progression: PlayerProgress,
   brandIntensity: number,
   unlockedCheckpoints: string[] = [],
+  extras?: CloudExtras,
 ) {
   if (uid === DEV_PREVIEW_UID) return;
 
@@ -89,6 +99,7 @@ export async function saveProgressionToCloud(
       progression,
       unlockedCheckpoints: resolveUnlockedCheckpoints(progression.totalDistanceKm, unlockedCheckpoints),
       brandIntensity,
+      ...(extras ? { extras } : {}),
       updatedAtISO: new Date().toISOString(),
     },
     { merge: true },

@@ -51,7 +51,10 @@ export function MapScreen() {
   const dragStartRef = useRef<MapOffset>({ x: 0, y: 0 });
   const progress = usePlayerStore((state) => state.progress);
   const position = calculateGutsPosition(progress.totalDistanceKm, BERSERK_CHECKPOINTS);
-  const travelingCompanions = getTravelingCompanions(progress.totalDistanceKm, COMPANIONS, BERSERK_CHECKPOINTS);
+  // Sans sprite, un compagnon n'a rien à dessiner sur la carte : il reste dans la collection.
+  const travelingCompanions = getTravelingCompanions(progress.totalDistanceKm, COMPANIONS, BERSERK_CHECKPOINTS).filter(
+    (companion) => companion.image,
+  );
   const isJourneyComplete = position.previous.id === position.next.id;
   const remainingKm = Math.max(0, position.next.kmThreshold - progress.totalDistanceKm);
   const contentWidth = MAP_WIDTH * zoom;

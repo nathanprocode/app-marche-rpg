@@ -35,6 +35,11 @@ function getStartOfToday(): Date {
   return start;
 }
 
+/** La notification montre le tour de Traque en cours, pas le total depuis le premier jour. */
+function lapStepsOf(totalSteps: number): number {
+  return Math.max(0, totalSteps - usePlayerStore.getState().progress.lapStartSteps);
+}
+
 function shouldRefreshNotification(previousBucket: number | null, totalSteps: number): boolean {
   const currentBucket = Math.floor(stepsToKm(totalSteps) * 100);
   return previousBucket !== currentBucket;
@@ -144,22 +149,23 @@ export function usePedometer(enabled = true, permanent = false): UsePedometerSta
         console.log("[Pedometer] cloud save failed", error);
       });
 
-      const { title, text } = buildTrackingNotificationContent(nextStepsToday, nextTotalSteps);
+      const nextLapSteps = lapStepsOf(nextTotalSteps);
+      const { title, text } = buildTrackingNotificationContent(nextStepsToday, nextLapSteps);
       const didUpdateNativeNotification = await safeUpdateNotification(
         title,
         text,
-        nextTotalSteps,
+        nextLapSteps,
         nextStepsToday,
         GAME_CONFIG.metersPerStep,
       );
 
-      if (shouldRefreshNotification(lastNotifiedDistanceBucketRef.current, nextTotalSteps)) {
-        lastNotifiedDistanceBucketRef.current = Math.floor(stepsToKm(nextTotalSteps) * 100);
+      if (shouldRefreshNotification(lastNotifiedDistanceBucketRef.current, nextLapSteps)) {
+        lastNotifiedDistanceBucketRef.current = Math.floor(stepsToKm(nextLapSteps) * 100);
 
         if (!didUpdateNativeNotification) {
           await updatePersistentTrackingNotificationAsync({
             stepsToday: nextStepsToday,
-            totalSteps: nextTotalSteps,
+            totalSteps: nextLapSteps,
           });
         }
       }
@@ -181,12 +187,12 @@ export function usePedometer(enabled = true, permanent = false): UsePedometerSta
 
       const progress = usePlayerStore.getState().progress;
       const stepsToday = usePedometerStore.getState().stepsToday;
-      const { title, text } = buildTrackingNotificationContent(stepsToday, progress.totalSteps);
+      const { title, text } = buildTrackingNotificationContent(stepsToday, progress.lapSteps);
 
       const didStart = await safeStartTracking(
         title,
         text,
-        progress.totalSteps,
+        progress.lapSteps,
         stepsToday,
         GAME_CONFIG.metersPerStep,
       );
@@ -201,7 +207,7 @@ export function usePedometer(enabled = true, permanent = false): UsePedometerSta
       }
 
       lastNativeStepsRef.current = 0;
-      lastNotifiedDistanceBucketRef.current = Math.floor(stepsToKm(progress.totalSteps) * 100);
+      lastNotifiedDistanceBucketRef.current = Math.floor(stepsToKm(progress.lapSteps) * 100);
 
       await syncNativeSteps(initialNativeSteps, safeGetStepsBeforeToday(permanentPedometer));
 
@@ -251,7 +257,7 @@ export function usePedometer(enabled = true, permanent = false): UsePedometerSta
         return;
       }
 
-      const baseTotalSteps = usePlayerStore.getState().progress.totalSteps;
+      const baseTotalSteps = usePlayerStore.getState().progress.lapSteps;
       let baseStepsToday = usePedometerStore.getState().stepsToday;
       let lastSensorStepsToday = baseStepsToday;
 
@@ -278,9 +284,10 @@ export function usePedometer(enabled = true, permanent = false): UsePedometerSta
 
         await usePlayerStore.getState().syncFromSteps(liveTotalSteps, progress.streakDays, progress.lastActiveDateISO);
 
-        if (shouldRefreshNotification(lastNotifiedDistanceBucketRef.current, liveTotalSteps)) {
-          lastNotifiedDistanceBucketRef.current = Math.floor(stepsToKm(liveTotalSteps) * 100);
-          await refreshTrackingNotification(liveStepsToday, liveTotalSteps);
+        const liveLapSteps = lapStepsOf(liveTotalSteps);
+        if (shouldRefreshNotification(lastNotifiedDistanceBucketRef.current, liveLapSteps)) {
+          lastNotifiedDistanceBucketRef.current = Math.floor(stepsToKm(liveLapSteps) * 100);
+          await refreshTrackingNotification(liveStepsToday, liveLapSteps);
         }
       }
 

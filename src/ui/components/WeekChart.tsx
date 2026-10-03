@@ -24,6 +24,8 @@ export function WeekChart({ days, thresholdSteps }: WeekChartProps) {
   const maxSteps = Math.max(thresholdSteps * 1.2, ...days.map((day) => day.steps));
   const heightOf = (steps: number) => (steps / maxSteps) * PLOT_HEIGHT;
   const day = days[selected];
+  // Au-delà d'une semaine, les colonnes sont trop étroites pour un jour chacune : un repère tous les 5 jours.
+  const sparseAxis = days.length > 10;
 
   return (
     <View>
@@ -63,11 +65,23 @@ export function WeekChart({ days, thresholdSteps }: WeekChartProps) {
       </View>
 
       <View style={styles.axis} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
-        {days.map((item, index) => (
-          <Text key={item.dayKey} style={[styles.axisLabel, index === selected && styles.axisLabelSelected]}>
-            {item.isToday ? "auj." : item.weekday}
-          </Text>
-        ))}
+        {days.map((item, index) =>
+          sparseAxis ? (
+            <View key={item.dayKey} style={styles.sparseCell}>
+              {(days.length - 1 - index) % 5 === 0 ? (
+                <View style={styles.sparseLabel}>
+                  <Text numberOfLines={1} style={[styles.axisLabel, index === selected && styles.axisLabelSelected]}>
+                    {item.isToday ? "auj." : item.dayOfMonth}
+                  </Text>
+                </View>
+              ) : null}
+            </View>
+          ) : (
+            <Text key={item.dayKey} style={[styles.axisLabel, index === selected && styles.axisLabelSelected]}>
+              {item.isToday ? "auj." : item.weekday}
+            </Text>
+          ),
+        )}
       </View>
 
       {day ? (
@@ -111,6 +125,8 @@ const styles = StyleSheet.create({
   keyLabel: { ...theme.text.label, color: theme.colors.boneDim },
   axis: { flexDirection: "row", marginTop: theme.space[4] },
   axisLabel: { ...theme.text.label, flex: 1, textAlign: "center", color: theme.colors.boneDim },
+  sparseCell: { flex: 1, height: 20 },
+  sparseLabel: { position: "absolute", top: 0, left: -14, width: 40, alignItems: "center" },
   axisLabelSelected: { color: theme.colors.bone },
   detail: { ...theme.text.small, color: theme.colors.bone, marginTop: theme.space[8] },
 });

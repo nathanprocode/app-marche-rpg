@@ -1,4 +1,4 @@
-import { HISTORY_KEEP_DAYS, lastDays, pruneHistory, shiftDay, summarizeDays, toDayKey } from "../weekHistory";
+import { HISTORY_KEEP_DAYS, historySpanDays, lastDays, pruneHistory, shiftDay, summarizeDays, toDayKey } from "../weekHistory";
 
 // Vendredi 2 octobre 2026.
 const TODAY = new Date(2026, 9, 2, 15, 30);
@@ -56,5 +56,20 @@ describe("pruneHistory", () => {
     const tooOld = toDayKey(shiftDay(TODAY, -HISTORY_KEEP_DAYS));
     const pruned = pruneHistory({ [tooOld]: 10, [oldestKept]: 20, "2026-10-02": 30 }, TODAY);
     expect(pruned).toEqual({ [oldestKept]: 20, "2026-10-02": 30 });
+  });
+});
+
+describe("historySpanDays", () => {
+  it("vaut 1 sans historique", () => {
+    expect(historySpanDays({}, TODAY)).toBe(1);
+  });
+
+  it("compte depuis le premier jour enregistré, aujourd'hui compris", () => {
+    expect(historySpanDays({ "2026-10-02": 100 }, TODAY)).toBe(1);
+    expect(historySpanDays({ "2026-09-26": 100, "2026-10-01": 50 }, TODAY)).toBe(7);
+  });
+
+  it("ne dépasse pas la durée conservée", () => {
+    expect(historySpanDays({ "2020-01-01": 100 }, TODAY)).toBe(HISTORY_KEEP_DAYS);
   });
 });

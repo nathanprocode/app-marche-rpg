@@ -7,6 +7,12 @@ function saved(overrides: Partial<SavedProgress> = {}): SavedProgress {
     lastActiveDateISO: "2026-09-30T10:00:00.000Z",
     unlockedCheckpoints: ["cp-001"],
     updatedAtISO: "2026-09-30T10:00:00.000Z",
+    lap: 1,
+    lapStartSteps: 0,
+    bestStreak: 2,
+    bestDaySteps: 0,
+    achievements: {},
+    bossVictories: {},
     ...overrides,
   };
 }
@@ -58,10 +64,59 @@ describe("parseSavedProgress", () => {
       lastActiveDateISO: new Date(0).toISOString(),
       unlockedCheckpoints: [],
       updatedAtISO: new Date(0).toISOString(),
+      lap: 1,
+      lapStartSteps: 0,
+      bestStreak: 0,
+      bestDaySteps: 0,
+      achievements: {},
+      bossVictories: {},
     });
   });
 
   it("relit une sauvegarde valide telle quelle", () => {
     expect(parseSavedProgress(saved())).toEqual(saved());
+  });
+});
+
+describe("tours, records et succès", () => {
+  it("relit une ancienne sauvegarde sans ces champs", () => {
+    const parsed = parseSavedProgress({ totalSteps: 100, streakDays: 4 });
+    expect(parsed).toMatchObject({ lap: 1, lapStartSteps: 0, bestStreak: 4, bestDaySteps: 0, achievements: {}, bossVictories: {} });
+  });
+
+  it("suit le tour de la sauvegarde gagnante", () => {
+    const result = pickSavedProgress(
+      saved({ totalSteps: 2_000_000, lap: 2, lapStartSteps: 1_333_334 }),
+      saved({ totalSteps: 1_500_000, lap: 1 }),
+    );
+    expect(result).toMatchObject({ lap: 2, lapStartSteps: 1_333_334 });
+  });
+
+  it("garde les meilleurs records et réunit les succès (le plus ancien déblocage gagne)", () => {
+    const result = pickSavedProgress(
+      saved({ bestStreak: 9, bestDaySteps: 4000, achievements: { "km-10": "2026-10-02T00:00:00.000Z" } }),
+      saved({
+        bestStreak: 5,
+        bestDaySteps: 12_000,
+        achievements: { "km-10": "2026-10-01T00:00:00.000Z", "day-10000": "2026-10-03T00:00:00.000Z" },
+      }),
+    );
+    expect(result?.bestStreak).toBe(9);
+    expect(result?.bestDaySteps).toBe(12_000);
+    expect(result?.achievements).toEqual({
+      "km-10": "2026-10-01T00:00:00.000Z",
+      "day-10000": "2026-10-03T00:00:00.000Z",
+    });
+  });
+
+  it("réunit les victoires de boss (la plus ancienne date gagne)", () => {
+    const result = pickSavedProgress(
+      saved({ bossVictories: { "1/zodd-1": "2026-10-02T00:00:00.000Z" } }),
+      saved({ bossVictories: { "1/zodd-1": "2026-10-01T00:00:00.000Z", "1/zodd-2": "2026-10-05T00:00:00.000Z" } }),
+    );
+    expect(result?.bossVictories).toEqual({
+      "1/zodd-1": "2026-10-01T00:00:00.000Z",
+      "1/zodd-2": "2026-10-05T00:00:00.000Z",
+    });
   });
 });
