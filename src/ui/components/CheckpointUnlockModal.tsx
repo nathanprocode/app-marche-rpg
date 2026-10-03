@@ -8,6 +8,8 @@ import { COMPANIONS } from "../../data/companions";
 import { BERSERK_CHECKPOINTS, type BerserkCheckpoint } from "../../data/map/berserk-checkpoints";
 import { BERSERK_PANEL_IMAGES } from "../../data/map/berserk-panels";
 import { getCompanionsMetAt } from "../../features/companions/journey";
+import { shareMessage } from "../../features/share/share";
+import { buildCheckpointShare } from "../../features/share/shareMessages";
 import { usePlayerStore } from "../../store/usePlayerStore";
 import { useUIStore } from "../../store/useUIStore";
 import { BrandMark } from "./BrandMark";
@@ -23,6 +25,7 @@ export function CheckpointUnlockModal({ enabled }: CheckpointUnlockModalProps) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const unlockedCheckpoints = usePlayerStore((state) => state.unlockedCheckpoints);
+  const lap = usePlayerStore((state) => state.progress.lap);
   const previousIdsRef = useRef<string[] | null>(null);
   const [checkpoint, setCheckpoint] = useState<BerserkCheckpoint | null>(null);
 
@@ -116,6 +119,11 @@ export function CheckpointUnlockModal({ enabled }: CheckpointUnlockModalProps) {
             <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, theme.space[16]) + theme.space[16] }]}>
               <Button label="Continuer la marche" onPress={dismiss} />
               <Button label="Voir sur la carte" variant="secondary" onPress={showOnMap} />
+              <Button
+                label="Partager"
+                variant="secondary"
+                onPress={() => void shareMessage(buildCheckpointShare(checkpoint, lap))}
+              />
             </View>
           </>
         ) : null}

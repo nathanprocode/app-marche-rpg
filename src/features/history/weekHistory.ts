@@ -22,7 +22,7 @@ export type WeekSummary = {
 };
 
 /** Nombre de jours conservés dans l'historique local. */
-export const HISTORY_KEEP_DAYS = 60;
+export const HISTORY_KEEP_DAYS = 365;
 
 // Écrites en dur : l'Intl de Hermes (moteur JS du téléphone) ne garantit pas les noms français.
 const WEEKDAYS = ["dim.", "lun.", "mar.", "mer.", "jeu.", "ven.", "sam."];
@@ -65,6 +65,20 @@ export function summarizeDays(days: HistoryDay[], thresholdSteps: number = GAME_
     bestDay,
     calmDays: days.filter((day) => day.steps >= thresholdSteps).length,
   };
+}
+
+/**
+ * Nombre de jours depuis le premier jour enregistré, aujourd'hui compris (1 au minimum, HISTORY_KEEP_DAYS au plus).
+ * Sert à résumer « tout l'historique » sans compter les jours d'avant l'installation comme des jours manqués.
+ */
+export function historySpanDays(history: StepsHistory, today: Date): number {
+  const firstKey = Object.keys(history).sort()[0];
+  if (!firstKey) return 1;
+
+  const [year, month, day] = firstKey.split("-").map(Number);
+  const msPerDay = 24 * 60 * 60 * 1000;
+  const spanMs = Date.UTC(today.getFullYear(), today.getMonth(), today.getDate()) - Date.UTC(year, month - 1, day);
+  return Math.min(HISTORY_KEEP_DAYS, Math.max(1, Math.round(spanMs / msPerDay) + 1));
 }
 
 /** Garde les HISTORY_KEEP_DAYS derniers jours (aujourd'hui compris) ; les plus anciens sont oubliés. */

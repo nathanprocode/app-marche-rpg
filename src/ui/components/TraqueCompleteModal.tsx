@@ -7,6 +7,8 @@ import { theme } from "../../core/theme";
 import { COMPANIONS } from "../../data/companions";
 import { BERSERK_CHECKPOINTS } from "../../data/map/berserk-checkpoints";
 import { isCompanionMet } from "../../features/companions/journey";
+import { shareMessage } from "../../features/share/share";
+import { buildFinaleShare } from "../../features/share/shareMessages";
 import { isGoalReached } from "../../features/progression/selectors";
 import { usePlayerStore } from "../../store/usePlayerStore";
 import { useUIStore } from "../../store/useUIStore";
@@ -65,6 +67,11 @@ export function TraqueCompleteModal({ enabled }: TraqueCompleteModalProps) {
 
         <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, theme.space[16]) + theme.space[16] }]}>
           <Button label={`Commencer le tour ${progress.lap + 1}`} onPress={() => void startNextLap()} />
+          <Button
+            label="Partager"
+            variant="secondary"
+            onPress={() => void shareMessage(buildFinaleShare(progress.totalSteps, bestStreak, progress.lap))}
+          />
           <Button label="Plus tard" variant="secondary" onPress={() => setDismissedLap(progress.lap)} />
         </View>
       </View>

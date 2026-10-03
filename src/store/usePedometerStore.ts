@@ -27,6 +27,8 @@ type PedometerState = {
   addStepsToDay: (dayKey: string, deltaSteps: number) => void;
   hydrateStepsTodayPreference: () => Promise<void>;
   resetStepsToday: () => Promise<void>;
+  /** Efface les pas du jour et tout l'historique (remise à zéro de la progression). */
+  clearAllSteps: () => Promise<void>;
 };
 
 function getLocalDayKey(date = new Date()): string {
@@ -144,6 +146,11 @@ export const usePedometerStore = create<PedometerState>((set, get) => ({
       set({ history });
       await AsyncStorage.removeItem(PEDOMETER_DAY_STORAGE_KEY);
     }
+  },
+  clearAllSteps: async () => {
+    set({ dayKey: getLocalDayKey(), stepsToday: 0, distanceTodayKm: 0, lastSyncISO: null, history: {} });
+    persistHistory({});
+    await persistStepsToday(0, null);
   },
   resetStepsToday: async () => {
     const history = { ...get().history, [getLocalDayKey()]: 0 };

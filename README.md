@@ -32,6 +32,9 @@ L'app contient du code natif (`modules/permanent-pedometer/`) : Expo Go ne suffi
 - Arrivé à 1 000 km, un écran de fin propose un nouveau tour de Traque : la carte repart de zéro, mais les chroniques,
   les compagnons, les succès et les records restent acquis. Les pas en trop sont reportés sur le nouveau tour.
 - 20 succès (distance, série, pas du jour, collections, tours) : onglet « Succès » des Quêtes.
+- Historique du Profil sur 7 jours, 30 jours ou depuis le début (365 jours conservés sur le téléphone).
+- Partage : texte envoyé par la feuille de partage du téléphone (point franchi, fin de Traque, progression du Profil).
+- « Recommencer à zéro » (Profil) efface progression, série, succès, historique et sauvegarde cloud ; les réglages restent.
 - Rappel du soir (Profil, désactivé par défaut) : une notification locale à l'heure choisie si l'objectif du jour n'est pas atteint.
   Les 3 prochains soirs sont programmés à chaque ouverture de l'app ; il ne demande pas de nouveau build natif.
 
@@ -42,7 +45,7 @@ L'app contient du code natif (`modules/permanent-pedometer/`) : Expo Go ne suffi
 - `src/features/` : logique métier. Pure et testée : `progression`, `brandOfSacrifice`, `mapJourney`,
   `companions` (qui marche avec Guts, placement autour de lui sur la carte), `camp` (vignette jour/nuit et phrase d'ambiance),
   `history` (pas par jour, stats des 7 derniers jours du Profil), `zoom` (pincer et déplacer les planches des Chroniques).
-  `achievements` (liste des succès et leur avancement), `reminders` (dates et texte du rappel du soir, programmation des notifications).
+  `achievements` (liste des succès et leur avancement), `reminders` (dates et texte du rappel du soir, programmation des notifications), `share` (textes de partage).
   Liée à l'appareil (non testée) : `pedometer` (capteur, service natif, notification), `runtime` (série et Marque du jour),
   `userCloud` (Firestore).
 - `src/store/` : états Zustand. La progression est sauvegardée en local (AsyncStorage, une clé par compte) à chaque
