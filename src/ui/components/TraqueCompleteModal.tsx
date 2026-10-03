@@ -7,8 +7,9 @@ import { theme } from "../../core/theme";
 import { COMPANIONS } from "../../data/companions";
 import { BERSERK_CHECKPOINTS } from "../../data/map/berserk-checkpoints";
 import { isCompanionMet } from "../../features/companions/journey";
-import { shareMessage } from "../../features/share/share";
-import { buildFinaleShare } from "../../features/share/shareMessages";
+import { BERSERK_PANEL_IMAGES } from "../../data/map/berserk-panels";
+import { buildFinaleCard } from "../../features/share/shareCards";
+import { useShareStore } from "../../store/useShareStore";
 import { isGoalReached } from "../../features/progression/selectors";
 import { usePlayerStore } from "../../store/usePlayerStore";
 import { useUIStore } from "../../store/useUIStore";
@@ -29,6 +30,7 @@ export function TraqueCompleteModal({ enabled }: TraqueCompleteModalProps) {
   const bestStreak = usePlayerStore((state) => state.bestStreak);
   const unlockedCheckpoints = usePlayerStore((state) => state.unlockedCheckpoints);
   const startNextLap = usePlayerStore((state) => state.startNextLap);
+  const requestShare = useShareStore((state) => state.requestShare);
   // « Plus tard » ferme jusqu'au prochain démarrage ; le Profil garde le bouton pour repartir.
   const [dismissedLap, setDismissedLap] = useState<number | null>(null);
 
@@ -70,7 +72,15 @@ export function TraqueCompleteModal({ enabled }: TraqueCompleteModalProps) {
           <Button
             label="Partager"
             variant="secondary"
-            onPress={() => void shareMessage(buildFinaleShare(progress.totalSteps, bestStreak, progress.lap))}
+            onPress={() =>
+              requestShare(
+                buildFinaleCard(
+                  ARRIVAL,
+                  { totalSteps: progress.totalSteps, bestStreak, lap: progress.lap },
+                  BERSERK_PANEL_IMAGES[ARRIVAL.id],
+                ),
+              )
+            }
           />
           <Button label="Plus tard" variant="secondary" onPress={() => setDismissedLap(progress.lap)} />
         </View>

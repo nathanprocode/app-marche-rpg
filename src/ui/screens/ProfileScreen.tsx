@@ -9,8 +9,8 @@ import { isGoalReached } from "../../features/progression/selectors";
 import { REMINDER_HOUR_OPTIONS } from "../../features/reminders/eveningReminder";
 import { requestReminderPermission } from "../../features/reminders/reminderScheduler";
 import { eraseAllProgress } from "../../features/runtime/eraseProgress";
-import { shareMessage } from "../../features/share/share";
-import { buildProgressShare } from "../../features/share/shareMessages";
+import { buildProgressCard } from "../../features/share/shareCards";
+import { useShareStore } from "../../store/useShareStore";
 import { useAuthStore } from "../../store/useAuthStore";
 import { useBrandStore } from "../../store/useBrandStore";
 import { usePedometerStore } from "../../store/usePedometerStore";
@@ -41,6 +41,7 @@ export function ProfileScreen() {
   const setReminderEnabled = useSettingsStore((state) => state.setEveningReminderEnabled);
   const setReminderHour = useSettingsStore((state) => state.setEveningReminderHour);
   const [reminderDenied, setReminderDenied] = useState(false);
+  const requestShare = useShareStore((state) => state.requestShare);
   const [period, setPeriod] = useState<HistoryPeriod>("week");
 
   async function handleReminderToggle(enabled: boolean): Promise<void> {
@@ -198,8 +199,8 @@ export function ProfileScreen() {
           label="Partager ma progression"
           variant="secondary"
           onPress={() =>
-            void shareMessage(
-              buildProgressShare({
+            requestShare(
+              buildProgressCard({
                 totalKm: progress.totalDistanceKm,
                 lap: progress.lap,
                 streakDays: status.streakDays,

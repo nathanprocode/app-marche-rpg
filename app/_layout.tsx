@@ -16,6 +16,7 @@ import { theme } from "../src/core/theme";
 import { Button } from "../src/ui/components/Button";
 import { AchievementToast } from "../src/ui/components/AchievementToast";
 import { CheckpointUnlockModal } from "../src/ui/components/CheckpointUnlockModal";
+import { ShareImageHost } from "../src/ui/components/ShareImageHost";
 import { TraqueCompleteModal } from "../src/ui/components/TraqueCompleteModal";
 
 export default function RootLayout() {
@@ -179,6 +180,7 @@ export default function RootLayout() {
       <CheckpointUnlockModal enabled={isAuthenticated && isProgressLoaded} />
       <TraqueCompleteModal enabled={isAuthenticated && isProgressLoaded} />
       <AchievementToast enabled={isAuthenticated && isProgressLoaded} />
+      <ShareImageHost />
     </>
   );
 }

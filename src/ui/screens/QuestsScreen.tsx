@@ -11,7 +11,9 @@ import { ACHIEVEMENTS } from "../../features/achievements/achievements";
 import { isCompanionMet } from "../../features/companions/journey";
 import { useBrandStore } from "../../store/useBrandStore";
 import { usePedometerStore } from "../../store/usePedometerStore";
+import { buildAchievementCard } from "../../features/share/shareCards";
 import { usePlayerStore } from "../../store/usePlayerStore";
+import { useShareStore } from "../../store/useShareStore";
 import { useSettingsStore } from "../../store/useSettingsStore";
 import { AchievementList } from "../components/AchievementList";
 import { CompanionCollection } from "../components/CompanionCollection";
@@ -45,6 +47,7 @@ export function QuestsScreen() {
   const bestStreak = usePlayerStore((state) => state.bestStreak);
   const bestDaySteps = usePlayerStore((state) => state.bestDaySteps);
   const achievements = usePlayerStore((state) => state.achievements);
+  const requestShare = useShareStore((state) => state.requestShare);
 
   const unlocked = BERSERK_CHECKPOINTS.filter((checkpoint) => unlockedIds.includes(checkpoint.id));
   const chronicles = [...unlocked].reverse();
@@ -90,7 +93,13 @@ export function QuestsScreen() {
         ) : tab === "companions" ? (
           <CompanionCollection unlockedCheckpointIds={unlockedIds} />
         ) : tab === "achievements" ? (
-          <AchievementList stats={achievementStats} unlocked={achievements} />
+          <AchievementList
+            stats={achievementStats}
+            unlocked={achievements}
+            onShare={(achievement) =>
+              requestShare(buildAchievementCard(achievement, { totalSteps: progress.totalSteps, bestStreak, lap: progress.lap }))
+            }
+          />
         ) : (
             <>
               {chronicles.map((checkpoint) => (

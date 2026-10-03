@@ -1,5 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import { StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 import { formatInt } from "../../core/format";
 import { theme } from "../../core/theme";
 import { ACHIEVEMENTS, type Achievement, type AchievementStats } from "../../features/achievements/achievements";
@@ -10,6 +10,8 @@ type AchievementListProps = {
   stats: AchievementStats;
   /** Succès débloqués : identifiant → date ISO. */
   unlocked: Record<string, string>;
+  /** Partage d'un succès débloqué : le bouton n'apparaît que s'il est fourni. */
+  onShare?: (achievement: Achievement) => void;
 };
 
 const DATE_FORMAT_MONTHS = ["janv.", "févr.", "mars", "avr.", "mai", "juin", "juil.", "août", "sept.", "oct.", "nov.", "déc."];
@@ -31,7 +33,7 @@ function sortAchievements(unlocked: Record<string, string>, stats: AchievementSt
   return [...done, ...todo];
 }
 
-export function AchievementList({ stats, unlocked }: AchievementListProps) {
+export function AchievementList({ stats, unlocked, onShare }: AchievementListProps) {
   return (
     <>
       {sortAchievements(unlocked, stats).map((achievement) => {
@@ -65,6 +67,16 @@ export function AchievementList({ stats, unlocked }: AchievementListProps) {
                 </View>
               )}
             </View>
+            {dateISO && onShare ? (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={`Partager le succès ${achievement.title}`}
+                onPress={() => onShare(achievement)}
+                style={styles.share}
+              >
+                <Ionicons name="share-outline" size={20} color={theme.colors.bone} />
+              </Pressable>
+            ) : null}
           </InkCard>
         );
       })}
@@ -79,6 +91,7 @@ const styles = StyleSheet.create({
   iconDone: { backgroundColor: theme.colors.blood, borderColor: theme.colors.bloodGlow },
   iconLocked: { borderColor: theme.colors.iron },
   text: { flex: 1 },
+  share: { width: 44, height: 44, alignItems: "center", justifyContent: "center" },
   title: { ...theme.text.bodyStrong, color: theme.colors.bone },
   small: { ...theme.text.small, color: theme.colors.boneDim },
   date: { ...theme.text.label, color: theme.colors.bloodEmber, marginTop: theme.space[4] },

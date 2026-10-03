@@ -8,8 +8,8 @@ import { COMPANIONS } from "../../data/companions";
 import { BERSERK_CHECKPOINTS, type BerserkCheckpoint } from "../../data/map/berserk-checkpoints";
 import { BERSERK_PANEL_IMAGES } from "../../data/map/berserk-panels";
 import { getCompanionsMetAt } from "../../features/companions/journey";
-import { shareMessage } from "../../features/share/share";
-import { buildCheckpointShare } from "../../features/share/shareMessages";
+import { buildCheckpointCard } from "../../features/share/shareCards";
+import { useShareStore } from "../../store/useShareStore";
 import { usePlayerStore } from "../../store/usePlayerStore";
 import { useUIStore } from "../../store/useUIStore";
 import { BrandMark } from "./BrandMark";
@@ -25,7 +25,9 @@ export function CheckpointUnlockModal({ enabled }: CheckpointUnlockModalProps) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const unlockedCheckpoints = usePlayerStore((state) => state.unlockedCheckpoints);
-  const lap = usePlayerStore((state) => state.progress.lap);
+  const progress = usePlayerStore((state) => state.progress);
+  const bestStreak = usePlayerStore((state) => state.bestStreak);
+  const requestShare = useShareStore((state) => state.requestShare);
   const previousIdsRef = useRef<string[] | null>(null);
   const [checkpoint, setCheckpoint] = useState<BerserkCheckpoint | null>(null);
 
@@ -122,7 +124,11 @@ export function CheckpointUnlockModal({ enabled }: CheckpointUnlockModalProps) {
               <Button
                 label="Partager"
                 variant="secondary"
-                onPress={() => void shareMessage(buildCheckpointShare(checkpoint, lap))}
+                onPress={() =>
+                  requestShare(
+                    buildCheckpointCard(checkpoint, { totalSteps: progress.totalSteps, bestStreak, lap: progress.lap }, panel),
+                  )
+                }
               />
             </View>
           </>
