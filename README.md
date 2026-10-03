@@ -59,8 +59,8 @@ L'app contient du code natif (`modules/permanent-pedometer/`) : Expo Go ne suffi
 - `docs/` : notes de développement, jour par jour (`day1-setup.md` à `day7-stabilization.md`).
 - `src/data/map/berserk-checkpoints.ts` : la seule source des checkpoints (km, texte, position sur la carte).
 - `src/data/companions.ts` : les 15 compagnons (texte, sprite, checkpoint de rencontre, tronçons parcourus avec Guts).
-  Sprites dans `assets/companions/` (fond transparent, 192 px de haut), scènes de camp dans `assets/camp/`.
-  15 compagnons dont 8 attendent encore leur sprite (Gambino, Judeau, Pippin, Corkus, Rickert, Zodd, Godo, Flora) : en attendant,
+  Sprites dans `assets/companions/` (formes de boss dans `assets/bosses/`) (fond transparent, 192 px de haut), scènes de camp dans `assets/camp/`.
+  15 compagnons dont 7 attendent encore leur sprite (Gambino, Judeau, Pippin, Corkus, Rickert, Godo, Flora) : en attendant,
   leur fiche montre une silhouette et ils n'apparaissent pas sur la carte.
   **Ajouter un sprite** : PNG à fond transparent, 192 px de haut, nommé `assets/companions/<id>.png` (même style que les
   autres), puis dans `companions.ts` remplacer le commentaire « Sprite à fournir » par

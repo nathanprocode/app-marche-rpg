@@ -100,7 +100,7 @@ export const COMPANIONS: Companion[] = [
     title: "Le Fauve Immortel",
     description:
       "Géant à la cape déchirée, Zodd ne marche pas à tes côtés : il rôde au bord de ta route, attiré par ceux qui refusent de plier. Pour lui, chaque kilomètre est un duel. Sentir son ombre derrière toi suffit à garder le rythme.",
-    // Sprite à fournir : assets/companions/zodd.png, puis image: require("../../assets/companions/zodd.png").
+    image: require("../../assets/companions/zodd.png"),
     metAtCheckpointId: "cp-004-5",
     travels: [{ fromCheckpointId: "cp-004-5", untilCheckpointId: "cp-005" }, { fromCheckpointId: "cp-011-5", untilCheckpointId: "cp-012" }],
   },
