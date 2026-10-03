@@ -6,6 +6,8 @@ import { formatDecimal, formatInt } from "../../core/format";
 import { theme } from "../../core/theme";
 import { BERSERK_CHECKPOINTS } from "../../data/map/berserk-checkpoints";
 import { BERSERK_PANEL_IMAGES } from "../../data/map/berserk-panels";
+import { BOSS_ENCOUNTERS } from "../../data/bosses";
+import { computeDuels } from "../../features/bosses/duel";
 import { resolveCampScene } from "../../features/camp/campScene";
 import { deriveBrandState } from "../../features/progression/engine";
 import { runDailySync } from "../../features/runtime/dailySync";
@@ -16,6 +18,7 @@ import { useSettingsStore } from "../../store/useSettingsStore";
 import { BrandMark } from "../components/BrandMark";
 import { Button } from "../components/Button";
 import { CampVignette } from "../components/CampVignette";
+import { DuelCard } from "../components/DuelCard";
 import { InkCard } from "../components/InkCard";
 import { PaperCard } from "../components/PaperCard";
 import { ProgressBar } from "../components/ProgressBar";
@@ -32,6 +35,9 @@ export function HomeScreen() {
   const resetProgressionDev = usePlayerStore((state) => state.resetProgressionDev);
   const streakDays = useBrandStore((state) => state.status.streakDays);
 
+  const activeDuels = computeDuels(BOSS_ENCOUNTERS, progress.lapSteps, BERSERK_CHECKPOINTS).filter(
+    (duel) => duel.state === "active",
+  );
   const threshold = useSettingsStore((state) => state.dailyGoal);
   const isCalm = deriveBrandState(stepsToday, threshold) === "active";
   const stepsLeftToday = Math.max(0, threshold - stepsToday);
@@ -105,6 +111,12 @@ export function HomeScreen() {
           <Text style={styles.label}>{streakDays > 1 ? "jours" : "jour"}</Text>
         </View>
       </InkCard>
+
+      {activeDuels.map((duel) => (
+        <View key={duel.encounter.id} style={styles.duel}>
+          <DuelCard duel={duel} />
+        </View>
+      ))}
 
       <PaperCard style={styles.journey}>
         {panel ? (
@@ -196,6 +208,7 @@ const styles = StyleSheet.create({
     borderColor: theme.colors.ash,
     borderRadius: theme.radius[4],
   },
+  duel: { marginTop: theme.space[16] },
   camp: { marginTop: theme.space[16] },
   hero: { marginTop: theme.space[16] },
   label: { ...theme.text.label, color: theme.colors.boneDim },

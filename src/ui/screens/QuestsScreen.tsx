@@ -6,6 +6,8 @@ import { theme } from "../../core/theme";
 import { COMPANIONS } from "../../data/companions";
 import { BERSERK_CHECKPOINTS, type BerserkCheckpoint } from "../../data/map/berserk-checkpoints";
 import { BERSERK_PANEL_IMAGES } from "../../data/map/berserk-panels";
+import { BOSS_ENCOUNTERS } from "../../data/bosses";
+import { computeDuels } from "../../features/bosses/duel";
 import { buildAchievementStats } from "../../features/achievements/stats";
 import { ACHIEVEMENTS } from "../../features/achievements/achievements";
 import { isCompanionMet } from "../../features/companions/journey";
@@ -15,6 +17,7 @@ import { buildAchievementCard } from "../../features/share/shareCards";
 import { usePlayerStore } from "../../store/usePlayerStore";
 import { useShareStore } from "../../store/useShareStore";
 import { useSettingsStore } from "../../store/useSettingsStore";
+import { DuelCard } from "../components/DuelCard";
 import { AchievementList } from "../components/AchievementList";
 import { CompanionCollection } from "../components/CompanionCollection";
 import { InkCard } from "../components/InkCard";
@@ -46,6 +49,7 @@ export function QuestsScreen() {
   const dailyGoal = useSettingsStore((state) => state.dailyGoal);
   const bestStreak = usePlayerStore((state) => state.bestStreak);
   const bestDaySteps = usePlayerStore((state) => state.bestDaySteps);
+  const bossVictories = usePlayerStore((state) => state.bossVictories);
   const achievements = usePlayerStore((state) => state.achievements);
   const requestShare = useShareStore((state) => state.requestShare);
 
@@ -56,7 +60,10 @@ export function QuestsScreen() {
   // Le prochain point se lit sur la distance du tour : au deuxième tour, toutes les chroniques sont déjà lues.
   const nextOnRoute = BERSERK_CHECKPOINTS.find((checkpoint) => checkpoint.kmThreshold > progress.totalDistanceKm + 0.0001) ?? null;
   const quests = buildQuests(stepsToday, streakDays, progress.totalDistanceKm, progress.currentSegmentProgressPct, nextOnRoute, dailyGoal);
-  const achievementStats = buildAchievementStats(progress, unlockedIds, bestStreak, bestDaySteps);
+  const activeDuels = computeDuels(BOSS_ENCOUNTERS, progress.lapSteps, BERSERK_CHECKPOINTS).filter(
+    (duel) => duel.state === "active",
+  );
+  const achievementStats = buildAchievementStats(progress, unlockedIds, bestStreak, bestDaySteps, bossVictories);
   const achievementCount = ACHIEVEMENTS.filter((achievement) => achievements[achievement.id]).length;
 
   return (
@@ -89,7 +96,14 @@ export function QuestsScreen() {
 
       <View style={styles.list}>
         {tab === "daily" ? (
-          quests.map((quest) => <QuestRow key={quest.id} quest={quest} />)
+          <>
+            {activeDuels.map((duel) => (
+              <DuelCard key={duel.encounter.id} duel={duel} />
+            ))}
+            {quests.map((quest) => (
+              <QuestRow key={quest.id} quest={quest} />
+            ))}
+          </>
         ) : tab === "companions" ? (
           <CompanionCollection unlockedCheckpointIds={unlockedIds} />
         ) : tab === "achievements" ? (

@@ -16,6 +16,7 @@ import { useSettingsStore } from "../src/store/useSettingsStore";
 import { theme } from "../src/core/theme";
 import { Button } from "../src/ui/components/Button";
 import { AchievementToast } from "../src/ui/components/AchievementToast";
+import { BossEventModal } from "../src/ui/components/BossEventModal";
 import { CheckpointUnlockModal } from "../src/ui/components/CheckpointUnlockModal";
 import { ShareImageHost } from "../src/ui/components/ShareImageHost";
 import { TraqueCompleteModal } from "../src/ui/components/TraqueCompleteModal";
@@ -188,6 +189,7 @@ export default function RootLayout() {
         <Stack.Screen name="(tabs)" />
       </Stack>
       <CheckpointUnlockModal enabled={isAuthenticated && isProgressLoaded} />
+      <BossEventModal enabled={isAuthenticated && isProgressLoaded} />
       <TraqueCompleteModal enabled={isAuthenticated && isProgressLoaded} />
       <AchievementToast enabled={isAuthenticated && isProgressLoaded} />
       <ShareImageHost />

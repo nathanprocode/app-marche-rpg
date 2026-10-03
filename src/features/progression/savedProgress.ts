@@ -12,6 +12,8 @@ export type SavedProgress = {
   bestDaySteps: number;
   /** Succès débloqués : identifiant → date ISO du déblocage. */
   achievements: Record<string, string>;
+  /** Duels de boss gagnés : « tour/identifiant du duel » → date ISO. */
+  bossVictories: Record<string, string>;
 };
 
 const NEVER_ISO = new Date(0).toISOString();
@@ -52,6 +54,7 @@ export function parseSavedProgress(raw: unknown): SavedProgress | null {
     bestStreak: Math.max(toCount(data.bestStreak), toCount(data.streakDays)),
     bestDaySteps: toCount(data.bestDaySteps),
     achievements: toAchievements(data.achievements),
+    bossVictories: toAchievements(data.bossVictories),
   };
 }
 
@@ -82,5 +85,6 @@ export function pickSavedProgress(local: SavedProgress | null, cloud: SavedProgr
     bestStreak: Math.max(local.bestStreak, cloud.bestStreak),
     bestDaySteps: Math.max(local.bestDaySteps, cloud.bestDaySteps),
     achievements: mergeAchievements(local.achievements, cloud.achievements),
+    bossVictories: mergeAchievements(local.bossVictories, cloud.bossVictories),
   };
 }

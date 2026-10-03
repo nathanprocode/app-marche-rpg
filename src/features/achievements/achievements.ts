@@ -9,9 +9,11 @@ export type AchievementStats = {
   companionsMet: number;
   companionsTotal: number;
   lapsCompleted: number;
+  /** Identifiants des duels de boss gagnés au moins une fois (tous tours confondus). */
+  bossesDefeated: string[];
 };
 
-export type AchievementCategory = "distance" | "streak" | "day" | "collection" | "lap";
+export type AchievementCategory = "distance" | "streak" | "day" | "collection" | "lap" | "boss";
 
 export type Achievement = {
   id: string;
@@ -75,6 +77,23 @@ export const ACHIEVEMENTS: Achievement[] = [
     category: "collection",
     icon: "book",
     progress: (stats) => ({ value: stats.checkpointsUnlocked, target: stats.checkpointsTotal }),
+  },
+
+  {
+    id: "boss-zodd-1",
+    title: "Tenir tête à Zodd",
+    description: "Gagner le duel contre Zodd.",
+    category: "boss",
+    icon: "skull",
+    progress: (stats) => ({ value: stats.bossesDefeated.includes("zodd-1") ? 1 : 0, target: 1 }),
+  },
+  {
+    id: "boss-zodd-2",
+    title: "Rival de Zodd",
+    description: "Gagner la revanche contre Zodd.",
+    category: "boss",
+    icon: "skull",
+    progress: (stats) => ({ value: stats.bossesDefeated.includes("zodd-2") ? 1 : 0, target: 1 }),
   },
 
   threshold("lap-1", "La Traque achevée", "Terminer la Traque une fois.", "lap", "trophy", 1, (s) => s.lapsCompleted),

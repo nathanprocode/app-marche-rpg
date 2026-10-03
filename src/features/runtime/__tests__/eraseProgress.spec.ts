@@ -51,6 +51,6 @@ describe("eraseAllProgress", () => {
 
     expect(saveToCloud).toHaveBeenCalledTimes(1);
     expect(saveToCloud.mock.calls[0][1].totalSteps).toBe(0);
-    expect(saveToCloud.mock.calls[0][4]).toEqual({ bestStreak: 0, bestDaySteps: 0, achievements: {} });
+    expect(saveToCloud.mock.calls[0][4]).toEqual({ bestStreak: 0, bestDaySteps: 0, achievements: {}, bossVictories: {} });
   });
 });

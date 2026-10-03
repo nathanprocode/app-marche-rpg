@@ -10,6 +10,7 @@ function stats(overrides: Partial<AchievementStats> = {}): AchievementStats {
     companionsMet: 0,
     companionsTotal: 7,
     lapsCompleted: 0,
+    bossesDefeated: [],
     ...overrides,
   };
 }
@@ -44,6 +45,12 @@ describe("succès", () => {
     expect(isAchievementEarned(getAchievement("chronicles-all")!, done)).toBe(true);
     expect(isAchievementEarned(getAchievement("lap-1")!, done)).toBe(true);
     expect(isAchievementEarned(getAchievement("lap-3")!, done)).toBe(false);
+  });
+
+  it("débloquent les succès de boss selon les duels gagnés", () => {
+    const stats1 = stats({ bossesDefeated: ["zodd-1"] });
+    expect(isAchievementEarned(getAchievement("boss-zodd-1")!, stats1)).toBe(true);
+    expect(isAchievementEarned(getAchievement("boss-zodd-2")!, stats1)).toBe(false);
   });
 
   it("donnent l'avancement des succès verrouillés", () => {

@@ -10,6 +10,7 @@ export type CloudExtras = {
   bestStreak: number;
   bestDaySteps: number;
   achievements: Record<string, string>;
+  bossVictories: Record<string, string>;
 };
 
 export type UserCloudDoc = {

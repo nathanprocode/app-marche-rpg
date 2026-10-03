@@ -30,6 +30,7 @@ function cloud(totalSteps: number, streakDays = 0): SavedProgress {
     bestStreak: streakDays,
     bestDaySteps: 0,
     achievements: {},
+    bossVictories: {},
   };
 }
 
@@ -180,5 +181,55 @@ describe("records et succès", () => {
     await usePlayerStore.getState().mergeCloudProgress(cloud(200_000, 4));
     expect(usePlayerStore.getState().achievements["km-100"]).toBeDefined();
     expect(usePlayerStore.getState().newAchievementIds).toEqual([]);
+  });
+});
+
+describe("duels de boss", () => {
+  // Zodd attend à 115 km : 153 334 pas.
+  const START = 153_334;
+
+  it("annonce le changement de forme quand les pas passent la vie de la forme humaine", async () => {
+    await usePlayerStore.getState().syncFromSteps(START + 9_990, 0, NEVER);
+    expect(usePlayerStore.getState().newBossEvents).toEqual([]);
+
+    await usePlayerStore.getState().syncFromSteps(START + 10_010, 0, NEVER);
+    expect(usePlayerStore.getState().newBossEvents).toEqual([{ type: "phase", encounterId: "zodd-1", phaseIndex: 1 }]);
+  });
+
+  it("enregistre la victoire une fois, avec son succès", async () => {
+    await usePlayerStore.getState().syncFromSteps(START + 29_990, 0, NEVER);
+    await usePlayerStore.getState().syncFromSteps(START + 30_010, 0, NEVER);
+
+    const state = usePlayerStore.getState();
+    expect(state.newBossEvents).toEqual([{ type: "victory", encounterId: "zodd-1", lap: 1 }]);
+    expect(state.bossVictories["1/zodd-1"]).toBeDefined();
+    expect(state.achievements["boss-zodd-1"]).toBeDefined();
+
+    await usePlayerStore.getState().syncFromSteps(START + 31_000, 0, NEVER);
+    expect(usePlayerStore.getState().newBossEvents).toHaveLength(1);
+
+    usePlayerStore.getState().clearNewBossEvents();
+    expect(usePlayerStore.getState().newBossEvents).toEqual([]);
+  });
+
+  it("rattrape les duels déjà gagnés au chargement sans les annoncer", async () => {
+    await usePlayerStore.getState().mergeCloudProgress(cloud(1_000_000, 0));
+    const state = usePlayerStore.getState();
+    expect(Object.keys(state.bossVictories).sort()).toEqual(["1/zodd-1", "1/zodd-2"]);
+    expect(state.newBossEvents).toEqual([]);
+  });
+
+  it("repart de zéro à chaque tour de Traque et garde les victoires", async () => {
+    await usePlayerStore.getState().syncFromSteps(1_333_334 + START + 50, 0, NEVER);
+    await usePlayerStore.getState().startNextLap();
+    usePlayerStore.getState().clearNewBossEvents();
+
+    const { bossVictories, progress } = usePlayerStore.getState();
+    expect(progress.lapSteps).toBe(START + 50);
+    expect(bossVictories["1/zodd-1"]).toBeDefined();
+    expect(bossVictories["2/zodd-1"]).toBeUndefined();
+
+    await usePlayerStore.getState().syncFromSteps(1_333_334 + START + 30_050, 0, NEVER);
+    expect(usePlayerStore.getState().bossVictories["2/zodd-1"]).toBeDefined();
   });
 });
