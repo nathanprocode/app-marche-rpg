@@ -46,7 +46,8 @@
         "ACTIVITY_RECOGNITION",
         "POST_NOTIFICATIONS",
         "FOREGROUND_SERVICE",
-        "FOREGROUND_SERVICE_HEALTH"
+        "FOREGROUND_SERVICE_HEALTH",
+        "VIBRATE"
       ]
     },
     "web": {

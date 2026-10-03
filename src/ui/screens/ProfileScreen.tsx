@@ -5,6 +5,7 @@ import { formatDecimal, formatInt } from "../../core/format";
 import { theme } from "../../core/theme";
 import { BERSERK_CHECKPOINTS } from "../../data/map/berserk-checkpoints";
 import { historySpanDays, lastDays, summarizeDays } from "../../features/history/weekHistory";
+import { vibrate } from "../../features/haptics/haptics";
 import { isGoalReached } from "../../features/progression/selectors";
 import { REMINDER_HOUR_OPTIONS } from "../../features/reminders/eveningReminder";
 import { requestReminderPermission } from "../../features/reminders/reminderScheduler";
@@ -40,6 +41,8 @@ export function ProfileScreen() {
   const reminderHour = useSettingsStore((state) => state.eveningReminderHour);
   const setReminderEnabled = useSettingsStore((state) => state.setEveningReminderEnabled);
   const setReminderHour = useSettingsStore((state) => state.setEveningReminderHour);
+  const hapticsEnabled = useSettingsStore((state) => state.hapticsEnabled);
+  const setHapticsEnabled = useSettingsStore((state) => state.setHapticsEnabled);
   const [reminderDenied, setReminderDenied] = useState(false);
   const requestShare = useShareStore((state) => state.requestShare);
   const [period, setPeriod] = useState<HistoryPeriod>("week");
@@ -172,6 +175,23 @@ export function ProfileScreen() {
             />
           </View>
         ) : null}
+        <View style={styles.settingRow}>
+          <View style={styles.settingText}>
+            <Text style={styles.settingTitle}>Vibrations</Text>
+            <Text style={styles.small}>Une vibration brève à chaque point franchi, succès ou objectif du jour atteint.</Text>
+          </View>
+          <Switch
+            accessibilityLabel="Vibrations"
+            value={hapticsEnabled}
+            onValueChange={(enabled) => {
+              setHapticsEnabled(enabled);
+              // On sent tout de suite ce que fait l'option.
+              if (enabled) vibrate("achievement");
+            }}
+            thumbColor={theme.colors.bone}
+            trackColor={{ false: theme.colors.ash, true: theme.colors.blood }}
+          />
+        </View>
         <View style={styles.settingRow}>
           <View style={styles.settingText}>
             <Text style={styles.settingTitle}>Suivi permanent</Text>

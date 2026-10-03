@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Modal, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { GAME_CONFIG } from "../../core/constants/game";
@@ -6,6 +6,7 @@ import { formatInt } from "../../core/format";
 import { theme } from "../../core/theme";
 import { COMPANIONS } from "../../data/companions";
 import { BERSERK_CHECKPOINTS } from "../../data/map/berserk-checkpoints";
+import { vibrate } from "../../features/haptics/haptics";
 import { isCompanionMet } from "../../features/companions/journey";
 import { BERSERK_PANEL_IMAGES } from "../../data/map/berserk-panels";
 import { buildFinaleCard } from "../../features/share/shareCards";
@@ -36,6 +37,11 @@ export function TraqueCompleteModal({ enabled }: TraqueCompleteModalProps) {
 
   const isCheckpointModalOpen = useUIStore((state) => state.isCheckpointModalOpen);
   const visible = enabled && !isCheckpointModalOpen && isGoalReached(progress) && dismissedLap !== progress.lap;
+
+  // Une seule vibration à l'apparition de l'écran, pas à chaque rendu.
+  useEffect(() => {
+    if (visible) vibrate("finale");
+  }, [visible]);
 
   return (
     <Modal visible={visible} animationType="fade" onRequestClose={() => setDismissedLap(progress.lap)} statusBarTranslucent>

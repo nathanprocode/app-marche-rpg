@@ -4,6 +4,7 @@ import { Animated, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { theme } from "../../core/theme";
 import { getAchievement } from "../../features/achievements/achievements";
+import { vibrate } from "../../features/haptics/haptics";
 import { usePlayerStore } from "../../store/usePlayerStore";
 
 const TOAST_DURATION_MS = 4000;
@@ -31,6 +32,7 @@ export function AchievementToast({ enabled }: AchievementToastProps) {
   useEffect(() => {
     if (!currentId) return;
 
+    vibrate("achievement");
     Animated.timing(opacity, { toValue: 1, duration: 250, useNativeDriver: true }).start();
     const timer = setTimeout(() => {
       Animated.timing(opacity, { toValue: 0, duration: 250, useNativeDriver: true }).start(() => {

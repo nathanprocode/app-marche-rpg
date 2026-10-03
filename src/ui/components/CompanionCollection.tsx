@@ -1,11 +1,12 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useState } from "react";
-import { Image, Modal, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { formatInt } from "../../core/format";
 import { theme } from "../../core/theme";
 import { COMPANIONS, type Companion } from "../../data/companions";
 import { BERSERK_CHECKPOINTS } from "../../data/map/berserk-checkpoints";
 import { isCompanionMet } from "../../features/companions/journey";
+import { CompanionSprite } from "./CompanionSprite";
 import { PaperCard } from "./PaperCard";
 
 type CompanionCollectionProps = {
@@ -33,7 +34,7 @@ export function CompanionCollection({ unlockedCheckpointIds }: CompanionCollecti
               style={styles.cell}
             >
               <PaperCard style={styles.card}>
-                <Image source={companion.image} style={styles.sprite} resizeMode="contain" />
+                <CompanionSprite companion={companion} size={88} />
                 <Text style={styles.name}>{companion.name}</Text>
                 <Text style={styles.title}>{companion.title}</Text>
               </PaperCard>
@@ -47,12 +48,7 @@ export function CompanionCollection({ unlockedCheckpointIds }: CompanionCollecti
             >
               <View style={[styles.card, styles.cardLocked]}>
                 {/* La silhouette : tintColor repeint tous les pixels opaques du sprite. */}
-                <Image
-                  source={companion.image}
-                  style={[styles.sprite, styles.silhouette]}
-                  resizeMode="contain"
-                  tintColor={theme.colors.ash}
-                />
+                <CompanionSprite companion={companion} size={88} tint={theme.colors.ash} style={styles.silhouette} />
                 <Text style={styles.nameLocked}>Inconnu</Text>
                 <Text style={styles.titleLocked}>{`À ${formatInt(meetingPoint(companion).kmThreshold)} km`}</Text>
               </View>
@@ -74,12 +70,7 @@ export function CompanionCollection({ unlockedCheckpointIds }: CompanionCollecti
                 <Ionicons name="close" size={24} color={theme.colors.ink} />
               </Pressable>
               <ScrollView contentContainerStyle={styles.sheetContent}>
-                <Image
-                  source={opened.image}
-                  style={styles.sheetSprite}
-                  resizeMode="contain"
-                  accessibilityIgnoresInvertColors
-                />
+                <CompanionSprite companion={opened} size={160} />
                 <Text style={styles.sheetKicker}>
                   {`Première rencontre · ${meetingPoint(opened).title} · ${formatInt(meetingPoint(opened).kmThreshold)} km`}
                 </Text>
@@ -109,7 +100,6 @@ const styles = StyleSheet.create({
     borderRadius: theme.radius[4],
     paddingHorizontal: theme.space[8],
   },
-  sprite: { width: 88, height: 88 },
   silhouette: { opacity: 0.9 },
   name: { ...theme.text.displayS, color: theme.colors.ink, marginTop: theme.space[8], textAlign: "center" },
   title: { ...theme.text.label, color: theme.colors.blood, textAlign: "center" },
@@ -133,7 +123,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   sheetContent: { alignItems: "center", padding: theme.space[24] },
-  sheetSprite: { width: 160, height: 160 },
   sheetKicker: { ...theme.text.label, color: theme.colors.blood, marginTop: theme.space[16], textAlign: "center" },
   sheetName: { ...theme.text.displayL, color: theme.colors.ink, textAlign: "center" },
   sheetTitle: { ...theme.text.bodyStrong, color: theme.colors.umber, textAlign: "center" },

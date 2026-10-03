@@ -11,7 +11,12 @@ beforeEach(async () => {
 
 describe("parseSettings", () => {
   it("retombe sur les défauts quand la valeur est inconnue ou abîmée", () => {
-    expect(parseSettings(null)).toEqual({ dailyGoal: 1500, eveningReminderEnabled: false, eveningReminderHour: 20 });
+    expect(parseSettings(null)).toEqual({
+      dailyGoal: 1500,
+      eveningReminderEnabled: false,
+      eveningReminderHour: 20,
+      hapticsEnabled: false,
+    });
     expect(parseSettings({ dailyGoal: 42, eveningReminderHour: 3 })).toMatchObject({
       dailyGoal: 1500,
       eveningReminderHour: 20,
@@ -19,10 +24,13 @@ describe("parseSettings", () => {
   });
 
   it("garde les valeurs proposées", () => {
-    expect(parseSettings({ dailyGoal: 5000, eveningReminderEnabled: true, eveningReminderHour: 19 })).toEqual({
+    expect(
+      parseSettings({ dailyGoal: 5000, eveningReminderEnabled: true, eveningReminderHour: 19, hapticsEnabled: true }),
+    ).toEqual({
       dailyGoal: 5000,
       eveningReminderEnabled: true,
       eveningReminderHour: 19,
+      hapticsEnabled: true,
     });
   });
 });

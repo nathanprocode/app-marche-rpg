@@ -1,7 +1,8 @@
 import { Redirect, Stack, useSegments } from "expo-router";
-import { useCallback, useEffect, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { AppState, Text, View } from "react-native";
 import { useAppFonts } from "../src/core/fonts";
+import { vibrate } from "../src/features/haptics/haptics";
 import { syncEveningReminder } from "../src/features/reminders/reminderScheduler";
 import { usePedometer } from "../src/features/pedometer/usePedometer";
 import { parseSavedProgress } from "../src/features/progression/savedProgress";
@@ -73,6 +74,15 @@ export default function RootLayout() {
   useEffect(() => {
     if (isProgressLoaded && isLocalStateLoaded) syncReminder();
   }, [isProgressLoaded, isLocalStateLoaded, syncReminder]);
+
+  // Une pulsation quand l'objectif du jour est franchi en direct (pas au chargement, ni après minuit : seul le passage
+  // de « pas atteint » à « atteint » compte).
+  const wasGoalReachedRef = useRef<boolean | null>(null);
+  useEffect(() => {
+    if (!isProgressLoaded || !isLocalStateLoaded) return;
+    if (wasGoalReachedRef.current === false && goalReachedToday) vibrate("calm");
+    wasGoalReachedRef.current = goalReachedToday;
+  }, [isProgressLoaded, isLocalStateLoaded, goalReachedToday]);
 
   // Au retour au premier plan : on remet les pas à zéro si on a changé de jour, puis on recalcule.
   // En arrière-plan : on envoie la sauvegarde cloud en attente, l'app peut être tuée à tout moment.

@@ -10,6 +10,8 @@ type Settings = {
   dailyGoal: number;
   eveningReminderEnabled: boolean;
   eveningReminderHour: number;
+  /** Vibrations aux grands moments (point franchi, succès, fin de Traque). Désactivées par défaut. */
+  hapticsEnabled: boolean;
 };
 
 type SettingsState = Settings & {
@@ -18,12 +20,14 @@ type SettingsState = Settings & {
   setDailyGoal: (steps: number) => void;
   setEveningReminderEnabled: (enabled: boolean) => void;
   setEveningReminderHour: (hour: number) => void;
+  setHapticsEnabled: (enabled: boolean) => void;
 };
 
 const DEFAULTS: Settings = {
   dailyGoal: DEFAULT_DAILY_GOAL,
   eveningReminderEnabled: false,
   eveningReminderHour: DEFAULT_REMINDER_HOUR,
+  hapticsEnabled: false,
 };
 
 /** Relit des réglages dont on ne connaît pas la forme : une valeur inconnue retombe sur le défaut. */
@@ -36,6 +40,7 @@ export function parseSettings(raw: unknown): Settings {
     dailyGoal: (DAILY_GOAL_OPTIONS as readonly number[]).includes(goal) ? goal : DEFAULTS.dailyGoal,
     eveningReminderEnabled: data.eveningReminderEnabled === true,
     eveningReminderHour: (REMINDER_HOUR_OPTIONS as readonly number[]).includes(hour) ? hour : DEFAULTS.eveningReminderHour,
+    hapticsEnabled: data.hapticsEnabled === true,
   };
 }
 
@@ -50,6 +55,7 @@ function pickSettings(state: SettingsState): Settings {
     dailyGoal: state.dailyGoal,
     eveningReminderEnabled: state.eveningReminderEnabled,
     eveningReminderHour: state.eveningReminderHour,
+    hapticsEnabled: state.hapticsEnabled,
   };
 }
 
@@ -75,6 +81,10 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
   },
   setEveningReminderHour: (hour) => {
     set({ eveningReminderHour: parseSettings({ eveningReminderHour: hour }).eveningReminderHour });
+    persist(pickSettings(get()));
+  },
+  setHapticsEnabled: (enabled) => {
+    set({ hapticsEnabled: enabled });
     persist(pickSettings(get()));
   },
 }));

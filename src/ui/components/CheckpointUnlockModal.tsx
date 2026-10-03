@@ -11,8 +11,10 @@ import { getCompanionsMetAt } from "../../features/companions/journey";
 import { buildCheckpointCard } from "../../features/share/shareCards";
 import { useShareStore } from "../../store/useShareStore";
 import { usePlayerStore } from "../../store/usePlayerStore";
+import { vibrate } from "../../features/haptics/haptics";
 import { useUIStore } from "../../store/useUIStore";
 import { BrandMark } from "./BrandMark";
+import { CompanionSprite } from "./CompanionSprite";
 import { Button } from "./Button";
 import { PaperCard } from "./PaperCard";
 
@@ -53,6 +55,7 @@ export function CheckpointUnlockModal({ enabled }: CheckpointUnlockModalProps) {
 
     if (latest) {
       setCheckpoint(latest);
+      vibrate("checkpoint");
     }
   }, [enabled, unlockedCheckpoints]);
 
@@ -108,7 +111,7 @@ export function CheckpointUnlockModal({ enabled }: CheckpointUnlockModalProps) {
                   accessible
                   accessibilityLabel={`Nouveau compagnon : ${companion.name}, ${companion.title}`}
                 >
-                  <Image source={companion.image} style={styles.companionSprite} resizeMode="contain" />
+                  <CompanionSprite companion={companion} size={64} />
                   <View style={styles.companionText}>
                     <Text style={styles.companionKicker}>Nouveau compagnon</Text>
                     <Text style={styles.companionName}>{companion.name}</Text>
@@ -167,7 +170,6 @@ const styles = StyleSheet.create({
     borderColor: theme.colors.ash,
     borderRadius: theme.radius[4],
   },
-  companionSprite: { width: 64, height: 64 },
   companionText: { flex: 1 },
   companionKicker: { ...theme.text.label, color: theme.colors.bloodEmber },
   companionName: { ...theme.text.displayS, color: theme.colors.bone },

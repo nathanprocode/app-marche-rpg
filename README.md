@@ -37,6 +37,7 @@ L'app contient du code natif (`modules/permanent-pedometer/`) : Expo Go ne suffi
   par la feuille de partage du téléphone. Elle demande `react-native-view-shot` et `expo-sharing` (build natif) ;
   sur un build qui ne les contient pas, le partage retombe sur un texte.
 - « Recommencer à zéro » (Profil) efface progression, série, succès, historique et sauvegarde cloud ; les réglages restent.
+- Vibrations (Profil, désactivées par défaut) : un motif bref à chaque point franchi, succès, fin de Traque et objectif du jour atteint.
 - Rappel du soir (Profil, désactivé par défaut) : une notification locale à l'heure choisie si l'objectif du jour n'est pas atteint.
   Les 3 prochains soirs sont programmés à chaque ouverture de l'app ; il ne demande pas de nouveau build natif.
 
@@ -47,7 +48,7 @@ L'app contient du code natif (`modules/permanent-pedometer/`) : Expo Go ne suffi
 - `src/features/` : logique métier. Pure et testée : `progression`, `brandOfSacrifice`, `mapJourney`,
   `companions` (qui marche avec Guts, placement autour de lui sur la carte), `camp` (vignette jour/nuit et phrase d'ambiance),
   `history` (pas par jour, stats des 7 derniers jours du Profil), `zoom` (pincer et déplacer les planches des Chroniques).
-  `achievements` (liste des succès et leur avancement), `reminders` (dates et texte du rappel du soir, programmation des notifications), `share` (cartes et textes de partage, capture de l'image).
+  `achievements` (liste des succès et leur avancement), `reminders` (dates et texte du rappel du soir, programmation des notifications), `share` (cartes et textes de partage, capture de l'image), `haptics` (motifs de vibration).
   Liée à l'appareil (non testée) : `pedometer` (capteur, service natif, notification), `runtime` (série et Marque du jour),
   `userCloud` (Firestore).
 - `src/store/` : états Zustand. La progression est sauvegardée en local (AsyncStorage, une clé par compte) à chaque
@@ -57,8 +58,13 @@ L'app contient du code natif (`modules/permanent-pedometer/`) : Expo Go ne suffi
 - `src/ui/` : composants et écrans.
 - `docs/` : notes de développement, jour par jour (`day1-setup.md` à `day7-stabilization.md`).
 - `src/data/map/berserk-checkpoints.ts` : la seule source des checkpoints (km, texte, position sur la carte).
-- `src/data/companions.ts` : les 7 compagnons (texte, sprite, checkpoint de rencontre, tronçons parcourus avec Guts).
+- `src/data/companions.ts` : les 15 compagnons (texte, sprite, checkpoint de rencontre, tronçons parcourus avec Guts).
   Sprites dans `assets/companions/` (fond transparent, 192 px de haut), scènes de camp dans `assets/camp/`.
+  15 compagnons dont 8 attendent encore leur sprite (Gambino, Judeau, Pippin, Corkus, Rickert, Zodd, Godo, Flora) : en attendant,
+  leur fiche montre une silhouette et ils n'apparaissent pas sur la carte.
+  **Ajouter un sprite** : PNG à fond transparent, 192 px de haut, nommé `assets/companions/<id>.png` (même style que les
+  autres), puis dans `companions.ts` remplacer le commentaire « Sprite à fournir » par
+  `image: require("../../assets/companions/<id>.png"),`. Il apparaît alors sur la carte aux tronçons indiqués dans `travels`.
 - `modules/permanent-pedometer/` : module Android natif : service de suivi permanent (notification fixe), activé par l'interrupteur du Profil. Demande un build natif (pas de simple rechargement).
 
 ## Design system

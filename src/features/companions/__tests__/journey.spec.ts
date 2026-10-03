@@ -11,13 +11,37 @@ describe("getTravelingCompanions", () => {
     expect(travelingAt(84.9)).toEqual([]);
   });
 
-  it("Casca et Griffith le rejoignent à La Rencontre avec le Faucon", () => {
-    expect(travelingAt(85)).toEqual(["casca", "griffith"]);
+  it("Gambino n'est là qu'entre L'Ombre de Gambino et Le Briseur d'Ours", () => {
+    expect(travelingAt(18)).toEqual(["gambino"]);
+    expect(travelingAt(51.9)).toEqual(["gambino"]);
+    expect(travelingAt(52)).toEqual([]);
   });
 
-  it("ils le quittent au Départ sous la Neige", () => {
-    expect(travelingAt(189.9)).toEqual(["casca", "griffith"]);
+  it("la Troupe du Faucon le rejoint à La Rencontre avec le Faucon", () => {
+    expect(travelingAt(85)).toEqual(["casca", "griffith", "judeau", "pippin", "corkus", "rickert"]);
+  });
+
+  it("Zodd rôde à Nosferatu Zodd, juste avant La Chute de Doldrey", () => {
+    expect(travelingAt(115)).toEqual(["casca", "griffith", "judeau", "pippin", "corkus", "rickert", "zodd"]);
+    expect(travelingAt(142)).toEqual(["casca", "griffith", "judeau", "pippin", "corkus", "rickert"]);
+  });
+
+  it("tous quittent Guts au Départ sous la Neige", () => {
+    expect(travelingAt(189.9)).toContain("griffith");
     expect(travelingAt(190)).toEqual([]);
+  });
+
+  it("les Faucons reviennent pour la Tour des Renaissances, puis disparaissent à L'Éclipse", () => {
+    expect(travelingAt(250)).toEqual(["judeau", "pippin", "corkus", "rickert"]);
+    expect(travelingAt(314.9)).toEqual(["judeau", "pippin", "corkus", "rickert"]);
+    expect(travelingAt(315)).toEqual(["skullknight"]);
+  });
+
+  it("Rickert retrouve Guts à la Forge de Godo ; Godo et Flora restent chez eux", () => {
+    expect(travelingAt(384)).toContain("rickert");
+    expect(travelingAt(384)).not.toContain("godo");
+    expect(travelingAt(460)).not.toContain("rickert");
+    expect(travelingAt(700)).not.toContain("flora");
   });
 
   it("le Chevalier Squelette n'apparaît qu'entre L'Éclipse et Le Comte", () => {
@@ -46,12 +70,38 @@ describe("isCompanionMet", () => {
 
 describe("getCompanionsMetAt", () => {
   it("liste les compagnons rencontrés à un checkpoint", () => {
-    expect(getCompanionsMetAt("cp-004", COMPANIONS).map((companion) => companion.id)).toEqual(["casca", "griffith"]);
-    expect(getCompanionsMetAt("cp-002", COMPANIONS)).toEqual([]);
+    expect(getCompanionsMetAt("cp-004", COMPANIONS).map((companion) => companion.id)).toEqual([
+      "casca",
+      "griffith",
+      "judeau",
+      "pippin",
+      "corkus",
+      "rickert",
+    ]);
+    expect(getCompanionsMetAt("cp-002", COMPANIONS).map((companion) => companion.id)).toEqual(["gambino"]);
+    expect(getCompanionsMetAt("cp-003", COMPANIONS)).toEqual([]);
   });
 });
 
 describe("COMPANIONS", () => {
+  it("ont des identifiants uniques et sont rangés dans l'ordre de rencontre", () => {
+    const ids = COMPANIONS.map((companion) => companion.id);
+    expect(new Set(ids).size).toBe(ids.length);
+
+    const km = (id: string) => BERSERK_CHECKPOINTS.find((checkpoint) => checkpoint.id === id)!.kmThreshold;
+    const meetKms = COMPANIONS.map((companion) => km(companion.metAtCheckpointId));
+    expect(meetKms).toEqual([...meetKms].sort((a, b) => a - b));
+  });
+
+  it("ne marchent avec Guts qu'après l'avoir rencontré", () => {
+    const km = (id: string) => BERSERK_CHECKPOINTS.find((checkpoint) => checkpoint.id === id)!.kmThreshold;
+    COMPANIONS.forEach((companion) => {
+      companion.travels.forEach((travel) => {
+        expect(km(travel.fromCheckpointId)).toBeGreaterThanOrEqual(km(companion.metAtCheckpointId));
+      });
+    });
+  });
+
   it("ne référence que des checkpoints existants", () => {
     const ids = new Set(BERSERK_CHECKPOINTS.map((checkpoint) => checkpoint.id));
     COMPANIONS.forEach((companion) => {

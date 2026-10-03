@@ -11,8 +11,11 @@ export type Companion = {
   name: string;
   title: string;
   description: string;
-  /** Sprite en pixel art, fond transparent, 192 px de haut. */
-  image: ImageSourcePropType;
+  /**
+   * Sprite en pixel art, fond transparent, 192 px de haut (assets/companions/<id>.png).
+   * Sans sprite, la fiche montre une silhouette et le compagnon n'apparaît pas sur la carte.
+   */
+  image?: ImageSourcePropType;
   /** Checkpoint où on le rencontre : il entre alors dans la collection. */
   metAtCheckpointId: string;
   /** Tronçons de la Traque où il marche aux côtés de Guts sur la carte. */
@@ -21,6 +24,16 @@ export type Companion = {
 
 /** Les compagnons, dans l'ordre de rencontre (c'est aussi leur ordre autour de Guts sur la carte). */
 export const COMPANIONS: Companion[] = [
+  {
+    id: "gambino",
+    name: "Gambino",
+    title: "Le Maître Cruel",
+    description:
+      "Mercenaire borgne et sans pitié, Gambino a élevé Guts à coups de bâton dans la boue des champs de bataille. Il t'apprend la leçon la plus dure : personne ne viendra marcher à ta place. Chaque pas que tu fais, tu le fais pour toi.",
+    // Sprite à fournir : assets/companions/gambino.png, puis image: require("../../assets/companions/gambino.png").
+    metAtCheckpointId: "cp-002",
+    travels: [{ fromCheckpointId: "cp-002", untilCheckpointId: "cp-003" }],
+  },
   {
     id: "casca",
     name: "Casca",
@@ -40,6 +53,56 @@ export const COMPANIONS: Companion[] = [
     image: require("../../assets/companions/griffith.png"),
     metAtCheckpointId: "cp-004",
     travels: [{ fromCheckpointId: "cp-004", untilCheckpointId: "cp-006" }],
+  },
+  {
+    id: "judeau",
+    name: "Judeau",
+    title: "Le Lanceur de Couteaux",
+    description:
+      "Sourire en coin et regard qui ne rate rien, Judeau est le plus fin tireur de la Troupe du Faucon. Il prend la vie avec légèreté, même au pire moment. Quand la route te semble lourde, il te rappelle qu'on avance mieux le cœur léger.",
+    // Sprite à fournir : assets/companions/judeau.png, puis image: require("../../assets/companions/judeau.png").
+    metAtCheckpointId: "cp-004",
+    travels: [{ fromCheckpointId: "cp-004", untilCheckpointId: "cp-006" }, { fromCheckpointId: "cp-007", untilCheckpointId: "cp-008" }],
+  },
+  {
+    id: "pippin",
+    name: "Pippin",
+    title: "Le Colosse au Grand Cœur",
+    description:
+      "Taciturne, immense et d'une douceur inattendue, Pippin porte sans broncher ce que les autres ne peuvent pas soulever. Il ne parle pas beaucoup, mais il est toujours là, au même pas que toi, jusqu'à ce que tu arrives au bout de la journée.",
+    // Sprite à fournir : assets/companions/pippin.png, puis image: require("../../assets/companions/pippin.png").
+    metAtCheckpointId: "cp-004",
+    travels: [{ fromCheckpointId: "cp-004", untilCheckpointId: "cp-006" }, { fromCheckpointId: "cp-007", untilCheckpointId: "cp-008" }],
+  },
+  {
+    id: "corkus",
+    name: "Corkus",
+    title: "Le Fanfaron",
+    description:
+      "Vantard, jaloux et prompt à s'emporter, Corkus ne supporte pas de se laisser distancer. Cette fierté mal placée est aussi ce qui le fait avancer : à côté de lui, tu as toujours une bonne raison de ne pas te laisser dépasser.",
+    // Sprite à fournir : assets/companions/corkus.png, puis image: require("../../assets/companions/corkus.png").
+    metAtCheckpointId: "cp-004",
+    travels: [{ fromCheckpointId: "cp-004", untilCheckpointId: "cp-006" }, { fromCheckpointId: "cp-007", untilCheckpointId: "cp-008" }],
+  },
+  {
+    id: "rickert",
+    name: "Rickert",
+    title: "Le Cadet de la Troupe",
+    description:
+      "Le plus jeune des Faucons, Rickert compense sa force modeste par son esprit : il sait réparer les armes et prévoir les imprévus. Il te rappelle qu'on va plus loin avec un bon équipement, de bonnes chaussures et un peu d'organisation.",
+    // Sprite à fournir : assets/companions/rickert.png, puis image: require("../../assets/companions/rickert.png").
+    metAtCheckpointId: "cp-004",
+    travels: [{ fromCheckpointId: "cp-004", untilCheckpointId: "cp-006" }, { fromCheckpointId: "cp-007", untilCheckpointId: "cp-008" }, { fromCheckpointId: "cp-009", untilCheckpointId: "cp-010" }],
+  },
+  {
+    id: "zodd",
+    name: "Zodd",
+    title: "Le Fauve Immortel",
+    description:
+      "Géant à la cape déchirée, Zodd ne marche pas à tes côtés : il rôde au bord de ta route, attiré par ceux qui refusent de plier. Pour lui, chaque kilomètre est un duel. Sentir son ombre derrière toi suffit à garder le rythme.",
+    // Sprite à fournir : assets/companions/zodd.png, puis image: require("../../assets/companions/zodd.png").
+    metAtCheckpointId: "cp-004-5",
+    travels: [{ fromCheckpointId: "cp-004-5", untilCheckpointId: "cp-005" }, { fromCheckpointId: "cp-011-5", untilCheckpointId: "cp-012" }],
   },
   {
     id: "skullknight",
@@ -62,6 +125,16 @@ export const COMPANIONS: Companion[] = [
     travels: [{ fromCheckpointId: "cp-009" }],
   },
   {
+    id: "godo",
+    name: "Godo",
+    title: "Le Forgeron de la Vallée",
+    description:
+      "Vieil artisan bourru à la barbe blanche, Godo a forgé l'épée qui demande une force démesurée. Il ne quitte jamais son atelier, mais sa leçon voyage avec toi : les grandes choses se construisent coup après coup, pas après pas.",
+    // Sprite à fournir : assets/companions/godo.png, puis image: require("../../assets/companions/godo.png").
+    metAtCheckpointId: "cp-009",
+    travels: [],
+  },
+  {
     id: "farnese",
     name: "Farnèse",
     title: "L'Étudiante Déterminée",
@@ -80,6 +153,16 @@ export const COMPANIONS: Companion[] = [
     image: require("../../assets/companions/serpico.png"),
     metAtCheckpointId: "cp-011",
     travels: [{ fromCheckpointId: "cp-011" }],
+  },
+  {
+    id: "flora",
+    name: "Flora",
+    title: "La Vieille Sorcière",
+    description:
+      "Doyenne des sorcières et maîtresse de Schierke, Flora veille sur sa demeure comme sur un refuge. Elle sait que les corps comme les esprits se réparent avec le temps : elle te rappelle de t'arrêter respirer, puis de reprendre la route.",
+    // Sprite à fournir : assets/companions/flora.png, puis image: require("../../assets/companions/flora.png").
+    metAtCheckpointId: "cp-012",
+    travels: [],
   },
   {
     id: "schierke",
