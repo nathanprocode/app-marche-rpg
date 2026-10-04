@@ -56,4 +56,12 @@ describe("succès", () => {
   it("donnent l'avancement des succès verrouillés", () => {
     expect(getAchievement("km-100")!.progress(stats({ lifetimeKm: 40 }))).toEqual({ value: 40, target: 100 });
   });
+
+  it("« Survivant de l'Éclipse » demande les cinq duels de la Main de Dieu", () => {
+    const survivor = getAchievement("boss-femto")!;
+    const four = stats({ bossesDefeated: ["void", "ubik", "conrad", "slan"] });
+    expect(survivor.progress(four)).toEqual({ value: 4, target: 5 });
+    expect(isAchievementEarned(survivor, four)).toBe(false);
+    expect(isAchievementEarned(survivor, stats({ bossesDefeated: ["void", "ubik", "conrad", "slan", "femto"] }))).toBe(true);
+  });
 });

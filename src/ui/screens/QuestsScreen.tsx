@@ -4,10 +4,11 @@ import { Image, Modal, Pressable, StyleSheet, Text, View, type ImageSourcePropTy
 import { formatDecimal, formatInt } from "../../core/format";
 import { theme } from "../../core/theme";
 import { COMPANIONS } from "../../data/companions";
+import { ENEMIES, enemyStatus } from "../../data/enemies";
 import { BERSERK_CHECKPOINTS, type BerserkCheckpoint } from "../../data/map/berserk-checkpoints";
 import { BERSERK_PANEL_IMAGES } from "../../data/map/berserk-panels";
 import { BOSS_ENCOUNTERS } from "../../data/bosses";
-import { computeDuels } from "../../features/bosses/duel";
+import { computeDuels, victoriousEncounterIds } from "../../features/bosses/duel";
 import { buildAchievementStats } from "../../features/achievements/stats";
 import { ACHIEVEMENTS } from "../../features/achievements/achievements";
 import { isCompanionMet } from "../../features/companions/journey";
@@ -20,13 +21,14 @@ import { useSettingsStore } from "../../store/useSettingsStore";
 import { DuelCard } from "../components/DuelCard";
 import { AchievementList } from "../components/AchievementList";
 import { CompanionCollection } from "../components/CompanionCollection";
+import { EnemyCollection } from "../components/EnemyCollection";
 import { InkCard } from "../components/InkCard";
 import { PaperCard } from "../components/PaperCard";
 import { ProgressBar } from "../components/ProgressBar";
 import { Screen } from "../components/Screen";
 import { ZoomableImage } from "../components/ZoomableImage";
 
-type QuestsTab = "daily" | "chronicles" | "companions" | "achievements";
+type QuestsTab = "daily" | "chronicles" | "companions" | "enemies" | "achievements";
 
 const STREAK_MILESTONES = [3, 7, 14, 30, 60, 100, 365];
 
@@ -63,6 +65,8 @@ export function QuestsScreen() {
   const activeDuels = computeDuels(BOSS_ENCOUNTERS, progress.lapSteps, BERSERK_CHECKPOINTS).filter(
     (duel) => duel.state === "active",
   );
+  const defeatedIds = victoriousEncounterIds(bossVictories);
+  const enemiesMet = ENEMIES.filter((enemy) => enemyStatus(enemy, unlockedIds, defeatedIds) !== "unknown").length;
   const achievementStats = buildAchievementStats(progress, unlockedIds, bestStreak, bestDaySteps, bossVictories);
   const achievementCount = ACHIEVEMENTS.filter((achievement) => achievements[achievement.id]).length;
 
@@ -87,6 +91,12 @@ export function QuestsScreen() {
           onPress={() => setTab("companions")}
         />
         <TabButton
+          label="Ennemis"
+          count={[enemiesMet, ENEMIES.length]}
+          selected={tab === "enemies"}
+          onPress={() => setTab("enemies")}
+        />
+        <TabButton
           label="Succès"
           count={[achievementCount, ACHIEVEMENTS.length]}
           selected={tab === "achievements"}
@@ -106,6 +116,8 @@ export function QuestsScreen() {
           </>
         ) : tab === "companions" ? (
           <CompanionCollection unlockedCheckpointIds={unlockedIds} />
+        ) : tab === "enemies" ? (
+          <EnemyCollection unlockedCheckpointIds={unlockedIds} bossVictories={bossVictories} />
         ) : tab === "achievements" ? (
           <AchievementList
             stats={achievementStats}
@@ -298,7 +310,7 @@ const styles = StyleSheet.create({
     borderRadius: theme.radius[4],
     overflow: "hidden",
   },
-  tabButton: { width: "50%", alignItems: "center", justifyContent: "center", paddingVertical: theme.space[8] },
+  tabButton: { flexBasis: "50%", flexGrow: 1, alignItems: "center", justifyContent: "center", paddingVertical: theme.space[8] },
   tabButtonSelected: { backgroundColor: theme.colors.bone },
   tabLabel: { ...theme.text.label, fontSize: 14, lineHeight: 20, color: theme.colors.boneDim, textAlign: "center" },
   tabCount: { ...theme.text.small, color: theme.colors.boneDim, textAlign: "center" },

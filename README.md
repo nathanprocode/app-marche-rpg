@@ -35,6 +35,8 @@ L'app contient du code natif (`modules/permanent-pedometer/`) : Expo Go ne suffi
 - Duels de boss : Zodd t'attend à « Nosferatu Zodd » (115 km) puis à « La Colline aux Épées » (590 km). Chaque pas fait depuis
   le point retire de la vie à Zodd, forme humaine d'abord puis forme d'Apôtre (10 000 + 20 000 pas, puis 20 000 + 40 000).
   Pas de limite de temps ni de pénalité : le duel continue jusqu'à la victoire. Il se rejoue à chaque tour de Traque.
+  À l'Éclipse (315 km), les cinq de la Main de Dieu (Void, Ubik, Conrad, Slan, Femto) se succèdent : chaque duel s'ouvre quand
+  le précédent est gagné (`afterEncounterId`), 42 000 pas en tout. Le bestiaire (onglet « Ennemis » des Quêtes) est dans `src/data/enemies.ts`.
   Les duels sont décrits dans `src/data/bosses.ts` (un nouveau boss = une entrée), les pas et les événements se calculent
   dans `src/features/bosses/duel.ts` (rien n'est stocké à part les victoires).
 - Carte : pincer à deux doigts pour zoomer (autour du milieu des doigts) ou dézoomer jusqu'à voir toute la carte, glisser à un doigt

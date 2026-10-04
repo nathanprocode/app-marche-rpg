@@ -16,6 +16,11 @@ export type BossEncounter = {
   /** Titre du duel, au-dessus de la barre de vie. */
   title: string;
   checkpointId: string;
+  /**
+   * Duel qu'il faut gagner avant : celui-ci s'ouvre quand l'autre se termine, au lieu de s'ouvrir au checkpoint
+   * (les cinq de la Main de Dieu se succèdent à l'Éclipse).
+   */
+  afterEncounterId?: string;
   /** Les formes s'enchaînent dans l'ordre ; la dernière vaincue, le duel est gagné. */
   phases: BossPhase[];
   /** Phrase affichée tant que le duel est en cours. */
@@ -28,6 +33,11 @@ export type BossEncounter = {
 
 const ZODD_HUMAN = require("../../assets/companions/zodd.png");
 const ZODD_APOSTLE = require("../../assets/bosses/zodd-apostle.png");
+const VOID = require("../../assets/bosses/void.png");
+const UBIK = require("../../assets/bosses/ubik.png");
+const CONRAD = require("../../assets/bosses/conrad.png");
+const SLAN = require("../../assets/bosses/slan.png");
+const FEMTO = require("../../assets/bosses/femto.png");
 
 /**
  * Les duels. Les points de vie sont en pas : le premier duel (60 km de route) et le second (48 km) laissent
@@ -67,5 +77,71 @@ export const BOSS_ENCOUNTERS: BossEncounter[] = [
     victoryTitle: "Zodd s'incline",
     victoryText:
       "Zodd sourit enfin, de ce sourire sauvage qu'il réserve à ses égaux. Tu as parcouru des centaines de kilomètres pour cet instant : il te reconnaît comme un rival digne de lui.",
+  },
+  // L'Éclipse (315 km) : les cinq de la Main de Dieu se succèdent. Entre l'Éclipse et « Le Comte » (350 km) il y a
+  // environ 46 700 pas : les cinq duels en demandent 42 000, comme pour Zodd, il reste un peu de marge.
+  {
+    id: "void",
+    bossName: "Void",
+    title: "L'Éclipse : Void",
+    checkpointId: "cp-008",
+    phases: [{ id: "base", label: "Le Vide", hp: 6_000, image: VOID }],
+    intro: "Le ciel s'est éteint. Void préside le rite, sans un geste. Chaque pas que tu fais entame son calme.",
+    phaseChangeTexts: [],
+    victoryTitle: "Void se détourne",
+    victoryText:
+      "Le Vide reste silencieux, puis son regard passe à un autre. Tu n'as pas gagné, tu as seulement tenu : dans cet enfer, c'est déjà beaucoup.",
+  },
+  {
+    id: "ubik",
+    bossName: "Ubik",
+    title: "L'Éclipse : Ubik",
+    checkpointId: "cp-008",
+    afterEncounterId: "void",
+    phases: [{ id: "base", label: "Le Rieur", hp: 7_000, image: UBIK }],
+    intro: "Ubik rit doucement, comme devant un enfant qui s'obstine. Marche : chaque pas fait taire ce rire un peu plus.",
+    phaseChangeTexts: [],
+    victoryTitle: "Ubik cesse de rire",
+    victoryText:
+      "Le rire s'éteint d'un coup. Ubik te dévisage, vexé, puis s'efface. Le suivant approche déjà.",
+  },
+  {
+    id: "conrad",
+    bossName: "Conrad",
+    title: "L'Éclipse : Conrad",
+    checkpointId: "cp-008",
+    afterEncounterId: "ubik",
+    phases: [{ id: "base", label: "Le Colosse", hp: 8_000, image: CONRAD }],
+    intro: "Conrad avance, lent et pesant, et chaque pas qu'il fait te coûte. Réponds-lui du tien, un après l'autre.",
+    phaseChangeTexts: [],
+    victoryTitle: "Conrad recule",
+    victoryText:
+      "La masse s'arrête, hésite, puis cède du terrain. Tu l'as usé à force de patience. Il en reste deux.",
+  },
+  {
+    id: "slan",
+    bossName: "Slan",
+    title: "L'Éclipse : Slan",
+    checkpointId: "cp-008",
+    afterEncounterId: "conrad",
+    phases: [{ id: "base", label: "La Tentatrice", hp: 9_000, image: SLAN }],
+    intro: "Slan te regarde de haut, sûre d'elle. Ne baisse pas les yeux : continue d'avancer.",
+    phaseChangeTexts: [],
+    victoryTitle: "Slan perd son sourire",
+    victoryText:
+      "Pour la première fois, elle ne sourit plus. Tu n'as pas cédé, et elle le sait. Plus qu'un seul.",
+  },
+  {
+    id: "femto",
+    bossName: "Femto",
+    title: "L'Éclipse : Femto",
+    checkpointId: "cp-008",
+    afterEncounterId: "slan",
+    phases: [{ id: "base", label: "Le Faucon Déchu", hp: 12_000, image: FEMTO }],
+    intro: "Femto est le dernier. Celui que tu suivais, celui que tu as aimé. Chaque pas est une réponse.",
+    phaseChangeTexts: [],
+    victoryTitle: "Tu as survécu à l'Éclipse",
+    victoryText:
+      "Le ciel se déchire. Tu n'as pas triomphé de la Main de Dieu : tu as survécu, et tu portes désormais la Marque. La route continue, et c'est ta force. Cours.",
   },
 ];

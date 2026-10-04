@@ -216,7 +216,15 @@ describe("duels de boss", () => {
   it("rattrape les duels déjà gagnés au chargement sans les annoncer", async () => {
     await usePlayerStore.getState().mergeCloudProgress(cloud(1_000_000, 0));
     const state = usePlayerStore.getState();
-    expect(Object.keys(state.bossVictories).sort()).toEqual(["1/zodd-1", "1/zodd-2"]);
+    expect(Object.keys(state.bossVictories).sort()).toEqual([
+      "1/conrad",
+      "1/femto",
+      "1/slan",
+      "1/ubik",
+      "1/void",
+      "1/zodd-1",
+      "1/zodd-2",
+    ]);
     expect(state.newBossEvents).toEqual([]);
   });
 

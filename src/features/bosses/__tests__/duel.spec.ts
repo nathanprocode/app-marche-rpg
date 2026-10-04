@@ -1,6 +1,6 @@
 import { BOSS_ENCOUNTERS } from "../../../data/bosses";
 import { BERSERK_CHECKPOINTS } from "../../../data/map/berserk-checkpoints";
-import { computeDuel, computeDuels, diffDuels, stepsAtKm, victoriousEncounterIds, victoryKey } from "../duel";
+import { computeDuel, computeDuels, duelStartSteps, diffDuels, stepsAtKm, victoriousEncounterIds, victoryKey } from "../duel";
 
 const ZODD_1 = BOSS_ENCOUNTERS[0];
 const START = stepsAtKm(115);
@@ -44,7 +44,7 @@ describe("computeDuel", () => {
 
   it("le second duel s'ouvre plus loin sur la route, avec plus de vie", () => {
     const duels = computeDuels(BOSS_ENCOUNTERS, stepsAtKm(590), BERSERK_CHECKPOINTS);
-    expect(duels.map((duel) => duel.state)).toEqual(["won", "active"]);
+    expect(duels.map((duel) => duel.state).slice(0, 2)).toEqual(["won", "active"]);
     expect(duels[1].totalHp).toBe(60_000);
   });
 
@@ -88,5 +88,51 @@ describe("victoires", () => {
   it("une clé par tour et par duel, les identifiants se lisent tous tours confondus", () => {
     expect(victoryKey(2, "zodd-1")).toBe("2/zodd-1");
     expect(victoriousEncounterIds({ "1/zodd-1": "a", "2/zodd-1": "b", "1/zodd-2": "c" }).sort()).toEqual(["zodd-1", "zodd-2"]);
+  });
+});
+
+describe("les cinq de la Main de Dieu à l'Éclipse", () => {
+  const eclipse = BOSS_ENCOUNTERS.filter((encounter) => encounter.checkpointId === "cp-008");
+  const eclipseStart = stepsAtKm(315);
+  const statesAt = (lapSteps: number) =>
+    computeDuels(BOSS_ENCOUNTERS, lapSteps, BERSERK_CHECKPOINTS)
+      .filter((duel) => duel.encounter.checkpointId === "cp-008")
+      .map((duel) => duel.state);
+
+  it("sont cinq, dans l'ordre Void, Ubik, Conrad, Slan, Femto", () => {
+    expect(eclipse.map((encounter) => encounter.id)).toEqual(["void", "ubik", "conrad", "slan", "femto"]);
+  });
+
+  it("restent fermés avant l'Éclipse", () => {
+    expect(statesAt(eclipseStart - 1)).toEqual(["locked", "locked", "locked", "locked", "locked"]);
+  });
+
+  it("se succèdent : un seul est ouvert à la fois, le suivant s'ouvre quand le précédent est gagné", () => {
+    expect(statesAt(eclipseStart)).toEqual(["active", "locked", "locked", "locked", "locked"]);
+    expect(statesAt(eclipseStart + 5_999)).toEqual(["active", "locked", "locked", "locked", "locked"]);
+    expect(statesAt(eclipseStart + 6_000)).toEqual(["won", "active", "locked", "locked", "locked"]);
+    expect(statesAt(eclipseStart + 6_000 + 7_000 + 8_000)).toEqual(["won", "won", "won", "active", "locked"]);
+  });
+
+  it("le duel suivant repart avec toute sa vie, sans reprendre les dégâts du précédent", () => {
+    const ubik = computeDuel(eclipse[1], eclipseStart + 6_000 + 1_000, BERSERK_CHECKPOINTS, BOSS_ENCOUNTERS);
+    expect(ubik.damage).toBe(1_000);
+    expect(ubik.phaseHpLeft).toBe(6_000);
+  });
+
+  it("Femto, le dernier, finit à la fin des cinq duels", () => {
+    const total = eclipse.reduce((sum, encounter) => sum + encounter.phases[0].hp, 0);
+    expect(duelStartSteps(eclipse[4], BOSS_ENCOUNTERS, BERSERK_CHECKPOINTS)).toBe(eclipseStart + total - eclipse[4].phases[0].hp);
+    expect(statesAt(eclipseStart + total)).toEqual(["won", "won", "won", "won", "won"]);
+  });
+
+  it("tiennent entre l'Éclipse et le point suivant (350 km), avec de la marge", () => {
+    const total = eclipse.reduce((sum, encounter) => sum + encounter.phases[0].hp, 0);
+    expect(total).toBeLessThan(stepsAtKm(350) - eclipseStart);
+  });
+
+  it("un duel enchaîné sur un duel inconnu est refusé", () => {
+    const orphan = { ...eclipse[1], afterEncounterId: "inconnu" };
+    expect(() => computeDuel(orphan, 0, BERSERK_CHECKPOINTS, BOSS_ENCOUNTERS)).toThrow("Duel inconnu");
   });
 });

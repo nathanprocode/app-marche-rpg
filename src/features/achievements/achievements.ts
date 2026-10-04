@@ -26,6 +26,9 @@ export type Achievement = {
   progress: (stats: AchievementStats) => { value: number; target: number };
 };
 
+/** Les cinq duels de l'Éclipse, dans l'ordre. */
+const ECLIPSE_DUELS = ["void", "ubik", "conrad", "slan", "femto"];
+
 function threshold(
   id: string,
   title: string,
@@ -94,6 +97,17 @@ export const ACHIEVEMENTS: Achievement[] = [
     category: "boss",
     icon: "skull",
     progress: (stats) => ({ value: stats.bossesDefeated.includes("zodd-2") ? 1 : 0, target: 1 }),
+  },
+  {
+    id: "boss-femto",
+    title: "Survivant de l'Éclipse",
+    description: "Tenir tête aux cinq de la Main de Dieu, de Void à Femto.",
+    category: "boss",
+    icon: "moon",
+    progress: (stats) => ({
+      value: ECLIPSE_DUELS.filter((id) => stats.bossesDefeated.includes(id)).length,
+      target: ECLIPSE_DUELS.length,
+    }),
   },
 
   threshold("lap-1", "La Traque achevée", "Terminer la Traque une fois.", "lap", "trophy", 1, (s) => s.lapsCompleted),
