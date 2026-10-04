@@ -65,7 +65,7 @@ L'app contient du code natif (`modules/permanent-pedometer/`) : Expo Go ne suffi
   est lu d'abord (l'app marche hors ligne), puis fusionné avec Firestore : la sauvegarde qui a le plus de pas l'emporte
   (`src/features/progression/savedProgress.ts`).
 - `src/ui/` : composants et écrans.
-- `docs/` : notes de développement, jour par jour (`day1-setup.md` à `day7-stabilization.md`).
+- `docs/HANDOFF.md` : **passation** (état du projet, décisions, reste à faire, pièges). `docs/day*.md` : journal des premiers jours.
 - `src/data/map/berserk-checkpoints.ts` : la seule source des checkpoints (km, texte, position sur la carte).
 - `src/data/companions.ts` : les 15 compagnons (texte, sprite, checkpoint de rencontre, tronçons parcourus avec Guts).
   Sprites dans `assets/companions/` (formes de boss dans `assets/bosses/`) (fond transparent, 192 px de haut), scènes de camp dans `assets/camp/`.
