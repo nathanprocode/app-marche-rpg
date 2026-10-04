@@ -37,6 +37,10 @@ L'app contient du code natif (`modules/permanent-pedometer/`) : Expo Go ne suffi
   Pas de limite de temps ni de pénalité : le duel continue jusqu'à la victoire. Il se rejoue à chaque tour de Traque.
   Les duels sont décrits dans `src/data/bosses.ts` (un nouveau boss = une entrée), les pas et les événements se calculent
   dans `src/features/bosses/duel.ts` (rien n'est stocké à part les victoires).
+- Carte : pincer à deux doigts pour zoomer (autour du milieu des doigts) ou dézoomer jusqu'à voir toute la carte, glisser à un doigt
+  pour la déplacer, boutons + / - / recentrer en plus. Dès qu'on explore, la carte ne se recentre plus d'elle-même sur Guts ;
+  le bouton « recentrer » reprend le suivi. Le chemin parcouru est une piste de points d'une taille constante à l'écran.
+  Calculs dans `src/features/mapZoom/mapZoom.ts`.
 - Historique du Profil sur 7 jours, 30 jours ou depuis le début (365 jours conservés sur le téléphone).
 - Partage : image 4:5 « Encre & Sang » (point franchi avec sa planche, fin de Traque, succès, progression du Profil) envoyée
   par la feuille de partage du téléphone. Elle demande `react-native-view-shot` et `expo-sharing` (build natif) ;
@@ -52,7 +56,7 @@ L'app contient du code natif (`modules/permanent-pedometer/`) : Expo Go ne suffi
 - `src/core/theme/` : design system « Encre & Sang » (grille de 8, tokens nommés comme les maquettes).
 - `src/features/` : logique métier. Pure et testée : `progression`, `brandOfSacrifice`, `mapJourney`,
   `companions` (qui marche avec Guts, placement autour de lui sur la carte), `camp` (vignette jour/nuit et phrase d'ambiance),
-  `history` (pas par jour, stats des 7 derniers jours du Profil), `zoom` (pincer et déplacer les planches des Chroniques).
+  `history` (pas par jour, stats des 7 derniers jours du Profil), `zoom` (pincer et déplacer les planches des Chroniques), `mapZoom` (zoom et déplacement de la carte).
   `achievements` (liste des succès et leur avancement), `bosses` (duels : vie restante, changements de forme), `reminders` (dates et texte du rappel du soir, programmation des notifications), `share` (cartes et textes de partage, capture de l'image), `haptics` (motifs de vibration).
   Liée à l'appareil (non testée) : `pedometer` (capteur, service natif, notification), `runtime` (série et Marque du jour),
   `userCloud` (Firestore).
@@ -61,7 +65,7 @@ L'app contient du code natif (`modules/permanent-pedometer/`) : Expo Go ne suffi
   est lu d'abord (l'app marche hors ligne), puis fusionné avec Firestore : la sauvegarde qui a le plus de pas l'emporte
   (`src/features/progression/savedProgress.ts`).
 - `src/ui/` : composants et écrans.
-- `docs/` : notes de développement, jour par jour (`day1-setup.md` à `day7-stabilization.md`).
+- `docs/HANDOFF.md` : **passation** (état du projet, décisions, reste à faire, pièges). `docs/day*.md` : journal des premiers jours.
 - `src/data/map/berserk-checkpoints.ts` : la seule source des checkpoints (km, texte, position sur la carte).
 - `src/data/companions.ts` : les 15 compagnons (texte, sprite, checkpoint de rencontre, tronçons parcourus avec Guts).
   Sprites dans `assets/companions/` (formes de boss dans `assets/bosses/`) (fond transparent, 192 px de haut), scènes de camp dans `assets/camp/`.
