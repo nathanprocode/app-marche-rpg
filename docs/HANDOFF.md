@@ -34,6 +34,7 @@ Tests : 25 suites, 208 tests, tous verts. CI GitHub (`.github/workflows/ci.yml`)
 | Vibrations | Option du Profil, désactivée par défaut : point franchi, succès, fin de Traque, boss, objectif du jour | `src/features/haptics` |
 | Remise à zéro | « Recommencer à zéro » (local + cloud), réglages conservés | `src/features/runtime/eraseProgress.ts` |
 | Bande (social) | Onglet « Bande » : créer/rejoindre avec un code `FAUCON-XXXXXX`, classement, amis sur la carte (point + nom), temps quasi réel via Firestore. **Demande de publier `firestore.rules`** | `docs/social.md`, `src/features/social`, `useSocialStore`, `BandScreen` |
+| Camp animé | Accueil : le jour Guts marche sur place (même pas que sur la carte), la nuit il respire et la lueur du feu vacille sur lui ; braises et feuilles en plus. Immobile si « Supprimer les animations ». Guts est une copie découpée posée exactement sur l'image d'origine (`assets/camp/guts-day.png`, `guts-night.png`) | `CampVignette`, `CampGuts`, `CampAmbience` |
 | Accessibilité | Grandes polices, animations réduites, libellés TalkBack | partout |
 
 ### Ce qui n'est PAS fait

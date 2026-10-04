@@ -3,6 +3,7 @@ import { Image, StyleSheet, Text, View, type LayoutChangeEvent } from "react-nat
 import { theme } from "../../core/theme";
 import type { CampScene } from "../../features/camp/campScene";
 import { CampAmbience } from "./CampAmbience";
+import { CampGuts, campImageSize } from "./CampGuts";
 
 const CAMP_IMAGES = {
   day: require("../../../assets/camp/camp-day.jpg"),
@@ -30,19 +31,43 @@ export function CampVignette({ scene }: CampVignetteProps) {
     setSize({ width, height });
   }
 
+  // Même cadrage que « cover » : l'image remplit la fenêtre, centrée, et dépasse sur un côté. Guts est posé dans ce cadre.
+  const natural = campImageSize(scene.time);
+  const scale = size.width && size.height ? Math.max(size.width / natural.width, size.height / natural.height) : 0;
+  const stage = {
+    width: natural.width * scale,
+    height: natural.height * scale,
+    left: (size.width - natural.width * scale) / 2,
+    top: (size.height - natural.height * scale) / 2,
+  };
+
   return (
     <View style={styles.root}>
       <View style={styles.frame}>
         {/* Le ratio est porté par un conteneur : sur une image en largeur 100 %, le web l'ignore. */}
         <View style={styles.window} onLayout={handleWindowLayout}>
-          <Image
-            source={CAMP_IMAGES[scene.time]}
-            style={styles.image}
-            resizeMode="cover"
-            accessibilityRole="image"
-            accessibilityLabel={CAMP_DESCRIPTIONS[scene.time]}
-            accessibilityIgnoresInvertColors
-          />
+          {scale > 0 ? (
+            <View style={[styles.stage, stage]}>
+              <Image
+                source={CAMP_IMAGES[scene.time]}
+                style={styles.image}
+                resizeMode="stretch"
+                accessibilityRole="image"
+                accessibilityLabel={CAMP_DESCRIPTIONS[scene.time]}
+                accessibilityIgnoresInvertColors
+              />
+              <CampGuts time={scene.time} stageWidth={stage.width} stageHeight={stage.height} />
+            </View>
+          ) : (
+            <Image
+              source={CAMP_IMAGES[scene.time]}
+              style={styles.image}
+              resizeMode="cover"
+              accessibilityRole="image"
+              accessibilityLabel={CAMP_DESCRIPTIONS[scene.time]}
+              accessibilityIgnoresInvertColors
+            />
+          )}
           <CampAmbience time={scene.time} width={size.width} height={size.height} />
         </View>
       </View>
@@ -61,6 +86,7 @@ const styles = StyleSheet.create({
     borderRadius: theme.radius[4],
   },
   window: { width: "100%", aspectRatio: 16 / 9, overflow: "hidden", borderRadius: 2 },
+  stage: { position: "absolute" },
   // Taille explicite : sinon le web reprend la taille d'origine de l'image et la centre mal.
   image: { width: "100%", height: "100%" },
   line: {
