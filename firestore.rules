@@ -1,0 +1,33 @@
+rules_version = '2';
+
+// À copier dans la console Firebase : Firestore Database > Règles > Publier.
+// Voir docs/social.md pour le détail.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Sauvegarde personnelle : chacun ne lit et n'écrit que la sienne.
+    match /users/{uid} {
+      allow read, write: if request.auth != null && request.auth.uid == uid;
+    }
+
+    // Une bande d'amis. Le code (6 caractères) sert de clé : on peut ouvrir une bande dont on
+    // connaît le code, mais personne ne peut lister les bandes.
+    match /groups/{code} {
+      allow get: if request.auth != null;
+      allow create: if request.auth != null
+        && code.matches('[A-HJ-NP-Z2-9]{6}')
+        && request.resource.data.ownerId == request.auth.uid;
+
+      // Les membres d'une bande ne se voient qu'entre eux, et chacun n'écrit que sa propre ligne.
+      match /members/{uid} {
+        allow read: if request.auth != null
+          && exists(/databases/$(database)/documents/groups/$(code)/members/$(request.auth.uid));
+        allow create, update: if request.auth != null
+          && request.auth.uid == uid
+          && exists(/databases/$(database)/documents/groups/$(code))
+          && request.resource.data.keys().hasOnly(['uid', 'displayName', 'lap', 'totalDistanceKm', 'streakDays', 'updatedAtISO']);
+        allow delete: if request.auth != null && request.auth.uid == uid;
+      }
+    }
+  }
+}

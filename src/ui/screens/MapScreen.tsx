@@ -35,6 +35,9 @@ import {
   type Offset,
 } from "../../features/mapZoom/mapZoom";
 import { usePlayerStore } from "../../store/usePlayerStore";
+import { useSocialStore } from "../../store/useSocialStore";
+import { useAuthStore } from "../../store/useAuthStore";
+import { BandMarker } from "../components/BandMarker";
 import { COMPANION_SPRITE_SIZE, CompanionMarker } from "../components/CompanionMarker";
 import { GutsMarker } from "../components/GutsMarker";
 import { MapSheet } from "../components/MapSheet";
@@ -71,6 +74,13 @@ export function MapScreen() {
   const gestureRef = useRef({ touchCount: 0, anchor: { x: 0, y: 0 } as Offset, startDistance: 0, startZoom: MAP_BASE_ZOOM });
   const progress = usePlayerStore((state) => state.progress);
   const position = calculateGutsPosition(progress.totalDistanceKm, BERSERK_CHECKPOINTS);
+  const myId = useAuthStore((state) => state.userId);
+  const bandMembers = useSocialStore((state) => state.members);
+  // Les amis de la Bande : un point et un nom, sans toi (tu es Guts).
+  const friends = bandMembers
+    .filter((member) => member.uid !== myId)
+    .sort((a, b) => a.totalDistanceKm - b.totalDistanceKm)
+    .map((member) => ({ member, spot: calculateGutsPosition(member.totalDistanceKm, BERSERK_CHECKPOINTS) }));
   // Sans sprite, un compagnon n'a rien à dessiner sur la carte : il reste dans la collection.
   const travelingCompanions = getTravelingCompanions(progress.totalDistanceKm, COMPANIONS, BERSERK_CHECKPOINTS).filter(
     (companion) => companion.image,
@@ -262,6 +272,9 @@ export function MapScreen() {
                 offsetX={troupeOffsets[index]}
                 index={index}
               />
+            ))}
+            {friends.map(({ member, spot }, index) => (
+              <BandMarker key={member.uid} name={member.displayName} lap={member.lap} xPct={spot.x} yPct={spot.y} index={index} />
             ))}
             <GutsMarker xPct={position.x} yPct={position.y} />
           </ImageBackground>
