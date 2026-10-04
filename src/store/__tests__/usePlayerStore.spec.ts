@@ -8,6 +8,7 @@ jest.mock("../../core/firebase", () => ({
 jest.mock("../../features/userCloud/service", () => ({
   saveProgressionToCloud: jest.fn(() => Promise.resolve()),
 }));
+jest.mock("../../features/social/service", () => ({ publishMember: jest.fn(() => Promise.resolve()) }));
 
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { saveProgressionToCloud } from "../../features/userCloud/service";

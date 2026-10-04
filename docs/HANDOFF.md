@@ -13,7 +13,7 @@ les branches, la CI et les PR simplement, et on décide avec lui de tout ce qui 
 
 ## État actuel (tout est dans `main`)
 
-Tests : 22 suites, 179 tests, tous verts. CI GitHub (`.github/workflows/ci.yml`) : typecheck + tests à chaque push et PR.
+Tests : 24 suites, 195 tests, tous verts. CI GitHub (`.github/workflows/ci.yml`) : typecheck + tests à chaque push et PR.
 
 ### Fonctionnalités déjà livrées
 
@@ -32,6 +32,7 @@ Tests : 22 suites, 179 tests, tous verts. CI GitHub (`.github/workflows/ci.yml`)
 | Partage | Image 4:5 (point franchi, fin de Traque, succès, progression) + texte en repli | `src/features/share`, `ShareCard`, `ShareImageHost` |
 | Vibrations | Option du Profil, désactivée par défaut : point franchi, succès, fin de Traque, boss, objectif du jour | `src/features/haptics` |
 | Remise à zéro | « Recommencer à zéro » (local + cloud), réglages conservés | `src/features/runtime/eraseProgress.ts` |
+| Bande (social) | Onglet « Bande » : créer/rejoindre avec un code `FAUCON-XXXXXX`, classement, amis sur la carte (point + nom), temps quasi réel via Firestore. **Demande de publier `firestore.rules`** | `docs/social.md`, `src/features/social`, `useSocialStore`, `BandScreen` |
 | Accessibilité | Grandes polices, animations réduites, libellés TalkBack | partout |
 
 ### Ce qui n'est PAS fait
@@ -101,7 +102,7 @@ Tests : 22 suites, 179 tests, tous verts. CI GitHub (`.github/workflows/ci.yml`)
 - **Jest** : pas de `import()` dynamique (utiliser `require` dans un `try`) ; les mocks de modules ES ont besoin de `__esModule: true`.
 - **Textes** : tout est en français, avec le ton « Berserk » des textes existants. Jours de la semaine et mois écrits en dur (l'Intl de
   Hermes ne garantit pas le français).
-- **Non testé sur téléphone** (à confirmer par Nathan) : notifications du rappel, vibrations, partage d'image réel, service Android
+- **Non testé sur téléphone** (à confirmer par Nathan) : la Bande à plusieurs comptes réels (après publication des règles Firestore, voir `docs/social.md`), notifications du rappel, vibrations, partage d'image réel, service Android
   avec les tours (la notification affiche la distance du tour), pincement sur la carte (testé avec de vrais événements tactiles
   dans le navigateur, pas sur Android).
 

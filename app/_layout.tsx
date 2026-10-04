@@ -11,7 +11,8 @@ import { ensureUserDocAndLoad } from "../src/features/userCloud/service";
 import { useAuthStore } from "../src/store/useAuthStore";
 import { useBrandStore } from "../src/store/useBrandStore";
 import { usePedometerStore } from "../src/store/usePedometerStore";
-import { flushCloudSave, usePlayerStore } from "../src/store/usePlayerStore";
+import { flushCloudSave, myBandStatus, usePlayerStore } from "../src/store/usePlayerStore";
+import { useSocialStore } from "../src/store/useSocialStore";
 import { useSettingsStore } from "../src/store/useSettingsStore";
 import { theme } from "../src/core/theme";
 import { Button } from "../src/ui/components/Button";
@@ -163,6 +164,13 @@ export default function RootLayout() {
       isCurrent = false;
     };
   }, [isAuthenticated, userId, loadAttempt, hydrateLocalProgress, mergeCloudProgress]);
+
+  // La Bande d'amis : suivie en direct dès que la progression est chargée, arrêtée à la déconnexion.
+  useEffect(() => {
+    if (!isAuthenticated || !userId || !isProgressLoaded) return;
+    void useSocialStore.getState().start(userId, () => myBandStatus(userId));
+    return () => useSocialStore.getState().stop();
+  }, [isAuthenticated, userId, isProgressLoaded]);
 
   if (!fontsLoaded || !isAuthResolved) {
     return <CenteredMessage message="Chargement de la session..." />;

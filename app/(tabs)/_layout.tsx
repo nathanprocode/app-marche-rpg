@@ -10,6 +10,7 @@ const ICONS: Record<string, { on: IconName; off: IconName }> = {
   index: { on: "footsteps", off: "footsteps-outline" },
   map: { on: "map", off: "map-outline" },
   quests: { on: "book", off: "book-outline" },
+  band: { on: "people", off: "people-outline" },
   profile: { on: "person", off: "person-outline" },
 };
 
@@ -49,6 +50,7 @@ export default function TabsLayout() {
       <Tabs.Screen name="index" options={{ title: "Marche" }} />
       <Tabs.Screen name="map" options={{ title: "Carte" }} />
       <Tabs.Screen name="quests" options={{ title: "Quêtes" }} />
+      <Tabs.Screen name="band" options={{ title: "Bande" }} />
       <Tabs.Screen name="profile" options={{ title: "Profil" }} />
     </Tabs>
   );

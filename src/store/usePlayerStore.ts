@@ -11,6 +11,7 @@ import { parseSavedProgress, pickSavedProgress, type SavedProgress } from "../fe
 import { saveProgressionToCloud } from "../features/userCloud/service";
 import type { PlayerProgress } from "../features/progression/types";
 import { useAuthStore } from "./useAuthStore";
+import { useSocialStore } from "./useSocialStore";
 import { isGoalReached } from "../features/progression/selectors";
 import { useBrandStore } from "./useBrandStore";
 import { usePedometerStore } from "./usePedometerStore";
@@ -169,6 +170,18 @@ function computeExtras(
 let cloudSaveTimer: ReturnType<typeof setTimeout> | null = null;
 let cloudSaveUid: string | null = null;
 
+/** Ce que la Bande voit de toi : nom, tour, distance du tour, série. */
+export function myBandStatus(uid: string) {
+  const { progress } = usePlayerStore.getState();
+  return {
+    uid,
+    displayName: useAuthStore.getState().userName ?? "Traqué",
+    lap: progress.lap,
+    totalDistanceKm: progress.totalDistanceKm,
+    streakDays: progress.streakDays,
+  };
+}
+
 async function saveToCloudNow(uid: string): Promise<void> {
   // Le compte a changé depuis la programmation : l'état en mémoire n'est plus le sien.
   if (useAuthStore.getState().userId !== uid) return;
@@ -178,6 +191,8 @@ async function saveToCloudNow(uid: string): Promise<void> {
   try {
     // Hors ligne, Firestore garde l'écriture en file et ne répond qu'au retour du réseau.
     await saveProgressionToCloud(uid, state.progress, brandIntensity, state.unlockedCheckpoints, extrasOf(state));
+    // Les amis de la Bande voient la même position, au même rythme que la sauvegarde.
+    await useSocialStore.getState().publish(myBandStatus(uid));
   } catch (error) {
     console.log("[PlayerStore] cloud save failed", error);
   }
