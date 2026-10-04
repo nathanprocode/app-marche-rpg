@@ -30,7 +30,7 @@ export const COMPANIONS: Companion[] = [
     title: "Le Maître Cruel",
     description:
       "Mercenaire borgne et sans pitié, Gambino a élevé Guts à coups de bâton dans la boue des champs de bataille. Il t'apprend la leçon la plus dure : personne ne viendra marcher à ta place. Chaque pas que tu fais, tu le fais pour toi.",
-    // Sprite à fournir : assets/companions/gambino.png, puis image: require("../../assets/companions/gambino.png").
+    image: require("../../assets/companions/gambino.png"),
     metAtCheckpointId: "cp-002",
     travels: [{ fromCheckpointId: "cp-002", untilCheckpointId: "cp-003" }],
   },
@@ -60,7 +60,7 @@ export const COMPANIONS: Companion[] = [
     title: "Le Lanceur de Couteaux",
     description:
       "Sourire en coin et regard qui ne rate rien, Judeau est le plus fin tireur de la Troupe du Faucon. Il prend la vie avec légèreté, même au pire moment. Quand la route te semble lourde, il te rappelle qu'on avance mieux le cœur léger.",
-    // Sprite à fournir : assets/companions/judeau.png, puis image: require("../../assets/companions/judeau.png").
+    image: require("../../assets/companions/judeau.png"),
     metAtCheckpointId: "cp-004",
     travels: [{ fromCheckpointId: "cp-004", untilCheckpointId: "cp-006" }, { fromCheckpointId: "cp-007", untilCheckpointId: "cp-008" }],
   },
@@ -70,17 +70,7 @@ export const COMPANIONS: Companion[] = [
     title: "Le Colosse au Grand Cœur",
     description:
       "Taciturne, immense et d'une douceur inattendue, Pippin porte sans broncher ce que les autres ne peuvent pas soulever. Il ne parle pas beaucoup, mais il est toujours là, au même pas que toi, jusqu'à ce que tu arrives au bout de la journée.",
-    // Sprite à fournir : assets/companions/pippin.png, puis image: require("../../assets/companions/pippin.png").
-    metAtCheckpointId: "cp-004",
-    travels: [{ fromCheckpointId: "cp-004", untilCheckpointId: "cp-006" }, { fromCheckpointId: "cp-007", untilCheckpointId: "cp-008" }],
-  },
-  {
-    id: "corkus",
-    name: "Corkus",
-    title: "Le Fanfaron",
-    description:
-      "Vantard, jaloux et prompt à s'emporter, Corkus ne supporte pas de se laisser distancer. Cette fierté mal placée est aussi ce qui le fait avancer : à côté de lui, tu as toujours une bonne raison de ne pas te laisser dépasser.",
-    // Sprite à fournir : assets/companions/corkus.png, puis image: require("../../assets/companions/corkus.png").
+    image: require("../../assets/companions/pippin.png"),
     metAtCheckpointId: "cp-004",
     travels: [{ fromCheckpointId: "cp-004", untilCheckpointId: "cp-006" }, { fromCheckpointId: "cp-007", untilCheckpointId: "cp-008" }],
   },

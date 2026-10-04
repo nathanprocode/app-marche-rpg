@@ -27,7 +27,7 @@ Tests : 25 suites, 208 tests, tous verts. CI GitHub (`.github/workflows/ci.yml`)
 | Tours de Traque | Écran de fin à 1 000 km, nouveau tour (carte à zéro, chroniques/compagnons/succès/records conservés) | `usePlayerStore.startNextLap`, `TraqueCompleteModal` |
 | Duels de boss | Zodd : 2 duels (« Nosferatu Zodd » 115 km, « La Colline aux Épées » 590 km), 2 formes chacun ; **l'Éclipse (315 km) : 5 duels enchaînés** (Void 6 000, Ubik 7 000, Conrad 8 000, Slan 9 000, Femto 12 000 pas), vie en pas, sans limite de temps | `src/data/bosses.ts`, `src/features/bosses`, `DuelCard`, `BossEventModal` |
 | Ennemis | Onglet « Ennemis » des Quêtes : Zodd + les 5 de la Main de Dieu, silhouette tant que le checkpoint n'est pas franchi, fiche, « Vaincu / À vaincre » | `src/data/enemies.ts`, `EnemyCollection` |
-| Compagnons | 15 (dont 8 nouveaux), fiches, présence sur la carte selon `travels` | `src/data/companions.ts`, `CompanionCollection` |
+| Compagnons | 14 (Corkus a été retiré : pas de sprite voulu ; Gambino, Judeau et Pippin ont leur sprite), fiches, présence sur la carte selon `travels` | `src/data/companions.ts`, `CompanionCollection` |
 | Carte | Chemin parcouru en piste de points, pincement pour zoomer/dézoomer, glissement, boutons, pas de recentrage forcé quand on explore | `MapScreen`, `src/features/mapZoom` |
 | Historique | 7 jours / 30 jours / tout (365 jours gardés sur le téléphone) | `ProfileScreen`, `src/features/history` |
 | Partage | Image 4:5 (point franchi, fin de Traque, succès, progression) + texte en repli | `src/features/share`, `ShareCard`, `ShareImageHost` |
@@ -38,7 +38,7 @@ Tests : 25 suites, 208 tests, tous verts. CI GitHub (`.github/workflows/ci.yml`)
 
 ### Ce qui n'est PAS fait
 
-- **Sprites manquants** : Gambino, Judeau, Pippin, Corkus, Rickert, Godo, Flora. Sans sprite, la fiche montre une silhouette
+- **Sprites manquants** : Rickert (un sprite existe mais Nathan le veut plus proche du manga : à retravailler), Godo, Flora. Sans sprite, la fiche montre une silhouette
   et le compagnon n'apparaît pas sur la carte. Pour en ajouter un : PNG à fond transparent, 192 px de haut,
   `assets/companions/<id>.png`, puis remplacer le commentaire « Sprite à fournir » de `src/data/companions.ts` par
   `image: require("../../assets/companions/<id>.png")`. Les formes de boss vont dans `assets/bosses/`.
