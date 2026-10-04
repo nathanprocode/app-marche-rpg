@@ -18,12 +18,12 @@ describe("getTravelingCompanions", () => {
   });
 
   it("la Troupe du Faucon le rejoint à La Rencontre avec le Faucon", () => {
-    expect(travelingAt(85)).toEqual(["casca", "griffith", "judeau", "pippin", "corkus", "rickert"]);
+    expect(travelingAt(85)).toEqual(["casca", "griffith", "judeau", "pippin", "rickert"]);
   });
 
   it("Zodd rôde à Nosferatu Zodd, juste avant La Chute de Doldrey", () => {
-    expect(travelingAt(115)).toEqual(["casca", "griffith", "judeau", "pippin", "corkus", "rickert", "zodd"]);
-    expect(travelingAt(142)).toEqual(["casca", "griffith", "judeau", "pippin", "corkus", "rickert"]);
+    expect(travelingAt(115)).toEqual(["casca", "griffith", "judeau", "pippin", "rickert", "zodd"]);
+    expect(travelingAt(142)).toEqual(["casca", "griffith", "judeau", "pippin", "rickert"]);
   });
 
   it("tous quittent Guts au Départ sous la Neige", () => {
@@ -32,8 +32,8 @@ describe("getTravelingCompanions", () => {
   });
 
   it("les Faucons reviennent pour la Tour des Renaissances, puis disparaissent à L'Éclipse", () => {
-    expect(travelingAt(250)).toEqual(["judeau", "pippin", "corkus", "rickert"]);
-    expect(travelingAt(314.9)).toEqual(["judeau", "pippin", "corkus", "rickert"]);
+    expect(travelingAt(250)).toEqual(["judeau", "pippin", "rickert"]);
+    expect(travelingAt(314.9)).toEqual(["judeau", "pippin", "rickert"]);
     expect(travelingAt(315)).toEqual(["skullknight"]);
   });
 
@@ -75,7 +75,6 @@ describe("getCompanionsMetAt", () => {
       "griffith",
       "judeau",
       "pippin",
-      "corkus",
       "rickert",
     ]);
     expect(getCompanionsMetAt("cp-002", COMPANIONS).map((companion) => companion.id)).toEqual(["gambino"]);

@@ -27,7 +27,7 @@ Tests : 25 suites, 208 tests, tous verts. CI GitHub (`.github/workflows/ci.yml`)
 | Tours de Traque | Écran de fin à 1 000 km, nouveau tour (carte à zéro, chroniques/compagnons/succès/records conservés) | `usePlayerStore.startNextLap`, `TraqueCompleteModal` |
 | Duels de boss | Zodd : 2 duels (« Nosferatu Zodd » 115 km, « La Colline aux Épées » 590 km), 2 formes chacun ; **l'Éclipse (315 km) : 5 duels enchaînés** (Void 6 000, Ubik 7 000, Conrad 8 000, Slan 9 000, Femto 12 000 pas), vie en pas, sans limite de temps | `src/data/bosses.ts`, `src/features/bosses`, `DuelCard`, `BossEventModal` |
 | Ennemis | Onglet « Ennemis » des Quêtes : Zodd + les 5 de la Main de Dieu, silhouette tant que le checkpoint n'est pas franchi, fiche, « Vaincu / À vaincre » | `src/data/enemies.ts`, `EnemyCollection` |
-| Compagnons | 15 (dont 8 nouveaux), fiches, présence sur la carte selon `travels` | `src/data/companions.ts`, `CompanionCollection` |
+| Compagnons | 14, tous avec sprite (Corkus a été retiré du jeu), fiches, présence sur la carte selon `travels` | `src/data/companions.ts`, `CompanionCollection` |
 | Carte | Chemin parcouru en piste de points, pincement pour zoomer/dézoomer, glissement, boutons, pas de recentrage forcé quand on explore | `MapScreen`, `src/features/mapZoom` |
 | Historique | 7 jours / 30 jours / tout (365 jours gardés sur le téléphone) | `ProfileScreen`, `src/features/history` |
 | Partage | Image 4:5 (point franchi, fin de Traque, succès, progression) + texte en repli | `src/features/share`, `ShareCard`, `ShareImageHost` |
@@ -38,10 +38,10 @@ Tests : 25 suites, 208 tests, tous verts. CI GitHub (`.github/workflows/ci.yml`)
 
 ### Ce qui n'est PAS fait
 
-- **Sprites manquants** : Gambino, Judeau, Pippin, Corkus, Rickert, Godo, Flora. Sans sprite, la fiche montre une silhouette
-  et le compagnon n'apparaît pas sur la carte. Pour en ajouter un : PNG à fond transparent, 192 px de haut,
-  `assets/companions/<id>.png`, puis remplacer le commentaire « Sprite à fournir » de `src/data/companions.ts` par
-  `image: require("../../assets/companions/<id>.png")`. Les formes de boss vont dans `assets/bosses/`.
+- **Sprites des compagnons** : les 14 compagnons ont leur sprite. Pour en ajouter un : PNG à fond transparent, 192 px de haut,
+  `assets/companions/<id>.png`, puis `image: require("../../assets/companions/<id>.png")` dans `src/data/companions.ts`. Les formes
+  de boss vont dans `assets/bosses/`. Rickert, Godo et Flora viennent d'images générées : Rickert a été retravaillé (table et
+  formules retirées, jambes reconstituées) ; Godo et Flora gardent leur enclume et leur établi.
 - **Puck** : voulu par Nathan, pas d'image (il ne trouve rien et ne sait pas le dessiner). À ajouter quand un sprite existe
   (rencontre suggérée vers « Le Comte », `cp-008-5`).
 - **Isma et Ivalera** : proposés puis écartés, car leur place dans l'histoire n'était pas sûre. À vérifier avant de les ajouter.
@@ -108,7 +108,7 @@ Tests : 25 suites, 208 tests, tous verts. CI GitHub (`.github/workflows/ci.yml`)
 
 ## Suite possible
 
-1. Sprites manquants (voir plus haut) ; Puck.
+1. Puck (quand un sprite existe).
 2. Compagnon préféré qui « parle » dans le rappel du soir (après décision de Nathan).
 3. Autres boss et d'autres duels de l'histoire.
 4. Sons discrets aux grands moments (nouveau build).
