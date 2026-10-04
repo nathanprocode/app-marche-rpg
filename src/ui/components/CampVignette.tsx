@@ -3,6 +3,7 @@ import { Image, StyleSheet, Text, View, type LayoutChangeEvent } from "react-nat
 import { theme } from "../../core/theme";
 import type { CampScene } from "../../features/camp/campScene";
 import { CampAmbience } from "./CampAmbience";
+import { GutsIdle } from "./GutsIdle";
 
 const CAMP_IMAGES = {
   day: require("../../../assets/camp/camp-day.jpg"),
@@ -43,6 +44,7 @@ export function CampVignette({ scene }: CampVignetteProps) {
             accessibilityLabel={CAMP_DESCRIPTIONS[scene.time]}
             accessibilityIgnoresInvertColors
           />
+          <GutsIdle time={scene.time} source={CAMP_IMAGES[scene.time]} width={size.width} height={size.height} />
           <CampAmbience time={scene.time} width={size.width} height={size.height} />
         </View>
       </View>
