@@ -7,6 +7,8 @@ import { useWalkStep } from "./useWalkStep";
 const GUTS_IMAGES = {
   day: require("../../../assets/camp/guts-day.png"),
   night: require("../../../assets/camp/guts-night.png"),
+  /** Le même Guts, éclairé par le feu : plus chaud et plus clair côté flamme (détails conservés). */
+  nightLit: require("../../../assets/camp/guts-night-lit.png"),
 };
 
 /**
@@ -48,17 +50,25 @@ function useBreath(durationMs: number): Animated.Value {
   return breath;
 }
 
-/** Lueur du feu sur Guts : même vacillement irrégulier que la flamme (voir CampAmbience). */
+/**
+ * Lueur du feu sur Guts : on fond doucement vers la version éclairée, puis on revient. Les montées et descentes sont
+ * lentes et irrégulières (une flamme ne clignote pas, elle respire), pour qu'on sente la lumière sans voir un battement.
+ */
 function useFireLight(): Animated.Value {
-  const light = useRef(new Animated.Value(0.1)).current;
+  const light = useRef(new Animated.Value(0.5)).current;
 
   useEffect(() => {
-    const steps = [0.17, 0.05, 0.13, 0.03, 0.16, 0.08];
-    const durations = [140, 90, 170, 110, 130, 160];
+    const steps = [0.85, 0.35, 0.7, 0.3, 0.9, 0.5];
+    const durations = [900, 1100, 800, 1300, 1000, 900];
     const loop = Animated.loop(
       Animated.sequence(
         steps.map((toValue, i) =>
-          Animated.timing(light, { toValue, duration: durations[i], easing: Easing.linear, useNativeDriver: true }),
+          Animated.timing(light, {
+            toValue,
+            duration: durations[i],
+            easing: Easing.inOut(Easing.sin),
+            useNativeDriver: true,
+          }),
         ),
       ),
     );
@@ -87,7 +97,7 @@ function NightGuts({ box }: { box: { left: number; top: number; width: number; h
   const breath = useBreath(2300);
   const fireLight = useFireLight();
   // Mise à l'échelle verticale autour du bas du corps : les pieds ne bougent pas, le torse monte un peu.
-  const grow = 0.014;
+  const grow = 0.02;
   const scaleY = breath.interpolate({ inputRange: [0, 1], outputRange: [1, 1 + grow] });
   const lift = breath.interpolate({ inputRange: [0, 1], outputRange: [0, (-box.height * grow) / 2] });
   const transform = [{ translateY: lift }, { scaleY }];
@@ -96,9 +106,8 @@ function NightGuts({ box }: { box: { left: number; top: number; width: number; h
     <>
       <Animated.Image source={GUTS_IMAGES.night} resizeMode="stretch" style={[styles.sprite, box, { transform }]} />
       <Animated.Image
-        source={GUTS_IMAGES.night}
+        source={GUTS_IMAGES.nightLit}
         resizeMode="stretch"
-        tintColor="#FF8A2A"
         style={[styles.sprite, box, { transform, opacity: fireLight }]}
       />
     </>

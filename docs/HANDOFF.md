@@ -34,7 +34,7 @@ Tests : 25 suites, 208 tests, tous verts. CI GitHub (`.github/workflows/ci.yml`)
 | Vibrations | Option du Profil, désactivée par défaut : point franchi, succès, fin de Traque, boss, objectif du jour | `src/features/haptics` |
 | Remise à zéro | « Recommencer à zéro » (local + cloud), réglages conservés | `src/features/runtime/eraseProgress.ts` |
 | Bande (social) | Onglet « Bande » : créer/rejoindre avec un code `FAUCON-XXXXXX`, classement, amis sur la carte (point + nom), temps quasi réel via Firestore. **Demande de publier `firestore.rules`** | `docs/social.md`, `src/features/social`, `useSocialStore`, `BandScreen` |
-| Camp animé | Accueil : le jour Guts marche sur place (même pas que sur la carte), la nuit il respire et la lueur du feu vacille sur lui ; braises et feuilles en plus. Immobile si « Supprimer les animations ». Guts est une copie découpée posée exactement sur l'image d'origine (`assets/camp/guts-day.png`, `guts-night.png`) | `CampVignette`, `CampGuts`, `CampAmbience` |
+| Camp animé | Accueil : le jour Guts marche sur place (même pas que sur la carte), la nuit il respire et la lueur du feu l'éclaire doucement (fondu lent vers `guts-night-lit.png`, jamais de filtre de couleur uniforme) ; braises et feuilles en plus. Immobile si « Supprimer les animations ». Guts est une copie découpée posée exactement sur l'image d'origine (`assets/camp/guts-day.png`, `guts-night.png`) | `CampVignette`, `CampGuts`, `CampAmbience` |
 | Accessibilité | Grandes polices, animations réduites, libellés TalkBack | partout |
 
 ### Ce qui n'est PAS fait
@@ -94,7 +94,7 @@ Tests : 25 suites, 208 tests, tous verts. CI GitHub (`.github/workflows/ci.yml`)
   Un nouveau build n'est nécessaire que si le natif change (`app.json`, modules natifs, dépendances natives). Dernier
   changement natif : `react-native-view-shot`, `expo-sharing` et la permission `VIBRATE`.
 - **Vérifier un écran sans téléphone** : `npx expo start --web`, puis `http://localhost:8081/?devpreview` (données fictives, départ à
-  68 km). Les boutons « Outils de développement » de l'Accueil (+500 pas, « Aller à : … ») permettent d'avancer. Chromium est
+  68 km). Les boutons « Outils de développement » de l'Accueil (+500 pas, « Aller à : … », « Scène du camp : automatique / jour / nuit ») permettent d'avancer et de forcer la scène du camp, quelle que soit l'heure. Chromium est
   installé (`/opt/pw-browsers`) ; Playwright global (`npm root -g`/playwright) avec `executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome'`.
 - **Serveur web de test** : lancer avec `CI=1 EXPO_NO_DEPENDENCY_VALIDATION=1`. En mode CI, Metro **ne recharge pas** : après chaque
   modification, tuer le serveur et le relancer (`--clear`), sinon l'ancien code est servi. Ne jamais utiliser `pkill -f` ni
