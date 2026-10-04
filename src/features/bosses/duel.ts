@@ -22,12 +22,38 @@ export function stepsAtKm(km: number): number {
   return Math.ceil((km * 1000) / GAME_CONFIG.metersPerStep);
 }
 
-export function computeDuel(encounter: BossEncounter, lapSteps: number, checkpoints: BerserkCheckpoint[]): DuelStatus {
+function totalHpOf(encounter: BossEncounter): number {
+  return encounter.phases.reduce((sum, phase) => sum + phase.hp, 0);
+}
+
+/**
+ * Pas du tour où le duel s'ouvre : le checkpoint, ou la fin du duel précédent quand ils s'enchaînent.
+ * `encounters` sert à retrouver le duel précédent.
+ */
+export function duelStartSteps(
+  encounter: BossEncounter,
+  encounters: BossEncounter[],
+  checkpoints: BerserkCheckpoint[],
+): number {
+  if (encounter.afterEncounterId) {
+    const previous = encounters.find((item) => item.id === encounter.afterEncounterId);
+    if (!previous) throw new Error(`Duel inconnu : ${encounter.afterEncounterId}`);
+    return duelStartSteps(previous, encounters, checkpoints) + totalHpOf(previous);
+  }
+
   const checkpoint = checkpoints.find((item) => item.id === encounter.checkpointId);
   if (!checkpoint) throw new Error(`Checkpoint inconnu : ${encounter.checkpointId}`);
+  return stepsAtKm(checkpoint.kmThreshold);
+}
 
-  const totalHp = encounter.phases.reduce((sum, phase) => sum + phase.hp, 0);
-  const startSteps = stepsAtKm(checkpoint.kmThreshold);
+export function computeDuel(
+  encounter: BossEncounter,
+  lapSteps: number,
+  checkpoints: BerserkCheckpoint[],
+  encounters: BossEncounter[] = [encounter],
+): DuelStatus {
+  const totalHp = totalHpOf(encounter);
+  const startSteps = duelStartSteps(encounter, encounters, checkpoints);
   const first = encounter.phases[0];
 
   if (lapSteps < startSteps) {
@@ -54,7 +80,7 @@ export function computeDuel(encounter: BossEncounter, lapSteps: number, checkpoi
 }
 
 export function computeDuels(encounters: BossEncounter[], lapSteps: number, checkpoints: BerserkCheckpoint[]): DuelStatus[] {
-  return encounters.map((encounter) => computeDuel(encounter, lapSteps, checkpoints));
+  return encounters.map((encounter) => computeDuel(encounter, lapSteps, checkpoints, encounters));
 }
 
 export type BossEvent =

@@ -25,7 +25,7 @@ export function DuelCard({ duel }: DuelCardProps) {
     >
       <Image source={phase.image} style={styles.sprite} resizeMode="contain" accessibilityIgnoresInvertColors />
       <View style={styles.text}>
-        <Text style={styles.kicker}>{`${encounter.title} · forme ${phaseIndex + 1} sur ${encounter.phases.length}`}</Text>
+        <Text style={styles.kicker}>{encounter.phases.length > 1 ? `${encounter.title} · forme ${phaseIndex + 1} sur ${encounter.phases.length}` : encounter.title}</Text>
         <Text style={styles.title}>{phase.label}</Text>
         <ProgressBar pct={pct} accessibilityLabel={`Vie de ${encounter.bossName}, ${phase.label}`} height={8} />
         <Text style={styles.small}>{`${left} pas avant ${isLastForm ? "la victoire" : "sa prochaine forme"}`}</Text>
