@@ -44,7 +44,7 @@ export function CampVignette({ scene }: CampVignetteProps) {
             accessibilityLabel={CAMP_DESCRIPTIONS[scene.time]}
             accessibilityIgnoresInvertColors
           />
-          <GutsIdle time={scene.time} source={CAMP_IMAGES[scene.time]} width={size.width} height={size.height} />
+          <GutsIdle time={scene.time} />
           <CampAmbience time={scene.time} width={size.width} height={size.height} />
         </View>
       </View>
