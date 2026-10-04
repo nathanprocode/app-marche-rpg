@@ -277,7 +277,7 @@ function ChronicleCard({ checkpoint, onOpenPanel }: ChronicleCardProps) {
         <View style={styles.chronicleText}>
           <Text style={styles.chronicleKicker}>{`${formatInt(checkpoint.kmThreshold)} km · ${checkpoint.arc}`}</Text>
           <Text style={styles.chronicleTitle}>{checkpoint.title}</Text>
-          <Text numberOfLines={2} style={styles.chronicleDescription}>
+          <Text style={styles.chronicleDescription}>
             {checkpoint.description}
           </Text>
         </View>

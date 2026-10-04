@@ -1,5 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   ImageBackground,
   PanResponder,
@@ -7,6 +7,7 @@ import {
   StyleSheet,
   Text,
   View,
+  type GestureResponderEvent,
   type LayoutChangeEvent,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -18,6 +19,21 @@ import { COMPANIONS } from "../../data/companions";
 import { BERSERK_CHECKPOINTS } from "../../data/map/berserk-checkpoints";
 import { getTravelingCompanions, layoutTroupe } from "../../features/companions/journey";
 import { calculateGutsPosition } from "../../features/mapJourney/interpolation";
+import {
+  MAP_BASE_ZOOM,
+  MAP_MAX_ZOOM,
+  anchorUnder,
+  clampMapOffset,
+  clampZoom,
+  fitZoom,
+  pinchZoom,
+  strokeAtZoom,
+  touchDistance,
+  touchFocal,
+  viewForAnchor,
+  type MapView,
+  type Offset,
+} from "../../features/mapZoom/mapZoom";
 import { usePlayerStore } from "../../store/usePlayerStore";
 import { COMPANION_SPRITE_SIZE, CompanionMarker } from "../components/CompanionMarker";
 import { GutsMarker } from "../components/GutsMarker";
@@ -26,16 +42,13 @@ import { MapSheet } from "../components/MapSheet";
 const worldMapAsset = require("../../../assets/map/world-map.png");
 const MAP_WIDTH = 1448;
 const MAP_HEIGHT = 1086;
-const MIN_ZOOM = 0.8;
-const BASE_ZOOM = 0.9;
-const MAX_ZOOM = 1.8;
-const ZOOM_STEP = 0.18;
+const MAP_SIZE = { width: MAP_WIDTH, height: MAP_HEIGHT };
+/** Chaque appui sur + ou - multiplie (ou divise) le zoom par ce facteur. */
+const ZOOM_FACTOR = 1.35;
 const REACHED_TOLERANCE_KM = 0.0001;
-
-type MapOffset = {
-  x: number;
-  y: number;
-};
+/** Piste de pas : taille des points et écart entre eux, en pixels à l'écran (constants quel que soit le zoom). */
+const TRAIL_DOT_PX = 5;
+const TRAIL_GAP_PX = 13;
 
 function toMapPoint(xPct: number, yPct: number): string {
   return `${(xPct / 100) * MAP_WIDTH},${(yPct / 100) * MAP_HEIGHT}`;
@@ -45,10 +58,17 @@ export function MapScreen() {
   const insets = useSafeAreaInsets();
   const [viewport, setViewport] = useState({ width: 0, height: 0 });
   const [sheetHeight, setSheetHeight] = useState(0);
-  const [zoom, setZoom] = useState(BASE_ZOOM);
-  const [mapOffset, setMapOffset] = useState<MapOffset>({ x: 0, y: 0 });
-  const mapOffsetRef = useRef<MapOffset>({ x: 0, y: 0 });
-  const dragStartRef = useRef<MapOffset>({ x: 0, y: 0 });
+  const [zoom, setZoom] = useState(MAP_BASE_ZOOM);
+  const [mapOffset, setMapOffset] = useState<Offset>({ x: 0, y: 0 });
+  // Vue « vivante » lue par les gestes sans passer par un rendu ; l'écran la suit à chaque image.
+  const viewRef = useRef<MapView>({ zoom: MAP_BASE_ZOOM, offset: { x: 0, y: 0 } });
+  const viewportRef = useRef({ width: 0, height: 0 });
+  const viewportNodeRef = useRef<View>(null);
+  const viewportOriginRef = useRef<Offset>({ x: 0, y: 0 });
+  const frameRef = useRef<number | null>(null);
+  /** Dès que l'utilisateur déplace ou zoome la carte, elle ne se recentre plus d'elle-même sur Guts. */
+  const userMovedRef = useRef(false);
+  const gestureRef = useRef({ touchCount: 0, anchor: { x: 0, y: 0 } as Offset, startDistance: 0, startZoom: MAP_BASE_ZOOM });
   const progress = usePlayerStore((state) => state.progress);
   const position = calculateGutsPosition(progress.totalDistanceKm, BERSERK_CHECKPOINTS);
   // Sans sprite, un compagnon n'a rien à dessiner sur la carte : il reste dans la collection.
@@ -75,89 +95,117 @@ export function MapScreen() {
 
   /** La fiche du bas masque une partie de la carte : on centre le Traqué dans la zone visible. */
   const visibleHeight = Math.max(0, viewport.height - sheetHeight);
+  // Le cadre des gestes est la zone visible au-dessus de la fiche : la carte dézoomée s'y centre entièrement.
+  const frame = { width: viewport.width, height: visibleHeight > 0 ? visibleHeight : viewport.height };
+  viewportRef.current = frame;
+  const minZoom = fitZoom(MAP_SIZE, frame);
+  const trailDot = strokeAtZoom(TRAIL_DOT_PX, zoom);
+  const trailGap = strokeAtZoom(TRAIL_GAP_PX, zoom);
 
-  function clampOffset(nextOffset: MapOffset, zoomValue = zoom): MapOffset {
-    const scaledWidth = MAP_WIDTH * zoomValue;
-    const scaledHeight = MAP_HEIGHT * zoomValue;
-
-    const x =
-      scaledWidth <= viewport.width
-        ? (viewport.width - scaledWidth) / 2
-        : Math.max(viewport.width - scaledWidth, Math.min(0, nextOffset.x));
-    const y =
-      scaledHeight <= viewport.height
-        ? (viewport.height - scaledHeight) / 2
-        : Math.max(viewport.height - scaledHeight, Math.min(0, nextOffset.y));
-
-    return { x, y };
+  /** Pose la vue (zoom + décalage) tout de suite pour les gestes, et demande un rendu à la prochaine image. */
+  function setView(next: MapView): void {
+    viewRef.current = next;
+    if (frameRef.current !== null) return;
+    frameRef.current = requestAnimationFrame(() => {
+      frameRef.current = null;
+      setZoom(viewRef.current.zoom);
+      setMapOffset(viewRef.current.offset);
+    });
   }
 
-  function updateMapOffset(nextOffset: MapOffset, zoomValue = zoom): void {
-    const clampedOffset = clampOffset(nextOffset, zoomValue);
-    mapOffsetRef.current = clampedOffset;
-    setMapOffset(clampedOffset);
+  function gutsCenteredView(zoomValue: number): MapView {
+    const area = viewportRef.current;
+    const anchor = { x: (position.x / 100) * MAP_WIDTH, y: (position.y / 100) * MAP_HEIGHT };
+    return viewForAnchor(anchor, { x: area.width / 2, y: area.height / 2 }, zoomValue, MAP_SIZE, area);
   }
 
-  function getGutsCenteredOffset(zoomValue = zoom): MapOffset {
-    const markerX = (position.x / 100) * MAP_WIDTH * zoomValue;
-    const markerY = (position.y / 100) * MAP_HEIGHT * zoomValue;
-
-    return clampOffset(
-      {
-        x: viewport.width / 2 - markerX,
-        y: visibleHeight / 2 - markerY,
-      },
-      zoomValue,
-    );
+  function recenterOnGuts(zoomValue: number): void {
+    userMovedRef.current = false;
+    setView(gutsCenteredView(zoomValue));
   }
 
-  function recenterOnGuts(zoomValue = zoom): void {
-    updateMapOffset(getGutsCenteredOffset(zoomValue), zoomValue);
+  function handleZoomButton(nextZoom: number): void {
+    recenterOnGuts(clampZoom(nextZoom, fitZoom(MAP_SIZE, viewportRef.current), MAP_MAX_ZOOM));
   }
 
-  function handleZoom(nextZoom: number): void {
-    const clampedZoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, nextZoom));
-    setZoom(clampedZoom);
-    recenterOnGuts(clampedZoom);
+  /** Position d'un geste dans le cadre de la carte (les pages de l'écran moins l'origine du cadre). */
+  function focalOf(event: GestureResponderEvent): Offset | null {
+    const touches = event.nativeEvent.touches;
+    // Sans touches (souris sur le web), on prend le point de l'événement.
+    const point = touchFocal(touches) ?? { pageX: event.nativeEvent.pageX, pageY: event.nativeEvent.pageY };
+    if (point.pageX === undefined) return null;
+    return { x: point.pageX - viewportOriginRef.current.x, y: point.pageY - viewportOriginRef.current.y };
   }
 
-  const mapPanResponder = useMemo(
-    () =>
-      PanResponder.create({
-        onMoveShouldSetPanResponder: (_event, gesture) =>
-          Math.abs(gesture.dx) > 6 || Math.abs(gesture.dy) > 6,
-        onPanResponderGrant: () => {
-          dragStartRef.current = mapOffsetRef.current;
-        },
-        onPanResponderMove: (_event, gesture) => {
-          updateMapOffset(
-            {
-              x: dragStartRef.current.x + gesture.dx,
-              y: dragStartRef.current.y + gesture.dy,
-            },
-            zoom,
-          );
-        },
-      }),
-    [viewport.height, viewport.width, zoom],
-  );
+  /** Nouveau point de départ du geste : au début, et quand un doigt se pose ou se lève. */
+  function rebase(event: GestureResponderEvent): void {
+    const touches = event.nativeEvent.touches;
+    const focal = focalOf(event);
+    const gesture = gestureRef.current;
+    gesture.touchCount = touches.length;
+    gesture.startZoom = viewRef.current.zoom;
+    gesture.startDistance = touches.length >= 2 ? touchDistance(touches[0], touches[1]) : 0;
+    if (focal) gesture.anchor = anchorUnder(viewRef.current, focal);
+  }
 
+  function moveGesture(event: GestureResponderEvent): void {
+    const touches = event.nativeEvent.touches;
+    if (touches.length !== gestureRef.current.touchCount) rebase(event);
+    const focal = focalOf(event);
+    if (!focal) return;
+
+    const gesture = gestureRef.current;
+    const area = viewportRef.current;
+    const nextZoom =
+      touches.length >= 2
+        ? pinchZoom(gesture.startZoom, gesture.startDistance, touchDistance(touches[0], touches[1]), fitZoom(MAP_SIZE, area))
+        : viewRef.current.zoom;
+
+    userMovedRef.current = true;
+    setView(viewForAnchor(gesture.anchor, focal, nextZoom, MAP_SIZE, area));
+  }
+
+  // Le PanResponder est créé une fois : il lit la vue par les refs, car il serait sinon remplacé en plein geste
+  // à chaque changement de zoom, et le pincement s'arrêterait.
+  const handlersRef = useRef({ rebase, moveGesture });
+  handlersRef.current = { rebase, moveGesture };
+  const mapPanResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => false,
+      onMoveShouldSetPanResponder: (event, gesture) =>
+        event.nativeEvent.touches.length >= 2 || Math.abs(gesture.dx) > 6 || Math.abs(gesture.dy) > 6,
+      onPanResponderTerminationRequest: () => false,
+      onPanResponderGrant: (event) => handlersRef.current.rebase(event),
+      onPanResponderMove: (event) => handlersRef.current.moveGesture(event),
+    }),
+  ).current;
+
+  // Le Traqué avance (ou le cadre change) : on recentre, sauf si l'utilisateur est parti explorer la carte.
   useEffect(() => {
-    if (!viewport.width || !viewport.height) {
-      return;
-    }
-
-    recenterOnGuts();
+    if (!viewport.width || !viewport.height || userMovedRef.current) return;
+    const target = gutsCenteredView(clampZoom(viewRef.current.zoom, minZoom));
+    setView(target);
   }, [position.x, position.y, viewport.height, viewport.width, sheetHeight]);
+
+  useEffect(
+    () => () => {
+      if (frameRef.current !== null) cancelAnimationFrame(frameRef.current);
+    },
+    [],
+  );
 
   function handleViewportLayout(event: LayoutChangeEvent): void {
     const { width, height } = event.nativeEvent.layout;
     setViewport({ width, height });
+    // Origine du cadre dans la fenêtre : les doigts sont mesurés en coordonnées de la fenêtre.
+    viewportNodeRef.current?.measureInWindow((x, y) => {
+      viewportOriginRef.current = { x, y };
+    });
   }
 
   return (
     <View style={styles.root}>
-      <View style={styles.mapViewport} onLayout={handleViewportLayout}>
+      <View ref={viewportNodeRef} style={styles.mapViewport} onLayout={handleViewportLayout}>
         <View
           {...mapPanResponder.panHandlers}
           style={[
@@ -176,10 +224,11 @@ export function MapScreen() {
             imageStyle={styles.mapImage}
           >
             <Svg width={contentWidth} height={contentHeight} viewBox={`0 0 ${MAP_WIDTH} ${MAP_HEIGHT}`} style={StyleSheet.absoluteFill}>
-              <Polyline points={walkedPath} fill="none" stroke={theme.colors.ink} strokeOpacity={0.4} strokeWidth={9} strokeLinecap="round" strokeLinejoin="round" />
-              <Polyline points={walkedPath} fill="none" stroke={theme.colors.bloodGlow} strokeWidth={5} strokeLinecap="round" strokeLinejoin="round" />
+              {/* Piste de pas : des points espacés d'une taille constante à l'écran, clairs sous foncés pour rester lisibles sur la terre comme sur la mer. */}
+              <Polyline points={walkedPath} fill="none" stroke={theme.colors.bone} strokeOpacity={0.9} strokeWidth={trailDot + strokeAtZoom(3, zoom)} strokeLinecap="round" strokeLinejoin="round" strokeDasharray={`0.1 ${trailGap}`} />
+              <Polyline points={walkedPath} fill="none" stroke={theme.colors.blood} strokeWidth={trailDot} strokeLinecap="round" strokeLinejoin="round" strokeDasharray={`0.1 ${trailGap}`} />
               {isJourneyComplete ? null : (
-                <Polyline points={nextLegPath} fill="none" stroke={theme.colors.ink} strokeWidth={5} strokeLinecap="round" strokeDasharray="1 12" />
+                <Polyline points={nextLegPath} fill="none" stroke={theme.colors.ink} strokeOpacity={0.55} strokeWidth={strokeAtZoom(3, zoom)} strokeLinecap="round" strokeDasharray={`0.1 ${strokeAtZoom(10, zoom)}`} />
               )}
             </Svg>
 
@@ -227,9 +276,9 @@ export function MapScreen() {
           <Text style={styles.distanceGoal}>{`sur ${formatInt(GAME_CONFIG.totalGoalKm)}`}</Text>
         </View>
         <View style={styles.controls}>
-          <MapButton label="Agrandir la carte" icon="add" onPress={() => handleZoom(zoom + ZOOM_STEP)} />
-          <MapButton label="Réduire la carte" icon="remove" onPress={() => handleZoom(zoom - ZOOM_STEP)} />
-          <MapButton label="Recentrer sur ma position" icon="locate" onPress={() => handleZoom(BASE_ZOOM)} />
+          <MapButton label="Agrandir la carte" icon="add" onPress={() => handleZoomButton(zoom * ZOOM_FACTOR)} />
+          <MapButton label="Réduire la carte" icon="remove" onPress={() => handleZoomButton(zoom / ZOOM_FACTOR)} />
+          <MapButton label="Recentrer sur ma position" icon="locate" onPress={() => handleZoomButton(MAP_BASE_ZOOM)} />
         </View>
       </View>
 
