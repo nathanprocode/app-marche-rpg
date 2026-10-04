@@ -1,5 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
+import { useState } from "react";
 import { Image, Pressable, StyleSheet, Text, View } from "react-native";
 import { GAME_CONFIG } from "../../core/constants/game";
 import { formatDecimal, formatInt } from "../../core/format";
@@ -24,8 +25,13 @@ import { PaperCard } from "../components/PaperCard";
 import { ProgressBar } from "../components/ProgressBar";
 import { Screen } from "../components/Screen";
 
+/** Outil de test (mode développement seulement) : forcer la scène du camp de jour ou de nuit, quelle que soit l'heure. */
+const DEV_DAY_HOUR = 14;
+const DEV_NIGHT_HOUR = 22;
+
 export function HomeScreen() {
   const router = useRouter();
+  const [devCampHour, setDevCampHour] = useState<number | null>(null);
   const stepsToday = usePedometerStore((state) => state.stepsToday);
   const distanceTodayKm = usePedometerStore((state) => state.distanceTodayKm);
   const resetStepsToday = usePedometerStore((state) => state.resetStepsToday);
@@ -86,7 +92,7 @@ export function HomeScreen() {
       </View>
 
       <View style={styles.camp}>
-        <CampVignette scene={resolveCampScene(new Date().getHours(), isCalm, previous.title)} />
+        <CampVignette scene={resolveCampScene(devCampHour ?? new Date().getHours(), isCalm, previous.title)} />
       </View>
 
       <InkCard alert={!isCalm} style={styles.brandStrip}>
@@ -176,6 +182,11 @@ export function HomeScreen() {
             variant="secondary"
             disabled={!next}
             onPress={() => void advanceToNextCheckpointDev()}
+          />
+          <Button
+            label={`Scène du camp : ${devCampHour === null ? "automatique" : devCampHour === DEV_DAY_HOUR ? "jour" : "nuit"}`}
+            variant="secondary"
+            onPress={() => setDevCampHour((hour) => (hour === null ? DEV_DAY_HOUR : hour === DEV_DAY_HOUR ? DEV_NIGHT_HOUR : null))}
           />
           <Button label="Réinitialiser la progression" variant="danger" onPress={() => void handleResetDev()} />
           <Button label="Voir la carte" variant="secondary" onPress={() => router.push("/(tabs)/map")} />

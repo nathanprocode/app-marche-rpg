@@ -70,7 +70,7 @@ L'app contient du code natif (`modules/permanent-pedometer/`) : Expo Go ne suffi
 - `docs/HANDOFF.md` : **passation** (état du projet, décisions, reste à faire, pièges). `docs/day*.md` : journal des premiers jours.
 - `src/data/map/berserk-checkpoints.ts` : la seule source des checkpoints (km, texte, position sur la carte).
 - `src/data/companions.ts` : les 14 compagnons (texte, sprite, checkpoint de rencontre, tronçons parcourus avec Guts).
-  Sprites dans `assets/companions/` (formes de boss dans `assets/bosses/`) (fond transparent, 192 px de haut), scènes de camp dans `assets/camp/`.
+  Sprites dans `assets/companions/` (formes de boss dans `assets/bosses/`) (fond transparent, 192 px de haut), scènes de camp dans `assets/camp/` (avec `guts-day.png` / `guts-night.png`, Guts découpé pour être animé : voir `CampGuts.tsx`).
   14 compagnons, tous avec leur sprite. Un compagnon sans sprite aurait une fiche en silhouette et n'apparaîtrait pas sur la carte.
   **Ajouter un sprite** : PNG à fond transparent, 192 px de haut, nommé `assets/companions/<id>.png` (même style que les
   autres), puis dans `companions.ts` remplacer le commentaire « Sprite à fournir » par
