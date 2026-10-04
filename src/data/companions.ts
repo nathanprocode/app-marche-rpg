@@ -80,7 +80,7 @@ export const COMPANIONS: Companion[] = [
     title: "Le Cadet de la Troupe",
     description:
       "Le plus jeune des Faucons, Rickert compense sa force modeste par son esprit : il sait réparer les armes et prévoir les imprévus. Il te rappelle qu'on va plus loin avec un bon équipement, de bonnes chaussures et un peu d'organisation.",
-    // Sprite à fournir : assets/companions/rickert.png, puis image: require("../../assets/companions/rickert.png").
+    image: require("../../assets/companions/rickert.png"),
     metAtCheckpointId: "cp-004",
     travels: [{ fromCheckpointId: "cp-004", untilCheckpointId: "cp-006" }, { fromCheckpointId: "cp-007", untilCheckpointId: "cp-008" }, { fromCheckpointId: "cp-009", untilCheckpointId: "cp-010" }],
   },
@@ -120,7 +120,7 @@ export const COMPANIONS: Companion[] = [
     title: "Le Forgeron de la Vallée",
     description:
       "Vieil artisan bourru à la barbe blanche, Godo a forgé l'épée qui demande une force démesurée. Il ne quitte jamais son atelier, mais sa leçon voyage avec toi : les grandes choses se construisent coup après coup, pas après pas.",
-    // Sprite à fournir : assets/companions/godo.png, puis image: require("../../assets/companions/godo.png").
+    image: require("../../assets/companions/godo.png"),
     metAtCheckpointId: "cp-009",
     travels: [],
   },
@@ -150,7 +150,7 @@ export const COMPANIONS: Companion[] = [
     title: "La Vieille Sorcière",
     description:
       "Doyenne des sorcières et maîtresse de Schierke, Flora veille sur sa demeure comme sur un refuge. Elle sait que les corps comme les esprits se réparent avec le temps : elle te rappelle de t'arrêter respirer, puis de reprendre la route.",
-    // Sprite à fournir : assets/companions/flora.png, puis image: require("../../assets/companions/flora.png").
+    image: require("../../assets/companions/flora.png"),
     metAtCheckpointId: "cp-012",
     travels: [],
   },
