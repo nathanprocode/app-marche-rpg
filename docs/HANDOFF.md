@@ -13,7 +13,7 @@ les branches, la CI et les PR simplement, et on décide avec lui de tout ce qui 
 
 ## État actuel (tout est dans `main`)
 
-Tests : 25 suites, 209 tests, tous verts. CI GitHub (`.github/workflows/ci.yml`) : typecheck + tests à chaque push et PR.
+Tests : 26 suites, 215 tests, tous verts. CI GitHub (`.github/workflows/ci.yml`) : typecheck + tests à chaque push et PR.
 
 ### Fonctionnalités déjà livrées
 
@@ -34,6 +34,7 @@ Tests : 25 suites, 209 tests, tous verts. CI GitHub (`.github/workflows/ci.yml`)
 | Vibrations | Option du Profil, désactivée par défaut : point franchi, succès, fin de Traque, boss, objectif du jour | `src/features/haptics` |
 | Remise à zéro | « Recommencer à zéro » (local + cloud), réglages conservés | `src/features/runtime/eraseProgress.ts` |
 | Bande (social) | Onglet « Bande » : créer/rejoindre avec un code `FAUCON-XXXXXX`, classement, amis sur la carte (point + nom), temps quasi réel via Firestore. **Demande de publier `firestore.rules`** | `docs/social.md`, `src/features/social`, `useSocialStore`, `BandScreen` |
+| Skins de Guts | Sur la carte seulement : Guts jeune (Troupe du Faucon) imposé jusqu'à la première Éclipse (315 km), puis le Guerrier Noir. Section « Apparence » du Profil pour choisir parmi les skins débloqués ; le choix est gardé aux tours suivants. Dessin de Guts jeune par @CRYBAG (accord pour un usage non commercial, crédité dans l'Apparence) | `src/data/gutsSkins.ts`, `src/features/skins`, `GutsMarker`, `AppearancePicker` |
 | Accessibilité | Grandes polices, animations réduites, libellés TalkBack | partout |
 
 ### Ce qui n'est PAS fait
@@ -42,6 +43,9 @@ Tests : 25 suites, 209 tests, tous verts. CI GitHub (`.github/workflows/ci.yml`)
   `assets/companions/<id>.png`, puis `image: require("../../assets/companions/<id>.png")` dans `src/data/companions.ts`. Les formes
   de boss vont dans `assets/bosses/`. Rickert, Godo et Flora viennent d'images générées : Rickert a été retravaillé (table et
   formules retirées, jambes reconstituées) ; Godo et Flora gardent leur enclume et leur établi.
+- **Marche de Guts jeune** : une seule image (`assets/map/guts-jeune.png`, pixel art agrandi x2, détouré, signature retirée)
+  qui sautille. Nathan prépare 8 images de marche au format de `guts-walk.png` (8 × 124 × 131 px) : passer alors le skin
+  `young` en `kind: "sheet"` dans `src/data/gutsSkins.ts`. Ajouter un skin = une entrée dans ce fichier.
 - **Puck** : voulu par Nathan, pas d'image (il ne trouve rien et ne sait pas le dessiner). À ajouter quand un sprite existe
   (rencontre suggérée vers « Le Comte », `cp-008-5`).
 - **Isma et Ivalera** : proposés puis écartés, car leur place dans l'histoire n'était pas sûre. À vérifier avant de les ajouter.

@@ -16,21 +16,30 @@ describe("parseSettings", () => {
       eveningReminderEnabled: false,
       eveningReminderHour: 20,
       hapticsEnabled: false,
+      gutsSkinId: null,
     });
-    expect(parseSettings({ dailyGoal: 42, eveningReminderHour: 3 })).toMatchObject({
+    expect(parseSettings({ dailyGoal: 42, eveningReminderHour: 3, gutsSkinId: "inconnu" })).toMatchObject({
       dailyGoal: 1500,
       eveningReminderHour: 20,
+      gutsSkinId: null,
     });
   });
 
   it("garde les valeurs proposées", () => {
     expect(
-      parseSettings({ dailyGoal: 5000, eveningReminderEnabled: true, eveningReminderHour: 19, hapticsEnabled: true }),
+      parseSettings({
+        dailyGoal: 5000,
+        eveningReminderEnabled: true,
+        eveningReminderHour: 19,
+        hapticsEnabled: true,
+        gutsSkinId: "young",
+      }),
     ).toEqual({
       dailyGoal: 5000,
       eveningReminderEnabled: true,
       eveningReminderHour: 19,
       hapticsEnabled: true,
+      gutsSkinId: "young",
     });
   });
 });

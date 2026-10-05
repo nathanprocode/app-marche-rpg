@@ -16,6 +16,7 @@ import { GAME_CONFIG } from "../../core/constants/game";
 import { formatDecimal, formatInt } from "../../core/format";
 import { theme } from "../../core/theme";
 import { COMPANIONS } from "../../data/companions";
+import { GUTS_SKINS } from "../../data/gutsSkins";
 import { BERSERK_CHECKPOINTS } from "../../data/map/berserk-checkpoints";
 import { getTravelingCompanions, layoutTroupe } from "../../features/companions/journey";
 import { calculateGutsPosition } from "../../features/mapJourney/interpolation";
@@ -34,9 +35,11 @@ import {
   type MapView,
   type Offset,
 } from "../../features/mapZoom/mapZoom";
+import { resolveGutsSkin } from "../../features/skins/gutsSkin";
 import { usePlayerStore } from "../../store/usePlayerStore";
 import { useSocialStore } from "../../store/useSocialStore";
 import { useAuthStore } from "../../store/useAuthStore";
+import { useSettingsStore } from "../../store/useSettingsStore";
 import { BandMarker } from "../components/BandMarker";
 import { COMPANION_SPRITE_SIZE, CompanionMarker } from "../components/CompanionMarker";
 import { GutsMarker } from "../components/GutsMarker";
@@ -74,6 +77,8 @@ export function MapScreen() {
   const gestureRef = useRef({ touchCount: 0, anchor: { x: 0, y: 0 } as Offset, startDistance: 0, startZoom: MAP_BASE_ZOOM });
   const progress = usePlayerStore((state) => state.progress);
   const position = calculateGutsPosition(progress.totalDistanceKm, BERSERK_CHECKPOINTS);
+  const gutsSkinId = useSettingsStore((state) => state.gutsSkinId);
+  const gutsSkin = resolveGutsSkin(GUTS_SKINS, gutsSkinId, progress, BERSERK_CHECKPOINTS);
   const myId = useAuthStore((state) => state.userId);
   const bandMembers = useSocialStore((state) => state.members);
   // Les amis de la Bande : un point et un nom, sans toi (tu es Guts).
@@ -276,7 +281,7 @@ export function MapScreen() {
             {friends.map(({ member, spot }, index) => (
               <BandMarker key={member.uid} name={member.displayName} lap={member.lap} xPct={spot.x} yPct={spot.y} index={index} />
             ))}
-            <GutsMarker xPct={position.x} yPct={position.y} />
+            <GutsMarker xPct={position.x} yPct={position.y} skin={gutsSkin} />
           </ImageBackground>
         </View>
       </View>
