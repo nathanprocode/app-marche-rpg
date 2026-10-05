@@ -18,6 +18,16 @@ export type Enemy = {
 /** Le bestiaire, dans l'ordre où on les croise sur la route. */
 export const ENEMIES: Enemy[] = [
   {
+    id: "bazuso",
+    name: "Bazuso",
+    title: "Le Tueur de Cent Hommes",
+    description:
+      "Chevalier géant du Tudor, bardé d'acier de la tête aux pieds, qui se vante d'avoir abattu cent hommes de sa hache. Le premier grand nom tombé sous ta lame, alors que tu n'étais qu'un mercenaire parmi d'autres.",
+    forms: [{ label: "Chevalier", image: require("../../assets/bosses/bazuso.png") }],
+    metAtCheckpointId: "cp-003",
+    encounterIds: ["bazuso"],
+  },
+  {
     id: "zodd",
     name: "Zodd",
     title: "L'Immortel",

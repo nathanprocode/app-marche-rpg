@@ -31,6 +31,7 @@ export type BossEncounter = {
   victoryText: string;
 };
 
+const BAZUSO = require("../../assets/bosses/bazuso.png");
 const ZODD_HUMAN = require("../../assets/companions/zodd.png");
 const ZODD_APOSTLE = require("../../assets/bosses/zodd-apostle.png");
 const VOID = require("../../assets/bosses/void.png");
@@ -44,6 +45,20 @@ const FEMTO = require("../../assets/bosses/femto.png");
  * assez de pas pour être gagnés tant que Zodd rôde, mais rien n'est perdu si on ne les gagne pas : le duel continue.
  */
 export const BOSS_ENCOUNTERS: BossEncounter[] = [
+  // Premier duel de la route : entre « Le Briseur d'Ours » (52 km) et « La Rencontre avec le Faucon » (85 km) il y a
+  // environ 44 000 pas, Bazuso n'en demande que 8 000.
+  {
+    id: "bazuso",
+    bossName: "Bazuso",
+    title: "Duel contre Bazuso",
+    checkpointId: "cp-003",
+    phases: [{ id: "base", label: "Le Tueur de Cent Hommes", hp: 8_000, image: BAZUSO }],
+    intro: "Bazuso s'avance seul devant son armée, sa hache sur l'épaule. Il rit de toi. Chaque pas que tu fais lui donne tort.",
+    phaseChangeTexts: [],
+    victoryTitle: "Bazuso est tombé",
+    victoryText:
+      "Le colosse en armure s'effondre dans la boue, et les deux armées se taisent. Personne n'y croyait. Désormais, c'est ton nom qu'on murmure sur les champs de bataille.",
+  },
   {
     id: "zodd-1",
     bossName: "Zodd",

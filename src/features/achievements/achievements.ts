@@ -83,6 +83,14 @@ export const ACHIEVEMENTS: Achievement[] = [
   },
 
   {
+    id: "boss-bazuso",
+    title: "Tueur du Tueur",
+    description: "Gagner le duel contre Bazuso.",
+    category: "boss",
+    icon: "skull",
+    progress: (stats) => ({ value: stats.bossesDefeated.includes("bazuso") ? 1 : 0, target: 1 }),
+  },
+  {
     id: "boss-zodd-1",
     title: "Tenir tête à Zodd",
     description: "Gagner le duel contre Zodd.",

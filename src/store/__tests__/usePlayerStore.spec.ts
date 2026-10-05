@@ -189,6 +189,12 @@ describe("duels de boss", () => {
   // Zodd attend à 115 km : 153 334 pas.
   const START = 153_334;
 
+  // Bazuso (52 km) est déjà battu : on part juste avant Zodd, sans événement en attente.
+  beforeEach(async () => {
+    await usePlayerStore.getState().syncFromSteps(START - 1, 0, NEVER);
+    usePlayerStore.getState().clearNewBossEvents();
+  });
+
   it("annonce le changement de forme quand les pas passent la vie de la forme humaine", async () => {
     await usePlayerStore.getState().syncFromSteps(START + 9_990, 0, NEVER);
     expect(usePlayerStore.getState().newBossEvents).toEqual([]);
@@ -217,6 +223,7 @@ describe("duels de boss", () => {
     await usePlayerStore.getState().mergeCloudProgress(cloud(1_000_000, 0));
     const state = usePlayerStore.getState();
     expect(Object.keys(state.bossVictories).sort()).toEqual([
+      "1/bazuso",
       "1/conrad",
       "1/femto",
       "1/slan",
