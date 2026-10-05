@@ -36,9 +36,14 @@ export const GUTS_SKINS: GutsSkin[] = [
     description: "Le mercenaire de l'Âge d'Or, avant l'Éclipse.",
     unlock: { type: "always" },
     unlockHint: "Disponible dès le départ.",
-    // Une seule image (pixel art agrandi x2, détouré, signature retirée) en attendant les 8 images de marche.
-    sprite: { kind: "single", image: require("../../assets/map/guts-jeune.png"), width: 128, height: 204 },
-    credit: "Dessin de @CRYBAG",
+    // 6 images de marche (fond vert retiré, retournées pour marcher dans le même sens que le Guerrier Noir).
+    sprite: {
+      kind: "sheet",
+      image: require("../../assets/map/guts-jeune-walk.png"),
+      frameCount: 6,
+      frame: { width: 155, height: 192 },
+    },
+    credit: "D'après un dessin de @CRYBAG",
   },
   {
     id: "black-swordsman",
