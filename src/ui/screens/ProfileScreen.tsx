@@ -3,12 +3,14 @@ import { Alert, StyleSheet, Switch, Text, View } from "react-native";
 import { DAILY_GOAL_OPTIONS } from "../../core/constants/game";
 import { formatDecimal, formatInt } from "../../core/format";
 import { theme } from "../../core/theme";
+import { GUTS_SKINS } from "../../data/gutsSkins";
 import { BERSERK_CHECKPOINTS } from "../../data/map/berserk-checkpoints";
 import { historySpanDays, lastDays, summarizeDays } from "../../features/history/weekHistory";
 import { vibrate } from "../../features/haptics/haptics";
 import { isGoalReached } from "../../features/progression/selectors";
 import { REMINDER_HOUR_OPTIONS } from "../../features/reminders/eveningReminder";
 import { requestReminderPermission } from "../../features/reminders/reminderScheduler";
+import { resolveGutsSkin, unlockedSkins } from "../../features/skins/gutsSkin";
 import { eraseAllProgress } from "../../features/runtime/eraseProgress";
 import { buildProgressCard } from "../../features/share/shareCards";
 import { useShareStore } from "../../store/useShareStore";
@@ -17,6 +19,7 @@ import { useBrandStore } from "../../store/useBrandStore";
 import { usePedometerStore } from "../../store/usePedometerStore";
 import { flushCloudSave, usePlayerStore } from "../../store/usePlayerStore";
 import { useSettingsStore } from "../../store/useSettingsStore";
+import { AppearancePicker } from "../components/AppearancePicker";
 import { ChoiceRow } from "../components/ChoiceRow";
 import { BrandMark } from "../components/BrandMark";
 import { Button } from "../components/Button";
@@ -43,6 +46,8 @@ export function ProfileScreen() {
   const setReminderHour = useSettingsStore((state) => state.setEveningReminderHour);
   const hapticsEnabled = useSettingsStore((state) => state.hapticsEnabled);
   const setHapticsEnabled = useSettingsStore((state) => state.setHapticsEnabled);
+  const gutsSkinId = useSettingsStore((state) => state.gutsSkinId);
+  const setGutsSkinId = useSettingsStore((state) => state.setGutsSkinId);
   const [reminderDenied, setReminderDenied] = useState(false);
   const requestShare = useShareStore((state) => state.requestShare);
   const [period, setPeriod] = useState<HistoryPeriod>("week");
@@ -136,6 +141,18 @@ export function ProfileScreen() {
           <Button label={`Commencer le tour ${progress.lap + 1}`} onPress={() => void startNextLap()} />
         </View>
       ) : null}
+
+      <View style={styles.week}>
+        <Text accessibilityRole="header" style={styles.label}>
+          Apparence
+        </Text>
+        <AppearancePicker
+          skins={GUTS_SKINS}
+          unlockedIds={unlockedSkins(GUTS_SKINS, progress, BERSERK_CHECKPOINTS).map((skin) => skin.id)}
+          selectedId={resolveGutsSkin(GUTS_SKINS, gutsSkinId, progress, BERSERK_CHECKPOINTS).id}
+          onSelect={setGutsSkinId}
+        />
+      </View>
 
       <View style={styles.settings}>
         <View style={styles.settingBlock}>
