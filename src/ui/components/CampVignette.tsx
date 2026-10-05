@@ -5,8 +5,9 @@ import type { CampScene } from "../../features/camp/campScene";
 import { CampAmbience } from "./CampAmbience";
 import { GutsIdle } from "./GutsIdle";
 
+// Le jour, le fond est sans Guts : il est dessiné par-dessus par GutsIdle, pour pouvoir bouger.
 const CAMP_IMAGES = {
-  day: require("../../../assets/camp/camp-day.jpg"),
+  day: require("../../../assets/camp/camp-day-clean.jpg"),
   night: require("../../../assets/camp/camp-night.jpg"),
 };
 
@@ -44,7 +45,7 @@ export function CampVignette({ scene }: CampVignetteProps) {
             accessibilityLabel={CAMP_DESCRIPTIONS[scene.time]}
             accessibilityIgnoresInvertColors
           />
-          <GutsIdle time={scene.time} />
+          <GutsIdle time={scene.time} height={size.height} />
           <CampAmbience time={scene.time} width={size.width} height={size.height} />
         </View>
       </View>
