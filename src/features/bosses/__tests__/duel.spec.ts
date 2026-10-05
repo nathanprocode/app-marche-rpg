@@ -2,7 +2,7 @@ import { BOSS_ENCOUNTERS } from "../../../data/bosses";
 import { BERSERK_CHECKPOINTS } from "../../../data/map/berserk-checkpoints";
 import { computeDuel, computeDuels, duelStartSteps, diffDuels, stepsAtKm, victoriousEncounterIds, victoryKey } from "../duel";
 
-const ZODD_1 = BOSS_ENCOUNTERS[0];
+const ZODD_1 = BOSS_ENCOUNTERS.find((encounter) => encounter.id === "zodd-1")!;
 const START = stepsAtKm(115);
 const statusAt = (lapSteps: number) => computeDuel(ZODD_1, lapSteps, BERSERK_CHECKPOINTS);
 
@@ -44,8 +44,9 @@ describe("computeDuel", () => {
 
   it("le second duel s'ouvre plus loin sur la route, avec plus de vie", () => {
     const duels = computeDuels(BOSS_ENCOUNTERS, stepsAtKm(590), BERSERK_CHECKPOINTS);
-    expect(duels.map((duel) => duel.state).slice(0, 2)).toEqual(["won", "active"]);
-    expect(duels[1].totalHp).toBe(60_000);
+    const zodd = duels.filter((duel) => duel.encounter.bossName === "Zodd");
+    expect(zodd.map((duel) => duel.state)).toEqual(["won", "active"]);
+    expect(zodd[1].totalHp).toBe(60_000);
   });
 
   it("références des checkpoints existantes et formes cohérentes", () => {
@@ -55,6 +56,15 @@ describe("computeDuel", () => {
       expect(encounter.phases.length).toBeGreaterThan(0);
       expect(encounter.phaseChangeTexts).toHaveLength(encounter.phases.length - 1);
       encounter.phases.forEach((phase) => expect(phase.hp).toBeGreaterThan(0));
+    });
+  });
+
+  it("chaque duel isolé peut être gagné avant le checkpoint suivant", () => {
+    BOSS_ENCOUNTERS.filter((encounter) => !encounter.afterEncounterId && encounter.checkpointId !== "cp-008").forEach((encounter) => {
+      const index = BERSERK_CHECKPOINTS.findIndex((checkpoint) => checkpoint.id === encounter.checkpointId);
+      const next = BERSERK_CHECKPOINTS[index + 1];
+      const totalHp = encounter.phases.reduce((sum, phase) => sum + phase.hp, 0);
+      expect(duelStartSteps(encounter, BOSS_ENCOUNTERS, BERSERK_CHECKPOINTS) + totalHp).toBeLessThanOrEqual(stepsAtKm(next.kmThreshold));
     });
   });
 });
@@ -80,7 +90,7 @@ describe("diffDuels", () => {
 
   it("ne signale rien tant que le duel n'avance pas d'une forme", () => {
     expect(diffDuels(duelsAt(START + 100), duelsAt(START + 5_000), 1)).toEqual([]);
-    expect(diffDuels(duelsAt(0), duelsAt(START + 5_000), 1)).toEqual([]);
+    expect(diffDuels(duelsAt(stepsAtKm(100)), duelsAt(START + 5_000), 1)).toEqual([]);
   });
 });
 

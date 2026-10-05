@@ -13,7 +13,7 @@ les branches, la CI et les PR simplement, et on décide avec lui de tout ce qui 
 
 ## État actuel (tout est dans `main`)
 
-Tests : 26 suites, 214 tests, tous verts. CI GitHub (`.github/workflows/ci.yml`) : typecheck + tests à chaque push et PR.
+Tests : 26 suites, 215 tests, tous verts. CI GitHub (`.github/workflows/ci.yml`) : typecheck + tests à chaque push et PR.
 
 ### Fonctionnalités déjà livrées
 
@@ -25,8 +25,8 @@ Tests : 26 suites, 214 tests, tous verts. CI GitHub (`.github/workflows/ci.yml`)
 | Rappel du soir | Notification locale (désactivée par défaut), 3 prochains soirs reprogrammés à chaque ouverture | `src/features/reminders` |
 | Succès | 22 succès (distance, série, pas du jour, collections, tours, boss), bandeau de déblocage, onglet « Succès » | `src/features/achievements`, `AchievementList`, `AchievementToast` |
 | Tours de Traque | Écran de fin à 1 000 km, nouveau tour (carte à zéro, chroniques/compagnons/succès/records conservés) | `usePlayerStore.startNextLap`, `TraqueCompleteModal` |
-| Duels de boss | Zodd : 2 duels (« Nosferatu Zodd » 115 km, « La Colline aux Épées » 590 km), 2 formes chacun ; **l'Éclipse (315 km) : 5 duels enchaînés** (Void 6 000, Ubik 7 000, Conrad 8 000, Slan 9 000, Femto 12 000 pas), vie en pas, sans limite de temps | `src/data/bosses.ts`, `src/features/bosses`, `DuelCard`, `BossEventModal` |
-| Ennemis | Onglet « Ennemis » des Quêtes : Zodd + les 5 de la Main de Dieu, silhouette tant que le checkpoint n'est pas franchi, fiche, « Vaincu / À vaincre » | `src/data/enemies.ts`, `EnemyCollection` |
+| Duels de boss | Bazuso (« Le Briseur d'Ours » 52 km, 8 000 pas) ; Zodd : 2 duels (« Nosferatu Zodd » 115 km, « La Colline aux Épées » 590 km), 2 formes chacun ; **l'Éclipse (315 km) : 5 duels enchaînés** (Void 6 000, Ubik 7 000, Conrad 8 000, Slan 9 000, Femto 12 000 pas) ; Mozgus (« La Tour d'Albion » 545 km, 15 000 + 25 000) ; Grunbeld (« La Demeure de Flora » 638 km, 25 000 + 50 000) ; vie en pas, sans limite de temps | `src/data/bosses.ts`, `src/features/bosses`, `DuelCard`, `BossEventModal` |
+| Ennemis | Onglet « Ennemis » des Quêtes : Bazuso, Zodd, les 5 de la Main de Dieu, Mozgus, Grunbeld, silhouette tant que le checkpoint n'est pas franchi, fiche, « Vaincu / À vaincre » | `src/data/enemies.ts`, `EnemyCollection` |
 | Compagnons | 14, tous avec sprite (Corkus a été retiré du jeu), fiches, présence sur la carte selon `travels` | `src/data/companions.ts`, `CompanionCollection` |
 | Carte | Chemin parcouru en piste de points, pincement pour zoomer/dézoomer, glissement, boutons, pas de recentrage forcé quand on explore | `MapScreen`, `src/features/mapZoom` |
 | Historique | 7 jours / 30 jours / tout (365 jours gardés sur le téléphone) | `ProfileScreen`, `src/features/history` |
@@ -54,7 +54,7 @@ Tests : 26 suites, 214 tests, tous verts. CI GitHub (`.github/workflows/ci.yml`)
 - **Sons et ambiance** : pas implémentés. Idée retenue : rien de continu ; au plus un son bref (< 2 s) aux grands moments
   (point franchi, succès, fin de Traque), désactivé par défaut et coupé en mode silencieux. Demande un module audio natif
   (donc un build) et des fichiers audio libres de droits. Les vibrations sont la version déjà faite.
-- **Autres boss** : la mécanique est générique (une entrée dans `src/data/bosses.ts`, et `afterEncounterId` pour enchaîner des duels). Candidats évoqués : Mozgus, Grunbeld (Griffith/Femto est fait). Il faut leurs sprites, leurs points de vie et un checkpoint d'apparition.
+- **Autres boss** : la mécanique est générique (une entrée dans `src/data/bosses.ts`, une dans `src/data/enemies.ts`, un succès, et `afterEncounterId` pour enchaîner des duels). Bazuso, Mozgus et Grunbeld sont faits. Les images de Bazuso, Mozgus et Grunbeld viennent de @CRYBAG (pixel art sur fond violet, signature à retirer). Elles sont reconstruites à leur résolution d'origine, détourées, puis agrandies à 192 px de haut.
 - **Supprimer le compte Google** : écarté (Firebase demande une reconnexion récente) ; « Recommencer à zéro » efface déjà les données.
 
 ## Décisions de game design (à respecter)

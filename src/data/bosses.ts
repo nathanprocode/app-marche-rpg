@@ -31,6 +31,7 @@ export type BossEncounter = {
   victoryText: string;
 };
 
+const BAZUSO = require("../../assets/bosses/bazuso.png");
 const ZODD_HUMAN = require("../../assets/companions/zodd.png");
 const ZODD_APOSTLE = require("../../assets/bosses/zodd-apostle.png");
 const VOID = require("../../assets/bosses/void.png");
@@ -38,12 +39,30 @@ const UBIK = require("../../assets/bosses/ubik.png");
 const CONRAD = require("../../assets/bosses/conrad.png");
 const SLAN = require("../../assets/bosses/slan.png");
 const FEMTO = require("../../assets/bosses/femto.png");
+const MOZGUS = require("../../assets/bosses/mozgus.png");
+const MOZGUS_APOSTLE = require("../../assets/bosses/mozgus-apostle.png");
+const GRUNBELD = require("../../assets/bosses/grunbeld.png");
+const GRUNBELD_DRAGON = require("../../assets/bosses/grunbeld-dragon.png");
 
 /**
  * Les duels. Les points de vie sont en pas : le premier duel (60 km de route) et le second (48 km) laissent
  * assez de pas pour être gagnés tant que Zodd rôde, mais rien n'est perdu si on ne les gagne pas : le duel continue.
  */
 export const BOSS_ENCOUNTERS: BossEncounter[] = [
+  // Premier duel de la route : entre « Le Briseur d'Ours » (52 km) et « La Rencontre avec le Faucon » (85 km) il y a
+  // environ 44 000 pas, Bazuso n'en demande que 8 000.
+  {
+    id: "bazuso",
+    bossName: "Bazuso",
+    title: "Duel contre Bazuso",
+    checkpointId: "cp-003",
+    phases: [{ id: "base", label: "Le Tueur de Cent Hommes", hp: 8_000, image: BAZUSO }],
+    intro: "Bazuso s'avance seul devant son armée, sa hache sur l'épaule. Il rit de toi. Chaque pas que tu fais lui donne tort.",
+    phaseChangeTexts: [],
+    victoryTitle: "Bazuso est tombé",
+    victoryText:
+      "Le colosse en armure s'effondre dans la boue, et les deux armées se taisent. Personne n'y croyait. Désormais, c'est ton nom qu'on murmure sur les champs de bataille.",
+  },
   {
     id: "zodd-1",
     bossName: "Zodd",
@@ -143,5 +162,41 @@ export const BOSS_ENCOUNTERS: BossEncounter[] = [
     victoryTitle: "Tu as survécu à l'Éclipse",
     victoryText:
       "Le ciel se déchire. Tu n'as pas triomphé de la Main de Dieu : tu as survécu, et tu portes désormais la Marque. La route continue, et c'est ta force. Cours.",
+  },
+  // La Tour d'Albion (545 km) : environ 60 000 pas avant « La Colline aux Épées » (590 km), Mozgus en demande 40 000.
+  {
+    id: "mozgus",
+    bossName: "Mozgus",
+    title: "Le Bûcher d'Albion",
+    checkpointId: "cp-011",
+    phases: [
+      { id: "human", label: "Forme humaine", hp: 15_000, image: MOZGUS },
+      { id: "apostle", label: "Forme d'Apôtre", hp: 25_000, image: MOZGUS_APOSTLE },
+    ],
+    intro: "Mozgus prie au pied du bûcher, son livre à la main, persuadé que Dieu marche à ses côtés. Chaque pas que tu fais ébranle sa foi.",
+    phaseChangeTexts: [
+      "Le Béhélit a répondu à sa prière. Sa chair devient pierre, des ailes lui poussent dans le dos : l'inquisiteur se croit ange. Continue de marcher.",
+    ],
+    victoryTitle: "Mozgus est tombé",
+    victoryText:
+      "Les ailes de pierre se fendent et le saint homme s'écrase au pied de sa propre tour. Les flammes d'Albion s'éteignent : Casca est sauve, pour cette nuit.",
+  },
+  // La Demeure de Flora (638 km) : environ 176 000 pas avant « Le Port de Vritannis » (770 km), Grunbeld en demande 75 000.
+  {
+    id: "grunbeld",
+    bossName: "Grunbeld",
+    title: "L'Incendie de la Forêt",
+    checkpointId: "cp-012",
+    phases: [
+      { id: "human", label: "Forme humaine", hp: 25_000, image: GRUNBELD },
+      { id: "apostle", label: "Forme d'Apôtre", hp: 50_000, image: GRUNBELD_DRAGON },
+    ],
+    intro: "Grunbeld s'avance entre les arbres en flammes, marteau et bouclier en main. Il cherche un adversaire digne de lui. Chaque pas que tu fais le lui donne.",
+    phaseChangeTexts: [
+      "Le géant se couvre de cristaux et devient dragon. La forêt brûle autour de toi : l'Armure du Berserker est ta seule chance. Ne t'arrête pas.",
+    ],
+    victoryTitle: "Grunbeld est brisé",
+    victoryText:
+      "Les cristaux éclatent et le dragon s'effondre dans les cendres. Tu as tenu, mais l'Armure a failli t'emporter avec lui. La route vers la mer est ouverte.",
   },
 ];

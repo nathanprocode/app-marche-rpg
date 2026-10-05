@@ -83,6 +83,14 @@ export const ACHIEVEMENTS: Achievement[] = [
   },
 
   {
+    id: "boss-bazuso",
+    title: "Tueur du Tueur",
+    description: "Gagner le duel contre Bazuso.",
+    category: "boss",
+    icon: "skull",
+    progress: (stats) => ({ value: stats.bossesDefeated.includes("bazuso") ? 1 : 0, target: 1 }),
+  },
+  {
     id: "boss-zodd-1",
     title: "Tenir tête à Zodd",
     description: "Gagner le duel contre Zodd.",
@@ -108,6 +116,23 @@ export const ACHIEVEMENTS: Achievement[] = [
       value: ECLIPSE_DUELS.filter((id) => stats.bossesDefeated.includes(id)).length,
       target: ECLIPSE_DUELS.length,
     }),
+  },
+
+  {
+    id: "boss-mozgus",
+    title: "Hérétique",
+    description: "Gagner le duel contre Mozgus.",
+    category: "boss",
+    icon: "flame",
+    progress: (stats) => ({ value: stats.bossesDefeated.includes("mozgus") ? 1 : 0, target: 1 }),
+  },
+  {
+    id: "boss-grunbeld",
+    title: "Tueur de Dragon",
+    description: "Gagner le duel contre Grunbeld.",
+    category: "boss",
+    icon: "skull",
+    progress: (stats) => ({ value: stats.bossesDefeated.includes("grunbeld") ? 1 : 0, target: 1 }),
   },
 
   threshold("lap-1", "La Traque achevée", "Terminer la Traque une fois.", "lap", "trophy", 1, (s) => s.lapsCompleted),
