@@ -1,6 +1,7 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { create } from "zustand";
 import { DAILY_GOAL_OPTIONS, DEFAULT_DAILY_GOAL } from "../core/constants/game";
+import { GUTS_SKINS } from "../data/gutsSkins";
 import { DEFAULT_REMINDER_HOUR, REMINDER_HOUR_OPTIONS } from "../features/reminders/eveningReminder";
 
 const SETTINGS_STORAGE_KEY = "marche-du-faucon:settings";
@@ -12,6 +13,8 @@ type Settings = {
   eveningReminderHour: number;
   /** Vibrations aux grands moments (point franchi, succès, fin de Traque). Désactivées par défaut. */
   hapticsEnabled: boolean;
+  /** Skin de Guts choisi dans le Profil (null : le dernier débloqué). Gardé aux tours suivants. */
+  gutsSkinId: string | null;
 };
 
 type SettingsState = Settings & {
@@ -21,6 +24,7 @@ type SettingsState = Settings & {
   setEveningReminderEnabled: (enabled: boolean) => void;
   setEveningReminderHour: (hour: number) => void;
   setHapticsEnabled: (enabled: boolean) => void;
+  setGutsSkinId: (skinId: string) => void;
 };
 
 const DEFAULTS: Settings = {
@@ -28,6 +32,7 @@ const DEFAULTS: Settings = {
   eveningReminderEnabled: false,
   eveningReminderHour: DEFAULT_REMINDER_HOUR,
   hapticsEnabled: false,
+  gutsSkinId: null,
 };
 
 /** Relit des réglages dont on ne connaît pas la forme : une valeur inconnue retombe sur le défaut. */
@@ -41,6 +46,7 @@ export function parseSettings(raw: unknown): Settings {
     eveningReminderEnabled: data.eveningReminderEnabled === true,
     eveningReminderHour: (REMINDER_HOUR_OPTIONS as readonly number[]).includes(hour) ? hour : DEFAULTS.eveningReminderHour,
     hapticsEnabled: data.hapticsEnabled === true,
+    gutsSkinId: GUTS_SKINS.some((skin) => skin.id === data.gutsSkinId) ? (data.gutsSkinId as string) : DEFAULTS.gutsSkinId,
   };
 }
 
@@ -56,6 +62,7 @@ function pickSettings(state: SettingsState): Settings {
     eveningReminderEnabled: state.eveningReminderEnabled,
     eveningReminderHour: state.eveningReminderHour,
     hapticsEnabled: state.hapticsEnabled,
+    gutsSkinId: state.gutsSkinId,
   };
 }
 
@@ -85,6 +92,10 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
   },
   setHapticsEnabled: (enabled) => {
     set({ hapticsEnabled: enabled });
+    persist(pickSettings(get()));
+  },
+  setGutsSkinId: (skinId) => {
+    set({ gutsSkinId: parseSettings({ gutsSkinId: skinId }).gutsSkinId });
     persist(pickSettings(get()));
   },
 }));
