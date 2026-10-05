@@ -1,5 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
+import { useState } from "react";
 import { Image, Pressable, StyleSheet, Text, View } from "react-native";
 import { GAME_CONFIG } from "../../core/constants/game";
 import { formatDecimal, formatInt } from "../../core/format";
@@ -8,7 +9,7 @@ import { BERSERK_CHECKPOINTS } from "../../data/map/berserk-checkpoints";
 import { BERSERK_PANEL_IMAGES } from "../../data/map/berserk-panels";
 import { BOSS_ENCOUNTERS } from "../../data/bosses";
 import { computeDuels } from "../../features/bosses/duel";
-import { resolveCampScene } from "../../features/camp/campScene";
+import { resolveCampScene, type CampTime } from "../../features/camp/campScene";
 import { deriveBrandState } from "../../features/progression/engine";
 import { runDailySync } from "../../features/runtime/dailySync";
 import { useBrandStore } from "../../store/useBrandStore";
@@ -34,6 +35,8 @@ export function HomeScreen() {
   const advanceToNextCheckpointDev = usePlayerStore((state) => state.advanceToNextCheckpointDev);
   const resetProgressionDev = usePlayerStore((state) => state.resetProgressionDev);
   const streakDays = useBrandStore((state) => state.status.streakDays);
+  // Outil de développement : forcer le jour ou la nuit sur la vignette du camp (null = heure réelle).
+  const [campTimeDev, setCampTimeDev] = useState<CampTime | null>(null);
 
   const activeDuels = computeDuels(BOSS_ENCOUNTERS, progress.lapSteps, BERSERK_CHECKPOINTS).filter(
     (duel) => duel.state === "active",
@@ -86,7 +89,7 @@ export function HomeScreen() {
       </View>
 
       <View style={styles.camp}>
-        <CampVignette scene={resolveCampScene(new Date().getHours(), isCalm, previous.title)} />
+        <CampVignette scene={resolveCampScene(campHour(campTimeDev), isCalm, previous.title)} />
       </View>
 
       <InkCard alert={!isCalm} style={styles.brandStrip}>
@@ -178,11 +181,30 @@ export function HomeScreen() {
             onPress={() => void advanceToNextCheckpointDev()}
           />
           <Button label="Réinitialiser la progression" variant="danger" onPress={() => void handleResetDev()} />
+          <Button
+            label={`Camp : ${campTimeDev === "day" ? "jour" : campTimeDev === "night" ? "nuit" : "heure réelle"}`}
+            variant="secondary"
+            onPress={() => setCampTimeDev(nextCampTimeDev(campTimeDev))}
+          />
           <Button label="Voir la carte" variant="secondary" onPress={() => router.push("/(tabs)/map")} />
         </View>
       ) : null}
     </Screen>
   );
+}
+
+/** Heure donnée à la vignette du camp : l'heure réelle, ou une heure de jour ou de nuit forcée. */
+function campHour(forced: CampTime | null): number {
+  if (forced === "day") return 14;
+  if (forced === "night") return 22;
+  return new Date().getHours();
+}
+
+/** Heure réelle → jour → nuit → heure réelle. */
+function nextCampTimeDev(current: CampTime | null): CampTime | null {
+  if (current === null) return "day";
+  if (current === "day") return "night";
+  return null;
 }
 
 function Total({ label, value }: { label: string; value: string }) {

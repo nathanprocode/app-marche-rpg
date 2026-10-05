@@ -34,6 +34,7 @@ Tests : 25 suites, 208 tests, tous verts. CI GitHub (`.github/workflows/ci.yml`)
 | Vibrations | Option du Profil, désactivée par défaut : point franchi, succès, fin de Traque, boss, objectif du jour | `src/features/haptics` |
 | Remise à zéro | « Recommencer à zéro » (local + cloud), réglages conservés | `src/features/runtime/eraseProgress.ts` |
 | Bande (social) | Onglet « Bande » : créer/rejoindre avec un code `FAUCON-XXXXXX`, classement, amis sur la carte (point + nom), temps quasi réel via Firestore. **Demande de publier `firestore.rules`** | `docs/social.md`, `src/features/social`, `useSocialStore`, `BandScreen` |
+| Vignette du camp | Accueil : forêt le jour, feu de camp la nuit (selon l'heure). Feuilles, braises et lueur du feu ; Guts marche le jour (rebond et balancement) et respire la nuit. Bouton « Camp : heure réelle / jour / nuit » dans les outils de développement | `CampVignette`, `CampAmbience`, `GutsIdle`, `assets/camp` |
 | Accessibilité | Grandes polices, animations réduites, libellés TalkBack | partout |
 
 ### Ce qui n'est PAS fait
@@ -47,6 +48,10 @@ Tests : 25 suites, 208 tests, tous verts. CI GitHub (`.github/workflows/ci.yml`)
 - **Isma et Ivalera** : proposés puis écartés, car leur place dans l'histoire n'était pas sûre. À vérifier avant de les ajouter.
 - **Compagnon préféré** (un compagnon rencontré « parle » dans le rappel du soir) : Nathan veut y réfléchir, ne pas le faire
   sans son accord.
+- **Vraie marche de Guts** (vignette du jour) : aujourd'hui, Guts découpé (`guts-day.png`) rebondit sur un fond où il a été
+  effacé à la main (`camp-day-clean.jpg`, un peu flou sous lui ; `camp-day.jpg` reste l'original). Nathan veut sûrement une
+  autre animation plus tard : il faudrait 3 ou 4 dessins de Guts aux étapes du pas (même pose, même taille, fond transparent)
+  et, si possible, la forêt sans Guts. La nuit, Guts reste dans le fond et `guts-night.png` ne fait que s'étirer vers le haut.
 - **Sons et ambiance** : pas implémentés. Idée retenue : rien de continu ; au plus un son bref (< 2 s) aux grands moments
   (point franchi, succès, fin de Traque), désactivé par défaut et coupé en mode silencieux. Demande un module audio natif
   (donc un build) et des fichiers audio libres de droits. Les vibrations sont la version déjà faite.
