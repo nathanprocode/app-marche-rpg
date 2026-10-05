@@ -118,6 +118,23 @@ export const ACHIEVEMENTS: Achievement[] = [
     }),
   },
 
+  {
+    id: "boss-mozgus",
+    title: "Hérétique",
+    description: "Gagner le duel contre Mozgus.",
+    category: "boss",
+    icon: "flame",
+    progress: (stats) => ({ value: stats.bossesDefeated.includes("mozgus") ? 1 : 0, target: 1 }),
+  },
+  {
+    id: "boss-grunbeld",
+    title: "Tueur de Dragon",
+    description: "Gagner le duel contre Grunbeld.",
+    category: "boss",
+    icon: "skull",
+    progress: (stats) => ({ value: stats.bossesDefeated.includes("grunbeld") ? 1 : 0, target: 1 }),
+  },
+
   threshold("lap-1", "La Traque achevée", "Terminer la Traque une fois.", "lap", "trophy", 1, (s) => s.lapsCompleted),
   threshold("lap-3", "Éternel Traqué", "Terminer la Traque trois fois.", "lap", "trophy", 3, (s) => s.lapsCompleted),
 ];

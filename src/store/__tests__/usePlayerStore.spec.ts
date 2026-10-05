@@ -226,6 +226,8 @@ describe("duels de boss", () => {
       "1/bazuso",
       "1/conrad",
       "1/femto",
+      "1/grunbeld",
+      "1/mozgus",
       "1/slan",
       "1/ubik",
       "1/void",
