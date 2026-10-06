@@ -13,8 +13,6 @@ type GutsMarkerProps = {
 
 /** Hauteur affichée sur la carte, quel que soit le skin. */
 const SPRITE_HEIGHT = 64;
-/** Durée d'une image : un cycle complet de marche en 0,8 s pour une planche de 8 images. */
-const FRAME_MS = 100;
 
 function spriteWidth(sprite: GutsSkinSprite): number {
   const source = sprite.kind === "sheet" ? sprite.frame : sprite;
@@ -59,13 +57,13 @@ function WalkSheet({ sprite, width }: { sprite: Extract<GutsSkinSprite, { kind: 
       Animated.sequence(
         Array.from({ length: sprite.frameCount }, (_, frame) => [
           Animated.timing(offset, { toValue: -frame * width, duration: 0, useNativeDriver: true }),
-          Animated.delay(FRAME_MS),
+          Animated.delay(sprite.frameMs),
         ]).flat(),
       ),
     );
     loop.start();
     return () => loop.stop();
-  }, [offset, reduceMotion, sprite.frameCount, width]);
+  }, [offset, reduceMotion, sprite.frameCount, sprite.frameMs, width]);
 
   // La fenêtre ne montre qu'une image de la planche.
   return (
