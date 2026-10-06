@@ -8,8 +8,14 @@ export type GutsSkinUnlock =
 
 /** Comment Guts est dessiné sur la carte. */
 export type GutsSkinSprite =
-  /** Planche de marche : `frameCount` images de `frame` px côte à côte, qui défilent. */
-  | { kind: "sheet"; image: ImageSourcePropType; frameCount: number; frame: { width: number; height: number } }
+  /** Planche de marche : `frameCount` images de `frame` px côte à côte, qui défilent toutes les `frameMs` ms. */
+  | {
+      kind: "sheet";
+      image: ImageSourcePropType;
+      frameCount: number;
+      frame: { width: number; height: number };
+      frameMs: number;
+    }
   /** Une seule image, qui marche par un simple rebond (en attendant une planche de marche). */
   | { kind: "single"; image: ImageSourcePropType; width: number; height: number };
 
@@ -42,6 +48,8 @@ export const GUTS_SKINS: GutsSkin[] = [
       image: require("../../assets/map/guts-jeune-walk.png"),
       frameCount: 6,
       frame: { width: 155, height: 192 },
+      // Un pas complet en 1,2 s : à 100 ms par image, il marchait beaucoup trop vite sur téléphone.
+      frameMs: 200,
     },
     credit: "D'après un dessin de @CRYBAG",
   },
@@ -56,6 +64,7 @@ export const GUTS_SKINS: GutsSkin[] = [
       image: require("../../assets/map/guts-walk.png"),
       frameCount: 8,
       frame: { width: 124, height: 131 },
+      frameMs: 100,
     },
   },
 ];
