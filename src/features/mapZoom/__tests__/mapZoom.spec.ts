@@ -3,12 +3,16 @@ import {
   anchorUnder,
   clampMapOffset,
   clampZoom,
+  dotsAlongPath,
   fitZoom,
+  gestureTransform,
+  isInRect,
   pinchZoom,
   strokeAtZoom,
   touchDistance,
   touchFocal,
   viewForAnchor,
+  visibleMapRect,
 } from "../mapZoom";
 
 const MAP = { width: 1448, height: 1086 };
@@ -105,5 +109,50 @@ describe("strokeAtZoom", () => {
     expect(strokeAtZoom(4, 1) * 1).toBe(4);
     expect(strokeAtZoom(4, 0.5) * 0.5).toBeCloseTo(4, 5);
     expect(strokeAtZoom(4, 2) * 2).toBeCloseTo(4, 5);
+  });
+});
+
+describe("dotsAlongPath", () => {
+  it("pose un point tous les `spacing`, sans repartir de zéro à chaque coude", () => {
+    const dots = dotsAlongPath([{ x: 0, y: 0 }, { x: 15, y: 0 }, { x: 15, y: 15 }], 10);
+    expect(dots).toEqual([{ x: 0, y: 0 }, { x: 10, y: 0 }, { x: 15, y: 5 }, { x: 15, y: 15 }]);
+  });
+
+  it("ne renvoie rien pour un tracé vide ou un écart nul", () => {
+    expect(dotsAlongPath([], 10)).toEqual([]);
+    expect(dotsAlongPath([{ x: 0, y: 0 }, { x: 5, y: 0 }], 0)).toEqual([]);
+  });
+
+  it("supporte deux points confondus", () => {
+    expect(dotsAlongPath([{ x: 3, y: 3 }, { x: 3, y: 3 }], 10)).toEqual([{ x: 3, y: 3 }]);
+  });
+});
+
+describe("visibleMapRect", () => {
+  it("donne la zone du dessin sous le cadre, élargie de la marge", () => {
+    const view = { zoom: 2, offset: { x: -200, y: -100 } };
+    expect(visibleMapRect(view, VIEWPORT)).toEqual({ x: 100, y: 50, width: 195, height: 390 });
+    const wide = visibleMapRect(view, VIEWPORT, 1);
+    expect(isInRect({ x: 100 - 190, y: 50 }, wide)).toBe(true);
+    expect(isInRect({ x: 100 - 200, y: 50 }, wide)).toBe(false);
+  });
+});
+
+describe("gestureTransform", () => {
+  it("place le dessin comme un vrai rendu au nouveau zoom", () => {
+    const view = { zoom: 1.5, offset: { x: -300, y: -120 } };
+    const layoutZoom = 0.9;
+    const { translateX, translateY, scale } = gestureTransform(view, layoutZoom, MAP);
+    // Un point du dessin, posé à la taille du rendu puis mis à l'échelle autour du centre de la vue.
+    const point = { x: 700, y: 400 };
+    const center = { x: (MAP.width * layoutZoom) / 2, y: (MAP.height * layoutZoom) / 2 };
+    const screenX = translateX + center.x + scale * (point.x * layoutZoom - center.x);
+    const screenY = translateY + center.y + scale * (point.y * layoutZoom - center.y);
+    expect(screenX).toBeCloseTo(view.offset.x + point.x * view.zoom, 6);
+    expect(screenY).toBeCloseTo(view.offset.y + point.y * view.zoom, 6);
+  });
+
+  it("revient à un simple décalage quand le zoom n'a pas changé", () => {
+    expect(gestureTransform({ zoom: 0.9, offset: { x: -10, y: -20 } }, 0.9, MAP)).toEqual({ translateX: -10, translateY: -20, scale: 1 });
   });
 });

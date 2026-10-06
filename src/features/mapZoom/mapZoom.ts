@@ -81,3 +81,57 @@ export function touchFocal(touches: Touch[]): Touch | null {
 export function strokeAtZoom(screenPx: number, zoom: number): number {
   return screenPx / Math.max(zoom, 0.05);
 }
+
+export type Rect = { x: number; y: number; width: number; height: number };
+
+/**
+ * Points posés le long d'un tracé tous les `spacing` (dans le repère du dessin), en continuant d'un segment à l'autre :
+ * la piste en pointillés, dessinée avec de simples vues plutôt qu'un SVG grand comme la carte.
+ */
+export function dotsAlongPath(path: Offset[], spacing: number): Offset[] {
+  if (path.length === 0 || spacing <= 0) return [];
+  const dots: Offset[] = [path[0]];
+  let untilNext = spacing;
+  for (let index = 1; index < path.length; index += 1) {
+    const from = path[index - 1];
+    const to = path[index];
+    const length = Math.hypot(to.x - from.x, to.y - from.y);
+    let along = untilNext;
+    while (along <= length) {
+      const ratio = along / length;
+      dots.push({ x: from.x + (to.x - from.x) * ratio, y: from.y + (to.y - from.y) * ratio });
+      along += spacing;
+    }
+    untilNext = along - length;
+  }
+  return dots;
+}
+
+/** Partie du dessin (à l'échelle 1) visible dans le cadre, élargie de `margin` cadres de chaque côté. */
+export function visibleMapRect(view: MapView, viewport: Size, margin = 0): Rect {
+  const width = viewport.width / view.zoom;
+  const height = viewport.height / view.zoom;
+  return {
+    x: -view.offset.x / view.zoom - width * margin,
+    y: -view.offset.y / view.zoom - height * margin,
+    width: width * (1 + 2 * margin),
+    height: height * (1 + 2 * margin),
+  };
+}
+
+export function isInRect(point: Offset, rect: Rect): boolean {
+  return point.x >= rect.x && point.x <= rect.x + rect.width && point.y >= rect.y && point.y <= rect.y + rect.height;
+}
+
+/**
+ * Pendant un geste, la carte garde la taille de son dernier rendu (`layoutZoom`) et on l'agrandit par une transformation :
+ * aucun nouveau rendu à chaque image. RN met à l'échelle autour du centre de la vue, d'où la correction du décalage.
+ */
+export function gestureTransform(view: MapView, layoutZoom: number, map: Size): { translateX: number; translateY: number; scale: number } {
+  const scale = view.zoom / layoutZoom;
+  return {
+    translateX: view.offset.x + ((scale - 1) * map.width * layoutZoom) / 2,
+    translateY: view.offset.y + ((scale - 1) * map.height * layoutZoom) / 2,
+    scale,
+  };
+}

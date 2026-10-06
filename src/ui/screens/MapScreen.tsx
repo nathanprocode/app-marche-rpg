@@ -1,6 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import {
+  Animated,
   ImageBackground,
   PanResponder,
   Pressable,
@@ -11,7 +12,6 @@ import {
   type LayoutChangeEvent,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import Svg, { Polyline } from "react-native-svg";
 import { GAME_CONFIG } from "../../core/constants/game";
 import { formatDecimal, formatInt } from "../../core/format";
 import { theme } from "../../core/theme";
@@ -26,12 +26,15 @@ import {
   anchorUnder,
   clampMapOffset,
   clampZoom,
+  dotsAlongPath,
   fitZoom,
+  gestureTransform,
+  isInRect,
   pinchZoom,
-  strokeAtZoom,
   touchDistance,
   touchFocal,
   viewForAnchor,
+  visibleMapRect,
   type MapView,
   type Offset,
 } from "../../features/mapZoom/mapZoom";
@@ -55,9 +58,16 @@ const REACHED_TOLERANCE_KM = 0.0001;
 /** Piste de pas : taille des points et écart entre eux, en pixels à l'écran (constants quel que soit le zoom). */
 const TRAIL_DOT_PX = 5;
 const TRAIL_GAP_PX = 13;
+/** Contour clair sous chaque point de la piste, pour rester lisible sur la terre comme sur la mer. */
+const TRAIL_OUTLINE_PX = 1.5;
+const NEXT_LEG_DOT_PX = 3;
+const NEXT_LEG_GAP_PX = 10;
+/** Les points ne sont posés qu'autour de la zone visible (un cadre de marge de chaque côté), pour garder peu de vues. */
+const TRAIL_MARGIN = 1;
+const TRAIL_DOT_SIZE = TRAIL_DOT_PX + 2 * TRAIL_OUTLINE_PX;
 
-function toMapPoint(xPct: number, yPct: number): string {
-  return `${(xPct / 100) * MAP_WIDTH},${(yPct / 100) * MAP_HEIGHT}`;
+function toMapPoint(xPct: number, yPct: number): Offset {
+  return { x: (xPct / 100) * MAP_WIDTH, y: (yPct / 100) * MAP_HEIGHT };
 }
 
 export function MapScreen() {
@@ -71,7 +81,16 @@ export function MapScreen() {
   const viewportRef = useRef({ width: 0, height: 0 });
   const viewportNodeRef = useRef<View>(null);
   const viewportOriginRef = useRef<Offset>({ x: 0, y: 0 });
-  const frameRef = useRef<number | null>(null);
+  // Pendant un geste, la carte n'est pas redessinée : elle est déplacée et agrandie par ces valeurs animées.
+  const transformRef = useRef({
+    translateX: new Animated.Value(0),
+    translateY: new Animated.Value(0),
+    scale: new Animated.Value(1),
+  });
+  /** Zoom du dernier rendu : la taille réelle de la carte à l'écran, que la transformation agrandit pendant un geste. */
+  const layoutZoomRef = useRef(MAP_BASE_ZOOM);
+  layoutZoomRef.current = zoom;
+  const isGesturingRef = useRef(false);
   /** Dès que l'utilisateur déplace ou zoome la carte, elle ne se recentre plus d'elle-même sur Guts. */
   const userMovedRef = useRef(false);
   const gestureRef = useRef({ touchCount: 0, anchor: { x: 0, y: 0 } as Offset, startDistance: 0, startZoom: MAP_BASE_ZOOM });
@@ -105,8 +124,8 @@ export function MapScreen() {
   const reachedCheckpoints = BERSERK_CHECKPOINTS.filter(
     (checkpoint) => checkpoint.kmThreshold <= progress.totalDistanceKm + REACHED_TOLERANCE_KM,
   );
-  const walkedPath = [...reachedCheckpoints.map((checkpoint) => toMapPoint(checkpoint.x, checkpoint.y)), toMapPoint(position.x, position.y)].join(" ");
-  const nextLegPath = `${toMapPoint(position.x, position.y)} ${toMapPoint(position.next.x, position.next.y)}`;
+  const walkedPath = [...reachedCheckpoints.map((checkpoint) => toMapPoint(checkpoint.x, checkpoint.y)), toMapPoint(position.x, position.y)];
+  const nextLegPath = [toMapPoint(position.x, position.y), toMapPoint(position.next.x, position.next.y)];
 
   /** La fiche du bas masque une partie de la carte : on centre le Traqué dans la zone visible. */
   const visibleHeight = Math.max(0, viewport.height - sheetHeight);
@@ -114,18 +133,38 @@ export function MapScreen() {
   const frame = { width: viewport.width, height: visibleHeight > 0 ? visibleHeight : viewport.height };
   viewportRef.current = frame;
   const minZoom = fitZoom(MAP_SIZE, frame);
-  const trailDot = strokeAtZoom(TRAIL_DOT_PX, zoom);
-  const trailGap = strokeAtZoom(TRAIL_GAP_PX, zoom);
+  // Piste en points de taille constante à l'écran. Ce sont de petites vues : un SVG aussi grand que la carte zoomée
+  // demandait sur Android une image de plus de 100 Mo, ce qui ralentissait le pincement puis fermait l'app.
+  const trailArea = visibleMapRect({ zoom, offset: mapOffset }, frame, TRAIL_MARGIN);
+  const trailDots = dotsAlongPath(walkedPath, (TRAIL_DOT_PX + TRAIL_GAP_PX) / zoom).filter((dot) => isInRect(dot, trailArea));
+  const nextLegDots = isJourneyComplete
+    ? []
+    : dotsAlongPath(nextLegPath, (NEXT_LEG_DOT_PX + NEXT_LEG_GAP_PX) / zoom).filter((dot) => isInRect(dot, trailArea));
 
-  /** Pose la vue (zoom + décalage) tout de suite pour les gestes, et demande un rendu à la prochaine image. */
+  /** Applique la vue à la transformation de la carte, sans rendu. */
+  function applyTransform(view: MapView): void {
+    const { translateX, translateY, scale } = gestureTransform(view, layoutZoomRef.current, MAP_SIZE);
+    transformRef.current.translateX.setValue(translateX);
+    transformRef.current.translateY.setValue(translateY);
+    transformRef.current.scale.setValue(scale);
+  }
+
+  /** Redessine la carte à la vue courante (taille réelle, piste). Pendant un geste, on attend que les doigts se lèvent. */
+  function commitView(): void {
+    setZoom(viewRef.current.zoom);
+    setMapOffset(viewRef.current.offset);
+  }
+
+  /** Pose la vue tout de suite à l'écran ; hors geste (boutons, recentrage), la carte est aussi redessinée. */
   function setView(next: MapView): void {
     viewRef.current = next;
-    if (frameRef.current !== null) return;
-    frameRef.current = requestAnimationFrame(() => {
-      frameRef.current = null;
-      setZoom(viewRef.current.zoom);
-      setMapOffset(viewRef.current.offset);
-    });
+    applyTransform(next);
+    if (!isGesturingRef.current) commitView();
+  }
+
+  function endGesture(): void {
+    isGesturingRef.current = false;
+    commitView();
   }
 
   function gutsCenteredView(zoomValue: number): MapView {
@@ -182,16 +221,21 @@ export function MapScreen() {
 
   // Le PanResponder est créé une fois : il lit la vue par les refs, car il serait sinon remplacé en plein geste
   // à chaque changement de zoom, et le pincement s'arrêterait.
-  const handlersRef = useRef({ rebase, moveGesture });
-  handlersRef.current = { rebase, moveGesture };
+  const handlersRef = useRef({ rebase, moveGesture, endGesture });
+  handlersRef.current = { rebase, moveGesture, endGesture };
   const mapPanResponder = useRef(
     PanResponder.create({
       onStartShouldSetPanResponder: () => false,
       onMoveShouldSetPanResponder: (event, gesture) =>
         event.nativeEvent.touches.length >= 2 || Math.abs(gesture.dx) > 6 || Math.abs(gesture.dy) > 6,
       onPanResponderTerminationRequest: () => false,
-      onPanResponderGrant: (event) => handlersRef.current.rebase(event),
+      onPanResponderGrant: (event) => {
+        isGesturingRef.current = true;
+        handlersRef.current.rebase(event);
+      },
       onPanResponderMove: (event) => handlersRef.current.moveGesture(event),
+      onPanResponderRelease: () => handlersRef.current.endGesture(),
+      onPanResponderTerminate: () => handlersRef.current.endGesture(),
     }),
   ).current;
 
@@ -202,12 +246,10 @@ export function MapScreen() {
     setView(target);
   }, [position.x, position.y, viewport.height, viewport.width, sheetHeight]);
 
-  useEffect(
-    () => () => {
-      if (frameRef.current !== null) cancelAnimationFrame(frameRef.current);
-    },
-    [],
-  );
+  // Après un rendu à la nouvelle taille, la transformation retombe à l'échelle 1 (un doigt peut déjà être reposé).
+  useLayoutEffect(() => {
+    applyTransform(viewRef.current);
+  }, [zoom, mapOffset]);
 
   function handleViewportLayout(event: LayoutChangeEvent): void {
     const { width, height } = event.nativeEvent.layout;
@@ -221,14 +263,18 @@ export function MapScreen() {
   return (
     <View style={styles.root}>
       <View ref={viewportNodeRef} style={styles.mapViewport} onLayout={handleViewportLayout}>
-        <View
+        <Animated.View
           {...mapPanResponder.panHandlers}
           style={[
             styles.mapContent,
             {
               width: contentWidth,
               height: contentHeight,
-              transform: [{ translateX: mapOffset.x }, { translateY: mapOffset.y }],
+              transform: [
+                { translateX: transformRef.current.translateX },
+                { translateY: transformRef.current.translateY },
+                { scale: transformRef.current.scale },
+              ],
             },
           ]}
         >
@@ -238,14 +284,21 @@ export function MapScreen() {
             style={{ width: contentWidth, height: contentHeight }}
             imageStyle={styles.mapImage}
           >
-            <Svg width={contentWidth} height={contentHeight} viewBox={`0 0 ${MAP_WIDTH} ${MAP_HEIGHT}`} style={StyleSheet.absoluteFill}>
-              {/* Piste de pas : des points espacés d'une taille constante à l'écran, clairs sous foncés pour rester lisibles sur la terre comme sur la mer. */}
-              <Polyline points={walkedPath} fill="none" stroke={theme.colors.bone} strokeOpacity={0.9} strokeWidth={trailDot + strokeAtZoom(3, zoom)} strokeLinecap="round" strokeLinejoin="round" strokeDasharray={`0.1 ${trailGap}`} />
-              <Polyline points={walkedPath} fill="none" stroke={theme.colors.blood} strokeWidth={trailDot} strokeLinecap="round" strokeLinejoin="round" strokeDasharray={`0.1 ${trailGap}`} />
-              {isJourneyComplete ? null : (
-                <Polyline points={nextLegPath} fill="none" stroke={theme.colors.ink} strokeOpacity={0.55} strokeWidth={strokeAtZoom(3, zoom)} strokeLinecap="round" strokeDasharray={`0.1 ${strokeAtZoom(10, zoom)}`} />
-              )}
-            </Svg>
+            {/* Piste de pas : des points espacés d'une taille constante à l'écran, clairs sous foncés pour rester lisibles sur la terre comme sur la mer. */}
+            {nextLegDots.map((dot, index) => (
+              <View
+                key={`next-${index}`}
+                pointerEvents="none"
+                style={[styles.nextLegDot, { left: dot.x * zoom - NEXT_LEG_DOT_PX / 2, top: dot.y * zoom - NEXT_LEG_DOT_PX / 2 }]}
+              />
+            ))}
+            {trailDots.map((dot, index) => (
+              <View
+                key={`trail-${index}`}
+                pointerEvents="none"
+                style={[styles.trailDot, { left: dot.x * zoom - TRAIL_DOT_SIZE / 2, top: dot.y * zoom - TRAIL_DOT_SIZE / 2 }]}
+              />
+            ))}
 
             {BERSERK_CHECKPOINTS.map((checkpoint) => {
               const isReached = checkpoint.kmThreshold <= progress.totalDistanceKm + REACHED_TOLERANCE_KM;
@@ -283,7 +336,7 @@ export function MapScreen() {
             ))}
             <GutsMarker xPct={position.x} yPct={position.y} skin={gutsSkin} />
           </ImageBackground>
-        </View>
+        </Animated.View>
       </View>
 
       <View pointerEvents="none" style={[styles.topScrim, { height: insets.top + theme.space[96] }]} />
@@ -349,6 +402,23 @@ const styles = StyleSheet.create({
   mapViewport: { ...StyleSheet.absoluteFillObject, overflow: "hidden", backgroundColor: theme.colors.ink },
   mapContent: { position: "absolute", top: 0, left: 0 },
   mapImage: { resizeMode: "stretch" },
+  trailDot: {
+    position: "absolute",
+    width: TRAIL_DOT_SIZE,
+    height: TRAIL_DOT_SIZE,
+    borderRadius: TRAIL_DOT_SIZE / 2,
+    borderWidth: TRAIL_OUTLINE_PX,
+    borderColor: "rgba(233,225,207,0.9)",
+    backgroundColor: theme.colors.blood,
+  },
+  nextLegDot: {
+    position: "absolute",
+    width: NEXT_LEG_DOT_PX,
+    height: NEXT_LEG_DOT_PX,
+    borderRadius: NEXT_LEG_DOT_PX / 2,
+    backgroundColor: theme.colors.ink,
+    opacity: 0.55,
+  },
   topScrim: { position: "absolute", top: 0, left: 0, right: 0, backgroundColor: "rgba(12,10,9,0.55)" },
   markerSlot: { position: "absolute", width: 16, height: 16, marginLeft: -8, marginTop: -8 },
   diamond: {
