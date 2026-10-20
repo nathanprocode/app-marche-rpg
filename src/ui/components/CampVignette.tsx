@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Image, StyleSheet, Text, View, type LayoutChangeEvent } from "react-native";
+import { Image, Platform, StyleSheet, Text, View, type LayoutChangeEvent, type ViewStyle } from "react-native";
 import { theme } from "../../core/theme";
 import type { CampScene } from "../../features/camp/campScene";
 import { CampAmbience } from "./CampAmbience";
@@ -19,7 +19,7 @@ type CampVignetteProps = {
 };
 
 /**
- * Le camp, en pixel art couleur : une fenêtre sur le monde, posée pleine largeur dans sa case.
+ * Le camp, en pixel art couleur : une fenêtre sur le monde, posée pleine largeur dans une case noire.
  * La phrase d'ambiance suit l'heure et l'état de la Marque (voir features/camp/campScene).
  */
 export function CampVignette({ scene }: CampVignetteProps) {
@@ -35,14 +35,16 @@ export function CampVignette({ scene }: CampVignetteProps) {
       <View style={styles.frame}>
         {/* Le ratio est porté par un conteneur : sur une image en largeur 100 %, le web l'ignore. */}
         <View style={styles.window} onLayout={handleWindowLayout}>
-          <Image
-            source={CAMP_IMAGES[scene.time]}
-            style={styles.image}
-            resizeMode="cover"
-            accessibilityRole="image"
-            accessibilityLabel={CAMP_DESCRIPTIONS[scene.time]}
-            accessibilityIgnoresInvertColors
-          />
+          <View style={[styles.image, INK_FILTER]}>
+            <Image
+              source={CAMP_IMAGES[scene.time]}
+              style={styles.image}
+              resizeMode="cover"
+              accessibilityRole="image"
+              accessibilityLabel={CAMP_DESCRIPTIONS[scene.time]}
+              accessibilityIgnoresInvertColors
+            />
+          </View>
           <CampAmbience time={scene.time} width={size.width} height={size.height} />
         </View>
       </View>
@@ -51,11 +53,19 @@ export function CampVignette({ scene }: CampVignetteProps) {
   );
 }
 
+// En attendant une scène dessinée à l'encre : l'image passe en noir et blanc contrasté
+// (filtres Android avec la nouvelle architecture ; les braises de CampAmbience restent en couleur).
+// Le web attend la syntaxe CSS en texte.
+const INK_FILTER: ViewStyle =
+  Platform.OS === "web"
+    ? ({ filter: "grayscale(1) contrast(1.5) brightness(0.85)" } as unknown as ViewStyle)
+    : { filter: [{ grayscale: 1 }, { contrast: 1.5 }, { brightness: 0.85 }] };
+
 const styles = StyleSheet.create({
   root: {},
-  frame: { borderBottomWidth: theme.frame, borderBottomColor: theme.colors.black },
+  frame: {},
   window: { width: "100%", aspectRatio: 16 / 9, overflow: "hidden" },
   // Taille explicite : sinon le web reprend la taille d'origine de l'image et la centre mal.
   image: { width: "100%", height: "100%" },
-  line: { ...theme.text.small, color: theme.colors.blackSoft, padding: theme.space[16] },
+  line: { ...theme.text.small, color: theme.colors.paperSoft, padding: theme.space[16] },
 });

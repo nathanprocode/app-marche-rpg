@@ -19,6 +19,7 @@ export function DuelCard({ duel }: DuelCardProps) {
 
   return (
     <Panel
+      reversed
       style={styles.card}
       accessible
       accessibilityLabel={`Duel : ${encounter.title}. ${phase.label}. ${left} pas avant ${isLastForm ? "la victoire" : "sa prochaine forme"}. ${encounter.intro}`}
@@ -28,7 +29,7 @@ export function DuelCard({ duel }: DuelCardProps) {
         <Text style={styles.title}>{phase.label}</Text>
         <Text style={styles.meta}>{`Duel · ${encounter.title}${formLine}`}</Text>
         <View style={styles.bar}>
-          <ProgressBar pct={pct} accessibilityLabel={`Vie de ${encounter.bossName}, ${phase.label}`} height={10} />
+          <ProgressBar reversed pct={pct} accessibilityLabel={`Vie de ${encounter.bossName}, ${phase.label}`} height={10} />
         </View>
         <Text style={styles.left}>{`${left} pas avant ${isLastForm ? "la victoire" : "sa prochaine forme"}`}</Text>
         <Text style={styles.intro}>{encounter.intro}</Text>
@@ -41,9 +42,9 @@ const styles = StyleSheet.create({
   card: { flexDirection: "row", alignItems: "center", gap: theme.space[16] },
   sprite: { width: 80, height: 96 },
   text: { flex: 1, gap: theme.space[4] },
-  title: { ...theme.text.displayS, color: theme.colors.black },
-  meta: { ...theme.text.label, letterSpacing: 0, color: theme.colors.red },
+  title: { ...theme.text.displayS, color: theme.colors.paper },
+  meta: { ...theme.text.label, letterSpacing: 0, color: theme.colors.redOnBlack },
   bar: { marginTop: theme.space[4] },
-  left: { ...theme.text.bodyStrong, color: theme.colors.black },
-  intro: { ...theme.text.small, color: theme.colors.blackSoft },
+  left: { ...theme.text.bodyStrong, color: theme.colors.paper },
+  intro: { ...theme.text.small, color: theme.colors.paperSoft },
 });

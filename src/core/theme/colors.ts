@@ -15,6 +15,14 @@ const palette = {
   toneLight: "#C8C8C3",
   /** Le seul rouge : la Marque, les alertes, le repère « tu es ici » (contraste 6:1 sur papier). */
   red: "#B3121B",
+
+  // Cases inversées (fond noir), comme les scènes sombres de Miura.
+  /** Texte secondaire sur noir (contraste 9:1). */
+  paperSoft: "#B9B9B4",
+  /** Trame sur noir : points à peine visibles. */
+  toneDark: "#3A3A37",
+  /** Le rouge lisible sur noir (contraste 4,7:1). */
+  redOnBlack: "#E8414A",
 } as const;
 
 /**

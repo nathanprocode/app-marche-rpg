@@ -115,15 +115,15 @@ export function HomeScreen() {
           )}
         </Panel>
 
-        <Panel padded={false} style={styles.lockedPanel}>
-          <Screentone color={theme.colors.tone} step={4} dot={1.1} />
+        <Panel reversed padded={false} style={styles.lockedPanel}>
+          <Screentone color={theme.colors.toneDark} step={4} dot={1.2} />
           {next ? (
             <View
               style={styles.lockedCaption}
               accessible
               accessibilityLabel={`Case ${unlockedCount + 1} sur ${BERSERK_CHECKPOINTS.length}, se révèle à ${formatInt(next.kmThreshold)} kilomètres`}
             >
-              <Ionicons name="lock-closed" size={16} color={theme.colors.paper} />
+              <Ionicons name="lock-closed" size={16} color={theme.colors.black} />
               <Text style={styles.lockedText}>{`Case ${unlockedCount + 1} sur ${BERSERK_CHECKPOINTS.length}`}</Text>
               <Text style={styles.lockedSmall}>{`se révèle à ${formatInt(next.kmThreshold)} km`}</Text>
             </View>
@@ -135,17 +135,17 @@ export function HomeScreen() {
         </Panel>
       </View>
 
-      <Panel>
+      <Panel reversed>
         <View style={styles.todayRow}>
           <View
             style={styles.todayCol}
             accessible
             accessibilityLabel={`Aujourd'hui : ${formatInt(stepsToday)} pas, objectif ${formatInt(threshold)}, soit ${formatDecimal(distanceTodayKm, 2)} kilomètres`}
           >
-            <Text {...theme.fitDisplayText} style={styles.figure}>
+            <Text {...theme.fitDisplayText} style={[styles.figure, styles.onBlack]}>
               {formatInt(stepsToday)}
             </Text>
-            <Text style={styles.small}>{`pas aujourd'hui · objectif ${formatInt(threshold)}`}</Text>
+            <Text style={styles.smallOnBlack}>{`pas aujourd'hui · objectif ${formatInt(threshold)}`}</Text>
           </View>
           <View
             style={[styles.todayCol, styles.markCol]}
@@ -154,17 +154,17 @@ export function HomeScreen() {
           >
             <View style={styles.markHead}>
               <BrandMark visual={{ state: isCalm ? "active" : "bleeding", intensity: isCalm ? 0.4 : 0.9 }} width={18} />
-              <Text {...theme.fitDisplayText} style={[styles.figure, !isCalm && styles.figureRed]}>
+              <Text {...theme.fitDisplayText} style={[styles.figure, styles.onBlack, !isCalm && styles.figureRed]}>
                 {isCalm ? "Apaisée" : formatInt(stepsLeftToday)}
               </Text>
             </View>
-            <Text style={styles.small}>{isCalm ? "la Marque se tait" : "pas pour apaiser la Marque"}</Text>
+            <Text style={styles.smallOnBlack}>{isCalm ? "la Marque se tait" : "pas pour apaiser la Marque"}</Text>
           </View>
         </View>
         <View style={styles.week}>
-          <DayCells days={week} thresholdSteps={threshold} />
+          <DayCells days={week} thresholdSteps={threshold} reversed />
           <Text
-            style={styles.streak}
+            style={[styles.streak, styles.onBlack]}
             accessibilityLabel={`Série : ${streakDays} ${streakDays > 1 ? "jours" : "jour"}`}
           >{`Série ${streakDays} j`}</Text>
         </View>
@@ -174,7 +174,7 @@ export function HomeScreen() {
         <DuelCard key={duel.encounter.id} duel={duel} />
       ))}
 
-      <Panel padded={false}>
+      <Panel reversed padded={false}>
         <CampVignette scene={resolveCampScene(new Date().getHours(), isCalm, previous.title)} />
       </Panel>
 
@@ -235,16 +235,18 @@ const styles = StyleSheet.create({
   next: { flex: 1, minHeight: 176, justifyContent: "space-between", gap: theme.space[16] },
   nextTitle: { ...theme.text.displayS, color: theme.colors.black },
   figure: { ...theme.text.figure, color: theme.colors.black },
-  figureRed: { color: theme.colors.red },
+  figureRed: { color: theme.colors.redOnBlack },
+  onBlack: { color: theme.colors.paper },
+  smallOnBlack: { ...theme.text.small, color: theme.colors.paperSoft },
   figureUnit: { ...theme.text.bodyStrong },
   small: { ...theme.text.small, color: theme.colors.blackSoft },
-  lockedPanel: { flex: 1, minHeight: 176, justifyContent: "flex-end", backgroundColor: theme.colors.toneLight },
-  lockedCaption: { margin: theme.space[8], padding: theme.space[8], backgroundColor: theme.colors.black, gap: 2 },
-  lockedText: { ...theme.text.bodyStrong, color: theme.colors.paper },
-  lockedSmall: { ...theme.text.small, color: theme.colors.toneLight },
+  lockedPanel: { flex: 1, minHeight: 176, justifyContent: "flex-end" },
+  lockedCaption: { margin: theme.space[8], padding: theme.space[8], backgroundColor: theme.colors.paper, gap: 2 },
+  lockedText: { ...theme.text.bodyStrong, color: theme.colors.black },
+  lockedSmall: { ...theme.text.small, color: theme.colors.blackSoft },
   todayRow: { flexDirection: "row" },
   todayCol: { flex: 1, gap: theme.space[4] },
-  markCol: { borderLeftWidth: theme.frame, borderLeftColor: theme.colors.black, paddingLeft: theme.space[16], marginLeft: theme.space[16] },
+  markCol: { borderLeftWidth: theme.frame, borderLeftColor: theme.colors.paper, paddingLeft: theme.space[16], marginLeft: theme.space[16] },
   markHead: { flexDirection: "row", alignItems: "center", gap: theme.space[8] },
   week: { flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: theme.space[16], marginTop: theme.space[16] },
   streak: { ...theme.text.bodyStrong, color: theme.colors.black },

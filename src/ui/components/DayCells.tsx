@@ -9,13 +9,15 @@ type DayCellsProps = {
   /** Les derniers jours, du plus ancien à aujourd'hui (voir lastDays). */
   days: HistoryDay[];
   thresholdSteps: number;
+  /** Cases posées dans une case inversée (fond noir). */
+  reversed?: boolean;
 };
 
 /**
  * Les jours en cases : pleine quand l'objectif est tenu, barrée quand il a été manqué,
  * creuse (en pointillés) pour aujourd'hui tant qu'il n'est pas atteint.
  */
-export function DayCells({ days, thresholdSteps }: DayCellsProps) {
+export function DayCells({ days, thresholdSteps, reversed = false }: DayCellsProps) {
   return (
     <View style={styles.row}>
       {days.map((day) => {
@@ -28,14 +30,19 @@ export function DayCells({ days, thresholdSteps }: DayCellsProps) {
             key={day.dayKey}
             accessible
             accessibilityLabel={`${day.weekday} ${day.dayOfMonth} : ${status}`}
-            style={[styles.cell, held && styles.held, day.isToday && !held && styles.today]}
+            style={[
+              styles.cell,
+              reversed && styles.cellReversed,
+              held && (reversed ? styles.heldReversed : styles.held),
+              day.isToday && !held && styles.today,
+            ]}
           >
             {missed ? (
               <Svg style={StyleSheet.absoluteFill} viewBox="0 0 10 10" preserveAspectRatio="none">
-                <Line x1={0} y1={10} x2={10} y2={0} stroke={theme.colors.red} strokeWidth={0.6} />
+                <Line x1={0} y1={10} x2={10} y2={0} stroke={reversed ? theme.colors.redOnBlack : theme.colors.red} strokeWidth={0.6} />
               </Svg>
             ) : null}
-            <Text style={[styles.letter, held && styles.letterHeld]}>{day.weekday.charAt(0).toUpperCase()}</Text>
+            <Text style={[styles.letter, reversed && styles.letterReversed, held && (reversed ? styles.letterHeldReversed : styles.letterHeld)]}>{day.weekday.charAt(0).toUpperCase()}</Text>
           </View>
         );
       })}
@@ -54,8 +61,12 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     overflow: "hidden",
   },
+  cellReversed: { borderColor: theme.colors.paper },
   held: { backgroundColor: theme.colors.black },
+  heldReversed: { backgroundColor: theme.colors.paper },
   today: { borderStyle: "dashed" },
   letter: { ...theme.text.label, letterSpacing: 0, color: theme.colors.black },
   letterHeld: { color: theme.colors.paper },
+  letterReversed: { color: theme.colors.paper },
+  letterHeldReversed: { color: theme.colors.black },
 });
