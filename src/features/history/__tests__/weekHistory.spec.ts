@@ -45,6 +45,14 @@ describe("summarizeDays", () => {
     expect(summary.calmDays).toBe(2);
   });
 
+  it("ne compte comme connus que les jours apaisés ou enregistrés et passés", () => {
+    // 29/09 sans données (inconnu), 30/09 apaisé, 01/10 enregistré sous le seuil (manqué), aujourd'hui en cours.
+    const days = lastDays({ "2026-09-30": 4000, "2026-10-01": 900, "2026-10-02": 800 }, TODAY);
+    const summary = summarizeDays(days, 1500);
+    expect(summary.calmDays).toBe(1);
+    expect(summary.knownDays).toBe(2);
+  });
+
   it("n'a pas de meilleur jour sans aucun pas", () => {
     expect(summarizeDays(lastDays({}, TODAY)).bestDay).toBeNull();
   });

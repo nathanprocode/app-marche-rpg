@@ -74,6 +74,7 @@ export function ProfileScreen() {
   const days = lastDays(history, now, period === "week" ? 7 : period === "month" ? 30 : historySpanDays(history, now));
   const summary = summarizeDays(days, dailyGoal);
   const daysWithSteps = days.filter((day) => day.steps > 0).length;
+  const daysWithoutData = days.filter((day) => !day.recorded).length;
   const showChart = period !== "all";
 
   function confirmErase(): void {
@@ -128,7 +129,12 @@ export function ProfileScreen() {
             value={summary.bestDay ? `${formatDecimal(summary.bestDay.km)} km` : "—"}
             hint={summary.bestDay ? (summary.bestDay.isToday ? "aujourd'hui" : `${summary.bestDay.weekday} ${summary.bestDay.dayOfMonth}`) : undefined}
           />
-          <WeekFigure label="Marque apaisée" value={`${summary.calmDays} / ${days.length} j`} />
+          {/* Sur les seuls jours connus : un jour absent de l'historique du téléphone n'est pas un jour manqué. */}
+          <WeekFigure
+            label="Marque apaisée"
+            value={summary.knownDays > 0 ? `${summary.calmDays} / ${summary.knownDays} j` : "—"}
+            hint={daysWithoutData > 0 ? `${daysWithoutData} j sans données` : undefined}
+          />
         </View>
         {showChart ? <WeekChart key={period} days={days} thresholdSteps={dailyGoal} /> : null}
         {daysWithSteps < 2 ? <Text style={styles.small}>L'historique se remplit jour après jour sur ce téléphone.</Text> : null}

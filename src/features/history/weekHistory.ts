@@ -11,6 +11,8 @@ export type HistoryDay = {
   weekday: string;
   dayOfMonth: number;
   isToday: boolean;
+  /** Le téléphone a des données pour ce jour (sinon ses 0 pas ne disent rien : jour inconnu). */
+  recorded: boolean;
 };
 
 export type WeekSummary = {
@@ -19,6 +21,11 @@ export type WeekSummary = {
   bestDay: HistoryDay | null;
   /** Jours où le seuil de la Marque a été atteint. */
   calmDays: number;
+  /**
+   * Jours dont l'issue est connue : apaisés, ou enregistrés et passés sous le seuil. Comme DayCells, un jour sans
+   * données ou aujourd'hui pas encore apaisé ne comptent pas comme manqués.
+   */
+  knownDays: number;
 };
 
 /** Nombre de jours conservés dans l'historique local. */
@@ -53,6 +60,7 @@ export function lastDays(history: StepsHistory, today: Date, count = 7): History
       weekday: WEEKDAYS[date.getDay()],
       dayOfMonth: date.getDate(),
       isToday: dayKey === todayKey,
+      recorded: history[dayKey] !== undefined,
     };
   });
 }
@@ -64,6 +72,7 @@ export function summarizeDays(days: HistoryDay[], thresholdSteps: number = GAME_
     totalKm: days.reduce((sum, day) => sum + day.km, 0),
     bestDay,
     calmDays: days.filter((day) => day.steps >= thresholdSteps).length,
+    knownDays: days.filter((day) => day.steps >= thresholdSteps || (day.recorded && !day.isToday)).length,
   };
 }
 
