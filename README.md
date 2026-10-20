@@ -77,18 +77,21 @@ L'app contient du code natif (`modules/permanent-pedometer/`) : Expo Go ne suffi
   `image: require("../../assets/companions/<id>.png"),`. Il apparaît alors sur la carte aux tronçons indiqués dans `travels`.
 - `modules/permanent-pedometer/` : module Android natif : service de suivi permanent (notification fixe), activé par l'interrupteur du Profil. Demande un build natif (pas de simple rechargement).
 
-## Design system
+## Design system « Trame & Encre »
+
+L'app se lit comme un tome de Berserk : chaque écran est une planche noire découpée en cases (`Panel`), la
+progression se remplit en trame de points. Le détail complet (règles, composants, à faire / à éviter) est dans
+`DESIGN.md` ; les tokens sont dans `src/core/theme/`.
 
 | Token | Valeur | Rôle |
 | --- | --- | --- |
-| `ink` | `#0C0A09` | fond |
-| `inkRaised` | `#171311` | cartes sombres |
-| `ash` | `#2E2823` | filets, pistes |
-| `iron` | `#5E6472` | bordures actives |
-| `bone` | `#E9E1CF` | papier, texte |
-| `boneDim` | `#B8AE98` | texte secondaire |
-| `umber` | `#5A5244` | texte sur papier |
-| `blood` / `bloodGlow` / `bloodEmber` | `#8A0303` / `#C1121F` / `#E5484D` | actions / accent / texte rouge |
+| `paper` | `#F3F3F0` | fond des cases |
+| `black` | `#111111` | encre : texte, cadres, gouttières, cases inversées |
+| `blackSoft` | `#4A4A47` | texte secondaire sur papier |
+| `paperSoft` | `#B9B9B4` | texte secondaire sur noir |
+| `tone` / `toneLight` / `toneDark` | `#8C8C88` / `#C8C8C3` / `#3A3A37` | trames et filets (jamais du texte) |
+| `red` / `redOnBlack` | `#B3121B` / `#E8414A` | le seul rouge : la Marque, le danger, « tu es ici » |
 
-Espacements : `theme.space[4 | 8 | 16 | 24 | 32 | 48 | 64 | 96 | 128]`.
-Typographie : Pirata One (titres et chiffres), Spectral (texte), Spectral SC (labels) ; échelle dans `src/core/theme/typography.ts`.
+Espacements : `theme.space[4 | 8 | 16 | 24 | 32 | 48 | 64 | 96 | 128]`, gouttière `theme.gutter` (6), cadre `theme.frame` (2), angles vifs.
+Typographie : Shippori Mincho B1 (titres et grands chiffres), Zen Kaku Gothic New (interface), réduites aux caractères
+latins dans `assets/fonts/` ; échelle dans `src/core/theme/typography.ts`.
