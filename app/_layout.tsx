@@ -183,7 +183,7 @@ export default function RootLayout() {
     return (
       <CenteredMessage message={progressLoadError ?? "Chargement de la progression..."}>
         {progressLoadError ? (
-          <Button label="Réessayer" onPress={() => setLoadAttempt((attempt) => attempt + 1)} />
+          <Button label="Réessayer" onDark onPress={() => setLoadAttempt((attempt) => attempt + 1)} />
         ) : null}
       </CenteredMessage>
     );
@@ -214,10 +214,10 @@ function CenteredMessage({ message, children }: { message: string; children?: Re
         alignItems: "center",
         gap: theme.space[24],
         padding: theme.space[24],
-        backgroundColor: theme.colors.ink,
+        backgroundColor: theme.colors.black,
       }}
     >
-      <Text style={{ ...theme.text.body, color: theme.colors.boneDim, textAlign: "center" }}>{message}</Text>
+      <Text style={{ ...theme.text.body, color: theme.colors.paperSoft, textAlign: "center" }}>{message}</Text>
       {children}
     </View>
   );

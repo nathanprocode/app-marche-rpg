@@ -16,7 +16,6 @@ import { useUIStore } from "../../store/useUIStore";
 import { BrandMark } from "./BrandMark";
 import { CompanionSprite } from "./CompanionSprite";
 import { Button } from "./Button";
-import { PaperCard } from "./PaperCard";
 
 type CheckpointUnlockModalProps = {
   enabled: boolean;
@@ -87,19 +86,16 @@ export function CheckpointUnlockModal({ enabled }: CheckpointUnlockModalProps) {
             >
               <View style={styles.header}>
                 <BrandMark visual={{ state: "bleeding", intensity: 0.9 }} width={20} />
-                <Text style={styles.kicker}>{`Nouveau chapitre · ${checkpoint.arc}`}</Text>
                 <Text accessibilityRole="header" style={styles.title}>
                   {checkpoint.title}
                 </Text>
-                <Text style={styles.meta}>{`Point franchi · ${formatInt(checkpoint.kmThreshold)} km`}</Text>
+                <Text style={styles.meta}>{`Nouveau chapitre · ${checkpoint.arc} · ${formatInt(checkpoint.kmThreshold)} km`}</Text>
               </View>
 
               {panel ? (
-                <PaperCard style={styles.plate}>
-                  <View style={styles.panelBlend}>
-                    <Image source={panel} style={styles.panel} resizeMode="cover" accessibilityIgnoresInvertColors />
-                  </View>
-                </PaperCard>
+                <View style={styles.plate}>
+                  <Image source={panel} style={styles.panel} resizeMode="cover" accessibilityIgnoresInvertColors />
+                </View>
               ) : null}
 
               <Text style={styles.description}>{checkpoint.description}</Text>
@@ -113,20 +109,20 @@ export function CheckpointUnlockModal({ enabled }: CheckpointUnlockModalProps) {
                 >
                   <CompanionSprite companion={companion} size={64} />
                   <View style={styles.companionText}>
-                    <Text style={styles.companionKicker}>Nouveau compagnon</Text>
                     <Text style={styles.companionName}>{companion.name}</Text>
-                    <Text style={styles.companionTitle}>{companion.title}</Text>
+                    <Text style={styles.companionTitle}>{`Nouveau compagnon · ${companion.title}`}</Text>
                   </View>
                 </View>
               ))}
             </ScrollView>
 
             <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, theme.space[16]) + theme.space[16] }]}>
-              <Button label="Continuer la marche" onPress={dismiss} />
-              <Button label="Voir sur la carte" variant="secondary" onPress={showOnMap} />
+              <Button label="Continuer la marche" onDark onPress={dismiss} />
+              <Button label="Voir sur la carte" variant="secondary" onDark onPress={showOnMap} />
               <Button
                 label="Partager"
                 variant="secondary"
+                onDark
                 onPress={() =>
                   requestShare(
                     buildCheckpointCard(checkpoint, { totalSteps: progress.totalSteps, bestStreak, lap: progress.lap }, panel),
@@ -142,37 +138,26 @@ export function CheckpointUnlockModal({ enabled }: CheckpointUnlockModalProps) {
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: theme.colors.ink },
-  topRule: { position: "absolute", top: 0, left: 0, right: 0, height: 4, backgroundColor: theme.colors.bloodGlow, zIndex: 2 },
-  content: { paddingHorizontal: theme.space[24], paddingBottom: theme.space[16] },
+  screen: { flex: 1, backgroundColor: theme.colors.black },
+  topRule: { position: "absolute", top: 0, left: 0, right: 0, height: theme.gutter, backgroundColor: theme.colors.redOnBlack, zIndex: 2 },
   header: { alignItems: "center" },
-  kicker: { ...theme.text.label, color: theme.colors.bloodEmber, marginTop: theme.space[16], textAlign: "center" },
-  title: { ...theme.text.displayL, color: theme.colors.bone, marginTop: theme.space[8], textAlign: "center" },
-  meta: { ...theme.text.body, color: theme.colors.boneDim, textAlign: "center" },
-  plate: { marginTop: theme.space[24] },
-  panelBlend: { mixBlendMode: "multiply" },
-  panel: { width: "100%", height: 232 },
-  description: {
-    ...theme.text.body,
-    fontFamily: theme.fontFamily.bodyItalic,
-    color: theme.colors.boneDim,
-    textAlign: "center",
-    marginTop: theme.space[16],
-  },
+  title: { ...theme.text.displayL, color: theme.colors.paper, marginTop: theme.space[16], textAlign: "center" },
+  meta: { ...theme.text.bodyStrong, color: theme.colors.redOnBlack, textAlign: "center", marginTop: theme.space[4] },
+  content: { paddingHorizontal: theme.space[16], paddingBottom: theme.space[16] },
+  // La case du manga, cadrée de papier comme une planche posée sur la page noire.
+  plate: { marginTop: theme.space[24], borderWidth: theme.gutter, borderColor: theme.colors.paper, backgroundColor: theme.colors.paper },
+  panel: { width: "100%", height: 260 },
+  description: { ...theme.text.body, color: theme.colors.paperSoft, textAlign: "center", marginTop: theme.space[16] },
   companion: {
     flexDirection: "row",
     alignItems: "center",
     gap: theme.space[16],
     marginTop: theme.space[24],
     padding: theme.space[16],
-    backgroundColor: theme.colors.inkRaised,
-    borderWidth: 1,
-    borderColor: theme.colors.ash,
-    borderRadius: theme.radius[4],
+    backgroundColor: theme.colors.paper,
   },
-  companionText: { flex: 1 },
-  companionKicker: { ...theme.text.label, color: theme.colors.bloodEmber },
-  companionName: { ...theme.text.displayS, color: theme.colors.bone },
-  companionTitle: { ...theme.text.small, color: theme.colors.boneDim },
-  footer: { paddingHorizontal: theme.space[24], paddingTop: theme.space[16], gap: theme.space[8] },
+  companionText: { flex: 1, gap: 2 },
+  companionName: { ...theme.text.displayS, color: theme.colors.black },
+  companionTitle: { ...theme.text.small, fontFamily: theme.fontFamily.gothicBold, color: theme.colors.red },
+  footer: { paddingHorizontal: theme.space[16], paddingTop: theme.space[16], gap: theme.space[8] },
 });

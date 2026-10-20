@@ -7,7 +7,6 @@ import { COMPANIONS, type Companion } from "../../data/companions";
 import { BERSERK_CHECKPOINTS } from "../../data/map/berserk-checkpoints";
 import { isCompanionMet } from "../../features/companions/journey";
 import { CompanionSprite } from "./CompanionSprite";
-import { PaperCard } from "./PaperCard";
 import { Panel } from "./Panel";
 
 type CompanionCollectionProps = {
@@ -61,7 +60,7 @@ export function CompanionCollection({ unlockedCheckpointIds }: CompanionCollecti
       <Modal visible={opened !== null} transparent animationType="fade" onRequestClose={() => setOpened(null)}>
         <View style={styles.overlay}>
           {opened ? (
-            <PaperCard style={styles.sheet}>
+            <Panel padded={false} style={styles.sheet}>
               <Pressable
                 accessibilityRole="button"
                 accessibilityLabel="Fermer la fiche"
@@ -81,7 +80,7 @@ export function CompanionCollection({ unlockedCheckpointIds }: CompanionCollecti
                 </Text>
                 <Text style={styles.sheetDescription}>{opened.description}</Text>
               </ScrollView>
-            </PaperCard>
+            </Panel>
           ) : null}
         </View>
       </Modal>

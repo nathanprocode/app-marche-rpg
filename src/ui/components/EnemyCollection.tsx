@@ -6,7 +6,6 @@ import { theme } from "../../core/theme";
 import { ENEMIES, enemyStatus, type Enemy } from "../../data/enemies";
 import { BERSERK_CHECKPOINTS } from "../../data/map/berserk-checkpoints";
 import { victoriousEncounterIds } from "../../features/bosses/duel";
-import { PaperCard } from "./PaperCard";
 import { Panel } from "./Panel";
 
 type EnemyCollectionProps = {
@@ -71,7 +70,7 @@ export function EnemyCollection({ unlockedCheckpointIds, bossVictories }: EnemyC
       <Modal visible={opened !== null} transparent animationType="fade" onRequestClose={() => setOpened(null)}>
         <View style={styles.overlay}>
           {opened ? (
-            <PaperCard style={styles.sheet}>
+            <Panel padded={false} style={styles.sheet}>
               <Pressable accessibilityRole="button" accessibilityLabel="Fermer la fiche" onPress={() => setOpened(null)} style={styles.close}>
                 <Ionicons name="close" size={24} color={theme.colors.black} />
               </Pressable>
@@ -105,7 +104,7 @@ export function EnemyCollection({ unlockedCheckpointIds, bossVictories }: EnemyC
                       : "Duel à gagner"}
                 </Text>
               </ScrollView>
-            </PaperCard>
+            </Panel>
           ) : null}
         </View>
       </Modal>

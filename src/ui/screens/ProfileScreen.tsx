@@ -132,7 +132,7 @@ export function ProfileScreen() {
 
       {isGoalReached(progress) ? (
         <Panel reversed>
-          <Button label={`Commencer le tour ${progress.lap + 1}`} variant="secondary" onPress={() => void startNextLap()} />
+          <Button label={`Commencer le tour ${progress.lap + 1}`} onDark onPress={() => void startNextLap()} />
         </Panel>
       ) : null}
 
@@ -255,7 +255,7 @@ export function ProfileScreen() {
 
       <Panel reversed style={styles.section}>
         <Text style={styles.smallOnBlack}>Efface ta progression, tes succès et ton historique, ici et dans le cloud.</Text>
-        <Button label="Recommencer à zéro" variant="danger" onPress={confirmErase} />
+        <Button label="Recommencer à zéro" variant="danger" onDark onPress={confirmErase} />
       </Panel>
     </Screen>
   );

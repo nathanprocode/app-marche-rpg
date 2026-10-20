@@ -55,44 +55,33 @@ export function AchievementToast({ enabled }: AchievementToastProps) {
       style={[styles.toast, { top: insets.top + theme.space[8], opacity }]}
     >
       <View style={styles.icon}>
-        <Ionicons name={achievement.icon as keyof typeof Ionicons.glyphMap} size={22} color={theme.colors.bone} />
+        <Ionicons name={achievement.icon as keyof typeof Ionicons.glyphMap} size={22} color={theme.colors.black} />
       </View>
       <View style={styles.text}>
-        <Text style={styles.kicker}>Succès débloqué</Text>
         <Text style={styles.title}>{achievement.title}</Text>
-        <Text style={styles.small}>{achievement.description}</Text>
+        <Text style={styles.small}>{`Succès débloqué · ${achievement.description}`}</Text>
       </View>
     </Animated.View>
   );
 }
 
 const styles = StyleSheet.create({
+  // Une case noire cadrée de rouge, posée en haut de l'écran.
   toast: {
     position: "absolute",
-    left: theme.space[16],
-    right: theme.space[16],
+    left: theme.gutter * 2,
+    right: theme.gutter * 2,
     flexDirection: "row",
     alignItems: "center",
     gap: theme.space[16],
     padding: theme.space[16],
-    backgroundColor: theme.colors.inkRaised,
-    borderWidth: 1,
-    borderColor: theme.colors.bloodGlow,
-    borderRadius: theme.radius[4],
+    backgroundColor: theme.colors.black,
+    borderWidth: theme.frame,
+    borderColor: theme.colors.redOnBlack,
     elevation: 8,
   },
-  icon: {
-    width: 44,
-    height: 44,
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: 22,
-    backgroundColor: theme.colors.blood,
-    borderWidth: 1,
-    borderColor: theme.colors.bloodGlow,
-  },
-  text: { flex: 1 },
-  kicker: { ...theme.text.label, color: theme.colors.bloodEmber },
-  title: { ...theme.text.bodyStrong, color: theme.colors.bone },
-  small: { ...theme.text.small, color: theme.colors.boneDim },
+  icon: { width: 48, height: 48, alignItems: "center", justifyContent: "center", backgroundColor: theme.colors.paper },
+  text: { flex: 1, gap: 2 },
+  title: { ...theme.text.displayS, fontSize: 18, lineHeight: 24, color: theme.colors.paper },
+  small: { ...theme.text.small, color: theme.colors.paperSoft },
 });

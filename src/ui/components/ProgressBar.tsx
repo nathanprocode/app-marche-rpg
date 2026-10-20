@@ -4,8 +4,6 @@ import { theme } from "../../core/theme";
 type ProgressBarProps = {
   /** Avancement de 0 à 100. */
   pct: number;
-  /** @deprecated Sans effet : toutes les barres sont posées sur du papier. */
-  onPaper?: boolean;
   /** Remplissage noir (Marque apaisée, trajet) ; sinon rouge (la Marque saigne). */
   calm?: boolean;
   /** Barre posée dans une case inversée (fond noir). */
@@ -19,14 +17,13 @@ type ProgressBarProps = {
 /** Barre encrée : un cadre noir, un remplissage plein. */
 export function ProgressBar({
   pct,
-  onPaper = false,
   calm = false,
   reversed = false,
   height = 8,
   accessibilityLabel,
 }: ProgressBarProps) {
   const clamped = Math.max(0, Math.min(100, pct));
-  const isCalm = calm || onPaper;
+  const isCalm = calm;
   const fillColor = reversed
     ? isCalm
       ? theme.colors.paper

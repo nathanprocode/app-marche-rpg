@@ -25,23 +25,6 @@ const palette = {
   redOnBlack: "#E8414A",
 } as const;
 
-/**
- * Anciens noms (« Encre & Sang »), rebranchés sur la nouvelle palette le temps de migrer les écrans.
- * @deprecated À remplacer par les noms de `palette` ; supprimés à la fin de la refonte.
- */
-const legacy = {
-  ink: palette.paper,
-  inkRaised: palette.paper,
-  ash: palette.toneLight,
-  iron: palette.tone,
-  bone: palette.black,
-  boneDim: palette.blackSoft,
-  umber: palette.toneLight,
-  blood: palette.red,
-  bloodGlow: palette.red,
-  bloodEmber: palette.red,
-} as const;
-
-export const colors = { ...palette, ...legacy } as const;
+export const colors = palette;
 
 export type AppColors = typeof colors;

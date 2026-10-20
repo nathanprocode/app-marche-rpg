@@ -1,5 +1,5 @@
 import { colors } from "./colors";
-import { frame, gutter, radius, space } from "./spacing";
+import { frame, gutter, space } from "./spacing";
 import { fitDisplayText, fontFamily, text } from "./typography";
 
 export const theme = {
@@ -7,7 +7,6 @@ export const theme = {
   space,
   gutter,
   frame,
-  radius,
   fontFamily,
   text,
   fitDisplayText,

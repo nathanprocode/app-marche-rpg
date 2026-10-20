@@ -13,17 +13,9 @@ const families = {
   gothicBlack: "ZenKakuGothicNew_900Black",
 } as const;
 
-export const fontFamily = {
-  ...families,
-  /** @deprecated Anciens rôles, rebranchés le temps de la migration. */
-  display: families.mincho,
-  body: families.gothic,
-  bodyItalic: families.gothic,
-  bodyStrong: families.gothicBold,
-  label: families.gothicBold,
-} as const;
+export const fontFamily = families;
 
-/** Les polices réellement chargées (sans les alias). */
+/** Les polices chargées au démarrage (src/core/fonts.ts). */
 export const loadedFontFamilies = families;
 
 /**

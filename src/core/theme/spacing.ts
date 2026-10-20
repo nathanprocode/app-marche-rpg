@@ -15,9 +15,3 @@ export const space = {
 export const gutter = 6;
 export const frame = 2;
 
-/** Les cases ont des angles vifs. */
-export const radius = {
-  0: 0,
-  /** @deprecated Ancien rayon, ramené à 0 le temps de la migration. */
-  4: 0,
-} as const;

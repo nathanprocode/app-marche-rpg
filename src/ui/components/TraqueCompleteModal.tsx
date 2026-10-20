@@ -16,7 +16,6 @@ import { usePlayerStore } from "../../store/usePlayerStore";
 import { useUIStore } from "../../store/useUIStore";
 import { BrandMark } from "./BrandMark";
 import { Button } from "./Button";
-import { InkCard } from "./InkCard";
 
 type TraqueCompleteModalProps = {
   enabled: boolean;
@@ -53,20 +52,19 @@ export function TraqueCompleteModal({ enabled }: TraqueCompleteModalProps) {
         >
           <View style={styles.header}>
             <BrandMark visual={{ state: "active", intensity: 0.4 }} width={28} />
-            <Text style={styles.kicker}>{`Tour ${progress.lap} · ${formatInt(GAME_CONFIG.totalGoalKm)} km`}</Text>
             <Text accessibilityRole="header" style={styles.title}>
               La Traque est achevée
             </Text>
-            <Text style={styles.meta}>{ARRIVAL.title}</Text>
+            <Text style={styles.meta}>{`${ARRIVAL.title} · tour ${progress.lap} · ${formatInt(GAME_CONFIG.totalGoalKm)} km`}</Text>
           </View>
 
           <Text style={styles.description}>{ARRIVAL.description}</Text>
 
-          <InkCard style={styles.stats}>
+          <View style={styles.stats}>
             <Stat label="Pas depuis le début" value={formatInt(progress.totalSteps)} />
             <Stat label="Meilleure série" value={`${bestStreak} ${bestStreak > 1 ? "jours" : "jour"}`} />
             <Stat label="Compagnons rencontrés" value={`${COMPANIONS.filter((companion) => isCompanionMet(companion, unlockedCheckpoints)).length} / ${COMPANIONS.length}`} />
-          </InkCard>
+          </View>
 
           <Text style={styles.hint}>
             La Marque ne s'efface pas : la route recommence. Tes chroniques, tes compagnons et tes succès restent à toi.
@@ -74,10 +72,11 @@ export function TraqueCompleteModal({ enabled }: TraqueCompleteModalProps) {
         </ScrollView>
 
         <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, theme.space[16]) + theme.space[16] }]}>
-          <Button label={`Commencer le tour ${progress.lap + 1}`} onPress={() => void startNextLap()} />
+          <Button label={`Commencer le tour ${progress.lap + 1}`} onDark onPress={() => void startNextLap()} />
           <Button
             label="Partager"
             variant="secondary"
+            onDark
             onPress={() =>
               requestShare(
                 buildFinaleCard(
@@ -88,7 +87,7 @@ export function TraqueCompleteModal({ enabled }: TraqueCompleteModalProps) {
               )
             }
           />
-          <Button label="Plus tard" variant="secondary" onPress={() => setDismissedLap(progress.lap)} />
+          <Button label="Plus tard" variant="secondary" onDark onPress={() => setDismissedLap(progress.lap)} />
         </View>
       </View>
     </Modal>
@@ -105,24 +104,17 @@ function Stat({ label, value }: { label: string; value: string }) {
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: theme.colors.ink },
-  topRule: { position: "absolute", top: 0, left: 0, right: 0, height: 4, backgroundColor: theme.colors.bloodGlow, zIndex: 2 },
-  content: { paddingHorizontal: theme.space[24], paddingBottom: theme.space[16] },
+  screen: { flex: 1, backgroundColor: theme.colors.black },
+  topRule: { position: "absolute", top: 0, left: 0, right: 0, height: theme.gutter, backgroundColor: theme.colors.redOnBlack, zIndex: 2 },
   header: { alignItems: "center" },
-  kicker: { ...theme.text.label, color: theme.colors.bloodEmber, marginTop: theme.space[16], textAlign: "center" },
-  title: { ...theme.text.displayL, color: theme.colors.bone, marginTop: theme.space[8], textAlign: "center" },
-  meta: { ...theme.text.body, color: theme.colors.boneDim, textAlign: "center" },
-  description: {
-    ...theme.text.body,
-    fontFamily: theme.fontFamily.bodyItalic,
-    color: theme.colors.boneDim,
-    textAlign: "center",
-    marginTop: theme.space[24],
-  },
-  stats: { marginTop: theme.space[24], gap: theme.space[16] },
+  title: { ...theme.text.displayL, color: theme.colors.paper, marginTop: theme.space[16], textAlign: "center" },
+  meta: { ...theme.text.bodyStrong, color: theme.colors.redOnBlack, textAlign: "center", marginTop: theme.space[4] },
+  content: { paddingHorizontal: theme.space[16], paddingBottom: theme.space[16] },
+  description: { ...theme.text.body, color: theme.colors.paperSoft, textAlign: "center", marginTop: theme.space[24] },
+  stats: { marginTop: theme.space[24], padding: theme.space[16], gap: theme.space[16], backgroundColor: theme.colors.paper },
   stat: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: theme.space[16] },
-  label: { ...theme.text.label, color: theme.colors.boneDim, flexShrink: 1 },
-  statValue: { ...theme.text.displayS, color: theme.colors.bone },
-  hint: { ...theme.text.small, color: theme.colors.boneDim, textAlign: "center", marginTop: theme.space[24] },
-  footer: { paddingHorizontal: theme.space[24], paddingTop: theme.space[16], gap: theme.space[8] },
+  label: { ...theme.text.small, color: theme.colors.blackSoft, flexShrink: 1 },
+  statValue: { ...theme.text.displayS, color: theme.colors.black },
+  hint: { ...theme.text.small, color: theme.colors.paperSoft, textAlign: "center", marginTop: theme.space[24] },
+  footer: { paddingHorizontal: theme.space[16], paddingTop: theme.space[16], gap: theme.space[8] },
 });
