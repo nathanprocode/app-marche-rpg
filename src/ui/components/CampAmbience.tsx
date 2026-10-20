@@ -1,7 +1,7 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { Animated, Easing, StyleSheet, View } from "react-native";
 import { useReducedMotion } from "react-native-reanimated";
-import Svg, { Defs, RadialGradient, Rect, Stop } from "react-native-svg";
+import Svg, { Circle } from "react-native-svg";
 import type { CampTime } from "../../features/camp/campScene";
 
 type CampAmbienceProps = {
@@ -19,14 +19,20 @@ const FIRE = { x: 0.24, y: 0.78 };
 
 /** Braises : écart horizontal au départ (px), retard, durée, dérive latérale (px), taille (px). */
 const EMBERS = [
-  // À l'encre : des braises rouges et blanches, comme le seul rouge de la planche.
-  { dx: -4, delay: 0, duration: 2200, sway: 10, size: 3, color: "#E8414A" },
-  { dx: 6, delay: 500, duration: 2600, sway: -8, size: 2, color: "#F3F3F0" },
-  { dx: 0, delay: 1100, duration: 2000, sway: 6, size: 3, color: "#E8414A" },
-  { dx: -8, delay: 1500, duration: 2900, sway: -12, size: 2, color: "#F3F3F0" },
-  { dx: 3, delay: 1900, duration: 2400, sway: 14, size: 2, color: "#E8414A" },
-  { dx: 9, delay: 800, duration: 3100, sway: -6, size: 3, color: "#B3121B" },
+  // À l'encre : des braises rouges et blanches en aplat, cernées de noir pour rester nettes même sur la flamme blanche.
+  { dx: -4, delay: 0, duration: 2200, sway: 10, size: 5, color: "#E8414A" },
+  { dx: 6, delay: 500, duration: 2600, sway: -8, size: 4, color: "#F3F3F0" },
+  { dx: 0, delay: 1100, duration: 2000, sway: 6, size: 5, color: "#E8414A" },
+  { dx: -8, delay: 1500, duration: 2900, sway: -12, size: 4, color: "#F3F3F0" },
+  { dx: 3, delay: 1900, duration: 2400, sway: 14, size: 4, color: "#E8414A" },
+  { dx: 9, delay: 800, duration: 3100, sway: -6, size: 5, color: "#E8414A" },
 ];
+
+/** Trame de la lueur : écart entre les points et rayon du plus gros point (px). */
+const GLOW_DOT_GAP = 7;
+const GLOW_DOT_MAX_R = 2.2;
+/** La trame laisse la flamme blanche intacte : elle commence à cette fraction du rayon. */
+const GLOW_INNER = 0.22;
 
 /** Feuilles : position de départ (fraction de la largeur), retard, durée, balancement (px), couleur. */
 const LEAVES = [
@@ -66,13 +72,15 @@ function Ember({ ember, height, origin }: { ember: (typeof EMBERS)[number]; heig
     <Animated.View
       style={[
         styles.particle,
+        styles.ember,
         {
           left: origin.x + ember.dx,
           top: origin.y - height * 0.12,
           width: ember.size,
           height: ember.size,
           backgroundColor: ember.color,
-          opacity: progress.interpolate({ inputRange: [0, 0.1, 0.7, 1], outputRange: [0, 1, 0.8, 0] }),
+          // Allumée ou éteinte, sans demi-teinte : un rouge à moitié transparent virerait au rose.
+          opacity: progress.interpolate({ inputRange: [0, 0.04, 0.05, 0.9, 0.91, 1], outputRange: [0, 0, 1, 1, 0, 0] }),
           transform: [
             { translateY: progress.interpolate({ inputRange: [0, 1], outputRange: [0, -rise] }) },
             {
@@ -88,12 +96,35 @@ function Ember({ ember, height, origin }: { ember: (typeof EMBERS)[number]; heig
   );
 }
 
-/** Lueur du feu : une tache orangée dont l'intensité vacille de façon irrégulière. */
+/**
+ * Points de la trame autour du feu, sur une grille en quinconce : gros près de la flamme, de plus en plus fins
+ * vers le bord. Pas de dégradé : le monde n'a que des aplats et de la trame.
+ */
+function glowDots(size: number): { x: number; y: number; r: number }[] {
+  const center = size / 2;
+  const inner = center * GLOW_INNER;
+  const dots: { x: number; y: number; r: number }[] = [];
+  const rowGap = GLOW_DOT_GAP * 0.87;
+  for (let row = 0; row * rowGap <= size; row++) {
+    const y = row * rowGap;
+    for (let x = row % 2 ? GLOW_DOT_GAP / 2 : 0; x <= size; x += GLOW_DOT_GAP) {
+      const distance = Math.hypot(x - center, y - center);
+      if (distance < inner) continue;
+      const r = GLOW_DOT_MAX_R * (1 - (distance - inner) / (center - inner));
+      if (r >= 0.6) dots.push({ x, y, r });
+    }
+  }
+  return dots;
+}
+
+/** Lueur du feu : une trame de points rouges pleins qui palpite de façon irrégulière. */
 function FireGlow({ size, origin }: { size: number; origin: { x: number; y: number } }) {
-  const flicker = useRef(new Animated.Value(0.45)).current;
+  const flicker = useRef(new Animated.Value(1)).current;
+  const dots = useMemo(() => glowDots(size), [size]);
 
   useEffect(() => {
-    const steps = [0.62, 0.4, 0.55, 0.35, 0.6, 0.48];
+    // La lueur grandit et rétrécit (l'opacité reste pleine : un rouge transparent virerait au rose).
+    const steps = [1.08, 0.94, 1.04, 0.9, 1.06, 0.98];
     const durations = [140, 90, 170, 110, 130, 160];
     const loop = Animated.loop(
       Animated.sequence(
@@ -110,18 +141,13 @@ function FireGlow({ size, origin }: { size: number; origin: { x: number; y: numb
     <Animated.View
       style={[
         styles.glow,
-        { left: origin.x - size / 2, top: origin.y - size / 2, width: size, height: size, opacity: flicker },
+        { left: origin.x - size / 2, top: origin.y - size / 2, width: size, height: size, transform: [{ scale: flicker }] },
       ]}
     >
       <Svg width={size} height={size}>
-        <Defs>
-          <RadialGradient id="fireGlow" cx="50%" cy="50%" r="50%">
-            <Stop offset="0" stopColor="#E8414A" stopOpacity="0.55" />
-            <Stop offset="0.5" stopColor="#B3121B" stopOpacity="0.25" />
-            <Stop offset="1" stopColor="#B3121B" stopOpacity="0" />
-          </RadialGradient>
-        </Defs>
-        <Rect width={size} height={size} fill="url(#fireGlow)" />
+        {dots.map((dot, i) => (
+          <Circle key={i} cx={dot.x} cy={dot.y} r={dot.r} fill="#E8414A" />
+        ))}
       </Svg>
     </Animated.View>
   );
@@ -184,5 +210,6 @@ export function CampAmbience({ time, width, height }: CampAmbienceProps) {
 
 const styles = StyleSheet.create({
   particle: { position: "absolute" },
+  ember: { borderWidth: 1, borderColor: "#111111" },
   glow: { position: "absolute" },
 });
