@@ -1,6 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Tabs } from "expo-router";
 import { Platform, StyleSheet, View } from "react-native";
+import { useReducedMotion } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { theme } from "../../src/core/theme";
 
@@ -16,6 +17,7 @@ const ICONS: Record<string, { on: IconName; off: IconName }> = {
 
 export default function TabsLayout() {
   const insets = useSafeAreaInsets();
+  const reduceMotion = useReducedMotion();
   const minimumBottomPadding = Platform.OS === "android" ? 12 : 8;
   const bottomPadding = Math.max(insets.bottom, minimumBottomPadding);
 
@@ -23,6 +25,8 @@ export default function TabsLayout() {
     <Tabs
       screenOptions={({ route }) => ({
         headerShown: false,
+        // Changement d'onglet : le nouvel écran glisse à peine en apparaissant (rien si les animations sont coupées).
+        animation: reduceMotion ? "none" : "shift",
         tabBarShowLabel: true,
         tabBarActiveTintColor: theme.colors.black,
         tabBarInactiveTintColor: theme.colors.blackSoft,
