@@ -7,17 +7,16 @@ type PaperCardProps = {
   style?: StyleProp<ViewStyle>;
 };
 
-/** Carte « papier » (bone) : les planches du manga s'y fondent en mode multiply. */
+/** Case cadrée à marges fines : les planches du manga s'y posent en pleine largeur. */
 export function PaperCard({ children, style }: PaperCardProps) {
   return <View style={[styles.card, style]}>{children}</View>;
 }
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: theme.colors.bone,
-    borderWidth: 1,
-    borderColor: "rgba(12,10,9,0.55)",
-    borderRadius: theme.radius[4],
+    backgroundColor: theme.colors.paper,
+    borderWidth: theme.frame,
+    borderColor: theme.colors.black,
     padding: theme.space[8],
     overflow: "hidden",
   },

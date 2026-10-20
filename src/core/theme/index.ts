@@ -1,10 +1,12 @@
 import { colors } from "./colors";
-import { radius, space } from "./spacing";
+import { frame, gutter, radius, space } from "./spacing";
 import { fitDisplayText, fontFamily, text } from "./typography";
 
 export const theme = {
   colors,
   space,
+  gutter,
+  frame,
   radius,
   fontFamily,
   text,

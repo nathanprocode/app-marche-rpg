@@ -11,8 +11,10 @@ type ButtonProps = {
   loading?: boolean;
 };
 
+/** Bouton encré : plein noir (principal), cadré (secondaire) ou cadré de rouge (action destructrice). */
 export function Button({ label, onPress, variant = "primary", disabled = false, loading = false }: ButtonProps) {
   const isDisabled = disabled || loading;
+  const isPrimary = variant === "primary";
 
   return (
     <Pressable
@@ -21,12 +23,19 @@ export function Button({ label, onPress, variant = "primary", disabled = false, 
       accessibilityState={{ disabled: isDisabled, busy: loading }}
       disabled={isDisabled}
       onPress={onPress}
-      style={({ pressed }) => [styles.base, styles[variant], pressed && styles.pressed, isDisabled && styles.disabled]}
+      style={({ pressed }) => [
+        styles.base,
+        styles[variant],
+        pressed && (isPrimary ? styles.pressedPrimary : styles.pressedFramed),
+        isDisabled && styles.disabled,
+      ]}
     >
       {loading ? (
-        <ActivityIndicator color={theme.colors.bone} />
+        <ActivityIndicator color={isPrimary ? theme.colors.paper : theme.colors.black} />
       ) : (
-        <Text style={[styles.label, variant === "danger" && styles.labelDanger]}>{label}</Text>
+        <Text style={[styles.label, isPrimary && styles.labelPrimary, variant === "danger" && styles.labelDanger]}>
+          {label}
+        </Text>
       )}
     </Pressable>
   );
@@ -37,17 +46,18 @@ const styles = StyleSheet.create({
   base: {
     minHeight: 56,
     paddingVertical: theme.space[8],
+    paddingHorizontal: theme.space[16],
     alignItems: "center",
     justifyContent: "center",
-    borderRadius: theme.radius[4],
-    borderWidth: 1,
-    paddingHorizontal: theme.space[16],
+    borderWidth: theme.frame,
   },
-  primary: { backgroundColor: theme.colors.blood, borderColor: theme.colors.bloodGlow },
-  secondary: { backgroundColor: "transparent", borderColor: theme.colors.iron },
-  danger: { backgroundColor: "transparent", borderColor: theme.colors.bloodGlow },
-  pressed: { opacity: 0.8 },
-  disabled: { opacity: 0.5 },
-  label: { ...theme.text.bodyStrong, color: theme.colors.bone, textAlign: "center" },
-  labelDanger: { color: theme.colors.bloodEmber },
+  primary: { backgroundColor: theme.colors.black, borderColor: theme.colors.black },
+  secondary: { backgroundColor: theme.colors.paper, borderColor: theme.colors.black },
+  danger: { backgroundColor: theme.colors.paper, borderColor: theme.colors.red },
+  pressedPrimary: { backgroundColor: theme.colors.blackSoft, borderColor: theme.colors.blackSoft },
+  pressedFramed: { backgroundColor: theme.colors.toneLight },
+  disabled: { opacity: 0.4 },
+  label: { ...theme.text.bodyStrong, color: theme.colors.black, textAlign: "center" },
+  labelPrimary: { color: theme.colors.paper },
+  labelDanger: { color: theme.colors.red },
 });

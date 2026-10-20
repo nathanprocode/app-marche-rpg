@@ -19,7 +19,7 @@ type CampVignetteProps = {
 };
 
 /**
- * Le camp, en pixel art couleur : une fenêtre sur le monde, encadrée pour s'accorder à l'encre.
+ * Le camp, en pixel art couleur : une fenêtre sur le monde, posée pleine largeur dans sa case.
  * La phrase d'ambiance suit l'heure et l'état de la Marque (voir features/camp/campScene).
  */
 export function CampVignette({ scene }: CampVignetteProps) {
@@ -52,20 +52,10 @@ export function CampVignette({ scene }: CampVignetteProps) {
 }
 
 const styles = StyleSheet.create({
-  root: { gap: theme.space[8] },
-  frame: {
-    padding: theme.space[4],
-    backgroundColor: theme.colors.inkRaised,
-    borderWidth: 1,
-    borderColor: theme.colors.ash,
-    borderRadius: theme.radius[4],
-  },
-  window: { width: "100%", aspectRatio: 16 / 9, overflow: "hidden", borderRadius: 2 },
+  root: {},
+  frame: { borderBottomWidth: theme.frame, borderBottomColor: theme.colors.black },
+  window: { width: "100%", aspectRatio: 16 / 9, overflow: "hidden" },
   // Taille explicite : sinon le web reprend la taille d'origine de l'image et la centre mal.
   image: { width: "100%", height: "100%" },
-  line: {
-    ...theme.text.small,
-    fontFamily: theme.fontFamily.bodyItalic,
-    color: theme.colors.boneDim,
-  },
+  line: { ...theme.text.small, color: theme.colors.blackSoft, padding: theme.space[16] },
 });

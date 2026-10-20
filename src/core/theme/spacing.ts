@@ -11,6 +11,13 @@ export const space = {
   128: 128,
 } as const;
 
+/** Gouttière noire entre deux cases, et épaisseur des cadres. */
+export const gutter = 6;
+export const frame = 2;
+
+/** Les cases ont des angles vifs. */
 export const radius = {
-  4: 4,
+  0: 0,
+  /** @deprecated Ancien rayon, ramené à 0 le temps de la migration. */
+  4: 0,
 } as const;

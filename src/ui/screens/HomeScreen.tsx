@@ -1,14 +1,14 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import { Image, Pressable, StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 import { GAME_CONFIG } from "../../core/constants/game";
 import { formatDecimal, formatInt } from "../../core/format";
 import { theme } from "../../core/theme";
 import { BERSERK_CHECKPOINTS } from "../../data/map/berserk-checkpoints";
-import { BERSERK_PANEL_IMAGES } from "../../data/map/berserk-panels";
 import { BOSS_ENCOUNTERS } from "../../data/bosses";
 import { computeDuels } from "../../features/bosses/duel";
 import { resolveCampScene } from "../../features/camp/campScene";
+import { lastDays } from "../../features/history/weekHistory";
 import { deriveBrandState } from "../../features/progression/engine";
 import { runDailySync } from "../../features/runtime/dailySync";
 import { useBrandStore } from "../../store/useBrandStore";
@@ -18,29 +18,34 @@ import { useSettingsStore } from "../../store/useSettingsStore";
 import { BrandMark } from "../components/BrandMark";
 import { Button } from "../components/Button";
 import { CampVignette } from "../components/CampVignette";
+import { DayCells } from "../components/DayCells";
 import { DuelCard } from "../components/DuelCard";
-import { InkCard } from "../components/InkCard";
-import { PaperCard } from "../components/PaperCard";
+import { Panel } from "../components/Panel";
 import { ProgressBar } from "../components/ProgressBar";
 import { Screen } from "../components/Screen";
+import { Screentone } from "../components/Screentone";
 
 export function HomeScreen() {
   const router = useRouter();
   const stepsToday = usePedometerStore((state) => state.stepsToday);
   const distanceTodayKm = usePedometerStore((state) => state.distanceTodayKm);
+  const history = usePedometerStore((state) => state.history);
   const resetStepsToday = usePedometerStore((state) => state.resetStepsToday);
   const progress = usePlayerStore((state) => state.progress);
+  const unlockedCount = usePlayerStore((state) => state.unlockedCheckpoints.length);
   const addDevSteps = usePlayerStore((state) => state.addDevSteps);
   const advanceToNextCheckpointDev = usePlayerStore((state) => state.advanceToNextCheckpointDev);
   const resetProgressionDev = usePlayerStore((state) => state.resetProgressionDev);
   const streakDays = useBrandStore((state) => state.status.streakDays);
+  const threshold = useSettingsStore((state) => state.dailyGoal);
 
   const activeDuels = computeDuels(BOSS_ENCOUNTERS, progress.lapSteps, BERSERK_CHECKPOINTS).filter(
     (duel) => duel.state === "active",
   );
-  const threshold = useSettingsStore((state) => state.dailyGoal);
   const isCalm = deriveBrandState(stepsToday, threshold) === "active";
   const stepsLeftToday = Math.max(0, threshold - stepsToday);
+  // L'historique du jour peut avoir un temps de retard sur le compteur : le compteur fait foi pour aujourd'hui.
+  const week = lastDays(history, new Date()).map((day) => (day.isToday ? { ...day, steps: stepsToday } : day));
 
   const previousIndex = Math.max(
     0,
@@ -50,7 +55,9 @@ export function HomeScreen() {
   const next = BERSERK_CHECKPOINTS[previousIndex + 1] ?? null;
   const remainingKm = next ? Math.max(0, next.kmThreshold - progress.totalDistanceKm) : 0;
   const remainingSteps = Math.ceil((remainingKm * 1000) / GAME_CONFIG.metersPerStep);
-  const panel = BERSERK_PANEL_IMAGES[previous.id];
+  const journeyLine = [`sur ${formatInt(GAME_CONFIG.totalGoalKm)} km`, previous.arc, progress.lap > 1 ? `tour ${progress.lap}` : null]
+    .filter(Boolean)
+    .join(" · ");
 
   async function handleResetDev(): Promise<void> {
     await resetProgressionDev();
@@ -58,118 +65,128 @@ export function HomeScreen() {
   }
 
   return (
-    <Screen scroll>
-      <View style={styles.header}>
-        <Text accessibilityRole="header" numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} style={styles.appName}>
-          Marche du Faucon
-        </Text>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Synchroniser la journée"
-          onPress={() => void runDailySync()}
-          style={styles.iconButton}
-        >
-          <Ionicons name="refresh" size={20} color={theme.colors.bone} />
-        </Pressable>
-      </View>
-
-      <View
-        style={styles.hero}
+    <Screen scroll variant="page">
+      <Panel
+        slant
+        style={styles.journey}
         accessible
-        accessibilityLabel={`Pas du jour : ${formatInt(stepsToday)}, soit ${formatDecimal(distanceTodayKm, 2)} kilomètres`}
+        accessibilityLabel={`La Traque : ${formatDecimal(progress.totalDistanceKm)} kilomètres ${journeyLine}`}
       >
-        <Text style={styles.label}>Pas du jour</Text>
-        <Text {...theme.fitDisplayText} style={styles.steps}>
-          {formatInt(stepsToday)}
-        </Text>
-        <Text style={styles.heroMeta}>{`soit ${formatDecimal(distanceTodayKm, 2)} km parcourus`}</Text>
-      </View>
-
-      <View style={styles.camp}>
-        <CampVignette scene={resolveCampScene(new Date().getHours(), isCalm, previous.title)} />
-      </View>
-
-      <InkCard alert={!isCalm} style={styles.brandStrip}>
-        <BrandMark visual={{ state: isCalm ? "active" : "bleeding", intensity: isCalm ? 0.4 : 0.9 }} width={24} />
-        <View style={styles.brandText}>
-          <Text style={[styles.label, !isCalm && styles.labelAlert]}>La Marque</Text>
-          <Text style={styles.body}>
-            {isCalm
-              ? `Apaisée · seuil de ${formatInt(threshold)} pas franchi`
-              : `Elle saigne · encore ${formatInt(stepsLeftToday)} pas`}
+        {/* La trame encre la case à mesure qu'on avance dans la Traque. */}
+        <Screentone color={theme.colors.toneLight} step={5} dot={1.5} style={{ width: `${progress.progressPct}%` }} />
+        <View style={styles.journeyTop}>
+          <Text {...theme.fitDisplayText} style={styles.km}>
+            {formatDecimal(progress.totalDistanceKm)}
+            <Text style={styles.kmUnit}> km</Text>
           </Text>
-          <ProgressBar pct={(stepsToday / threshold) * 100} calm={isCalm} accessibilityLabel="Seuil de pas du jour" />
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Synchroniser la journée"
+            onPress={() => void runDailySync()}
+            style={({ pressed }) => [styles.iconButton, pressed && styles.iconButtonPressed]}
+          >
+            <Ionicons name="refresh" size={20} color={theme.colors.black} />
+          </Pressable>
         </View>
-        <View
-          style={styles.streak}
-          accessible
-          accessibilityLabel={`Série : ${streakDays} ${streakDays > 1 ? "jours" : "jour"}`}
-        >
-          <Text {...theme.fitDisplayText} style={styles.streakValue}>
-            {streakDays}
-          </Text>
-          <Text style={styles.label}>{streakDays > 1 ? "jours" : "jour"}</Text>
+        <Text style={styles.journeyLine}>{journeyLine}</Text>
+        <View style={styles.journeyBar}>
+          <ProgressBar pct={progress.progressPct} calm height={10} accessibilityLabel="Avancée dans la Traque" />
         </View>
-      </InkCard>
+      </Panel>
 
-      {activeDuels.map((duel) => (
-        <View key={duel.encounter.id} style={styles.duel}>
-          <DuelCard duel={duel} />
-        </View>
-      ))}
-
-      <PaperCard style={styles.journey}>
-        {panel ? (
-          <View style={styles.panelFrame}>
-            <View style={styles.panelBlend}>
-              <Image source={panel} style={styles.panel} resizeMode="cover" accessibilityIgnoresInvertColors />
-            </View>
-            <View style={styles.panelCaption}>
-              <Text style={styles.panelCaptionText}>
-                {`Dernier point · ${previous.title} · ${formatInt(previous.kmThreshold)} km`}
-              </Text>
-            </View>
-          </View>
-        ) : null}
-
-        <View style={styles.journeyBody}>
+      <View style={styles.row}>
+        <Panel style={styles.next}>
           {next ? (
             <>
-              <Text style={styles.paperKicker}>{`${progress.lap > 1 ? `Tour ${progress.lap} · ` : ""}Prochain point · ${formatInt(next.kmThreshold)} km`}</Text>
-              <Text style={styles.paperTitle}>{next.title}</Text>
-              <View style={styles.paperBar}>
-                <ProgressBar
-                  pct={progress.currentSegmentProgressPct}
-                  onPaper
-                  height={8}
-                  accessibilityLabel={`Trajet vers ${next.title}`}
-                />
-              </View>
-              <View style={styles.paperRow}>
-                <Text style={styles.paperSmall}>{`${formatInt(previous.kmThreshold)} km`}</Text>
-                <Text style={styles.paperSmall}>
-                  {`${formatDecimal(remainingKm)} km restants · ≈ ${formatInt(remainingSteps)} pas`}
+              <Text style={styles.nextTitle}>{next.title}</Text>
+              <View>
+                <Text {...theme.fitDisplayText} style={styles.figure}>
+                  {formatDecimal(remainingKm)}
+                  <Text style={styles.figureUnit}> km</Text>
                 </Text>
+                <Text style={styles.small}>{`≈ ${formatInt(remainingSteps)} pas jusqu'au point ${formatInt(next.kmThreshold)} km`}</Text>
               </View>
             </>
           ) : (
             <>
-              <Text style={styles.paperKicker}>Périple accompli</Text>
-              <Text style={styles.paperTitle}>{previous.title}</Text>
+              <Text style={styles.nextTitle}>Périple accompli</Text>
+              <Text style={styles.small}>{`Dernier point : ${previous.title}`}</Text>
             </>
           )}
-        </View>
-      </PaperCard>
+        </Panel>
 
-      <View style={styles.totals}>
-        <Total label="Pas au total" value={formatInt(progress.totalSteps)} />
-        <Total label="Distance" value={`${formatDecimal(progress.totalDistanceKm)} km`} />
-        <Total label="Trajet" value={`${formatDecimal(progress.progressPct)} %`} />
+        <Panel padded={false} style={styles.lockedPanel}>
+          <Screentone color={theme.colors.tone} step={4} dot={1.1} />
+          {next ? (
+            <View
+              style={styles.lockedCaption}
+              accessible
+              accessibilityLabel={`Case ${unlockedCount + 1} sur ${BERSERK_CHECKPOINTS.length}, se révèle à ${formatInt(next.kmThreshold)} kilomètres`}
+            >
+              <Ionicons name="lock-closed" size={16} color={theme.colors.paper} />
+              <Text style={styles.lockedText}>{`Case ${unlockedCount + 1} sur ${BERSERK_CHECKPOINTS.length}`}</Text>
+              <Text style={styles.lockedSmall}>{`se révèle à ${formatInt(next.kmThreshold)} km`}</Text>
+            </View>
+          ) : (
+            <View style={styles.lockedCaption}>
+              <Text style={styles.lockedText}>{`${BERSERK_CHECKPOINTS.length} cases sur ${BERSERK_CHECKPOINTS.length}`}</Text>
+            </View>
+          )}
+        </Panel>
       </View>
 
+      <Panel>
+        <View style={styles.todayRow}>
+          <View
+            style={styles.todayCol}
+            accessible
+            accessibilityLabel={`Aujourd'hui : ${formatInt(stepsToday)} pas, objectif ${formatInt(threshold)}, soit ${formatDecimal(distanceTodayKm, 2)} kilomètres`}
+          >
+            <Text {...theme.fitDisplayText} style={styles.figure}>
+              {formatInt(stepsToday)}
+            </Text>
+            <Text style={styles.small}>{`pas aujourd'hui · objectif ${formatInt(threshold)}`}</Text>
+          </View>
+          <View
+            style={[styles.todayCol, styles.markCol]}
+            accessible
+            accessibilityLabel={isCalm ? "La Marque est apaisée" : `La Marque saigne : encore ${formatInt(stepsLeftToday)} pas`}
+          >
+            <View style={styles.markHead}>
+              <BrandMark visual={{ state: isCalm ? "active" : "bleeding", intensity: isCalm ? 0.4 : 0.9 }} width={18} />
+              <Text {...theme.fitDisplayText} style={[styles.figure, !isCalm && styles.figureRed]}>
+                {isCalm ? "Apaisée" : formatInt(stepsLeftToday)}
+              </Text>
+            </View>
+            <Text style={styles.small}>{isCalm ? "la Marque se tait" : "pas pour apaiser la Marque"}</Text>
+          </View>
+        </View>
+        <View style={styles.week}>
+          <DayCells days={week} thresholdSteps={threshold} />
+          <Text
+            style={styles.streak}
+            accessibilityLabel={`Série : ${streakDays} ${streakDays > 1 ? "jours" : "jour"}`}
+          >{`Série ${streakDays} j`}</Text>
+        </View>
+      </Panel>
+
+      {activeDuels.map((duel) => (
+        <DuelCard key={duel.encounter.id} duel={duel} />
+      ))}
+
+      <Panel padded={false}>
+        <CampVignette scene={resolveCampScene(new Date().getHours(), isCalm, previous.title)} />
+      </Panel>
+
+      <Panel style={styles.totals}>
+        <Total label="pas au total" value={formatInt(progress.totalSteps)} />
+        <View style={styles.totalRule} />
+        <Total label="de la Traque" value={`${formatDecimal(progress.progressPct)} %`} />
+      </Panel>
+
       {__DEV__ ? (
-        <View style={styles.dev}>
-          <Text style={styles.label}>Outils de développement</Text>
+        <Panel style={styles.dev}>
+          <Text style={styles.devTitle}>Outils de développement</Text>
           <Button label="+500 pas" variant="secondary" onPress={() => void addDevSteps(500)} />
           <Button
             label={next ? `Aller à : ${next.title}` : "Parcours terminé"}
@@ -179,7 +196,7 @@ export function HomeScreen() {
           />
           <Button label="Réinitialiser la progression" variant="danger" onPress={() => void handleResetDev()} />
           <Button label="Voir la carte" variant="secondary" onPress={() => router.push("/(tabs)/map")} />
-        </View>
+        </Panel>
       ) : null}
     </Screen>
   );
@@ -187,66 +204,54 @@ export function HomeScreen() {
 
 function Total({ label, value }: { label: string; value: string }) {
   return (
-    <View style={styles.total} accessible accessibilityLabel={`${label} : ${value}`}>
-      <Text style={styles.label}>{label}</Text>
+    <View style={styles.total} accessible accessibilityLabel={`${value} ${label}`}>
       <Text {...theme.fitDisplayText} style={styles.totalValue}>
         {value}
       </Text>
+      <Text style={styles.small}>{label}</Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", minHeight: 44 },
-  appName: { ...theme.text.displayM, color: theme.colors.bone, flex: 1 },
+  journey: { paddingTop: theme.space[8] },
+  journeyTop: { flexDirection: "row", alignItems: "flex-start", gap: theme.space[8] },
+  km: { ...theme.text.displayXl, color: theme.colors.black, flex: 1 },
+  kmUnit: { ...theme.text.displayM, letterSpacing: 0 },
   iconButton: {
-    width: 44,
-    height: 44,
+    width: 48,
+    height: 48,
+    marginTop: theme.space[8],
     alignItems: "center",
     justifyContent: "center",
-    borderWidth: 1,
-    borderColor: theme.colors.ash,
-    borderRadius: theme.radius[4],
+    borderWidth: theme.frame,
+    borderColor: theme.colors.black,
+    backgroundColor: theme.colors.paper,
   },
-  duel: { marginTop: theme.space[16] },
-  camp: { marginTop: theme.space[16] },
-  hero: { marginTop: theme.space[16] },
-  label: { ...theme.text.label, color: theme.colors.boneDim },
-  labelAlert: { color: theme.colors.bloodEmber },
-  steps: { ...theme.text.displayXl, color: theme.colors.bone },
-  heroMeta: { ...theme.text.body, color: theme.colors.boneDim },
-  body: { ...theme.text.body, color: theme.colors.bone },
-  brandStrip: {
-    marginTop: theme.space[16],
-    flexDirection: "row",
-    alignItems: "center",
-    gap: theme.space[16],
-    paddingVertical: theme.space[8],
-  },
-  brandText: { flex: 1, gap: theme.space[4] },
-  streak: { alignItems: "flex-end" },
-  streakValue: { ...theme.text.displayM, color: theme.colors.bone },
-  journey: { marginTop: theme.space[16], paddingBottom: theme.space[16] },
-  panelFrame: { height: 168, overflow: "hidden", backgroundColor: theme.colors.bone },
-  panelBlend: { flex: 1, mixBlendMode: "multiply" },
-  panel: { width: "100%", height: "100%" },
-  panelCaption: {
-    position: "absolute",
-    left: 0,
-    bottom: 0,
-    backgroundColor: theme.colors.ink,
-    paddingVertical: theme.space[4],
-    paddingHorizontal: theme.space[8],
-  },
-  panelCaptionText: { ...theme.text.label, color: theme.colors.bone },
-  journeyBody: { paddingHorizontal: theme.space[8], paddingTop: theme.space[16] },
-  paperKicker: { ...theme.text.label, color: theme.colors.blood },
-  paperTitle: { ...theme.text.displayM, color: theme.colors.ink },
-  paperBar: { marginTop: theme.space[16] },
-  paperRow: { flexDirection: "row", justifyContent: "space-between", marginTop: theme.space[8], gap: theme.space[8] },
-  paperSmall: { ...theme.text.small, color: theme.colors.umber },
-  totals: { marginTop: theme.space[16], flexDirection: "row", gap: theme.space[16] },
-  total: { flex: 1, borderTopWidth: 1, borderTopColor: theme.colors.ash, paddingTop: theme.space[8] },
-  totalValue: { ...theme.text.displayM, color: theme.colors.bone },
-  dev: { marginTop: theme.space[32], gap: theme.space[8] },
+  iconButtonPressed: { backgroundColor: theme.colors.toneLight },
+  journeyLine: { ...theme.text.bodyStrong, color: theme.colors.black },
+  journeyBar: { marginTop: theme.space[16] },
+  row: { flexDirection: "row", gap: theme.gutter },
+  next: { flex: 1, minHeight: 176, justifyContent: "space-between", gap: theme.space[16] },
+  nextTitle: { ...theme.text.displayS, color: theme.colors.black },
+  figure: { ...theme.text.figure, color: theme.colors.black },
+  figureRed: { color: theme.colors.red },
+  figureUnit: { ...theme.text.bodyStrong },
+  small: { ...theme.text.small, color: theme.colors.blackSoft },
+  lockedPanel: { flex: 1, minHeight: 176, justifyContent: "flex-end", backgroundColor: theme.colors.toneLight },
+  lockedCaption: { margin: theme.space[8], padding: theme.space[8], backgroundColor: theme.colors.black, gap: 2 },
+  lockedText: { ...theme.text.bodyStrong, color: theme.colors.paper },
+  lockedSmall: { ...theme.text.small, color: theme.colors.toneLight },
+  todayRow: { flexDirection: "row" },
+  todayCol: { flex: 1, gap: theme.space[4] },
+  markCol: { borderLeftWidth: theme.frame, borderLeftColor: theme.colors.black, paddingLeft: theme.space[16], marginLeft: theme.space[16] },
+  markHead: { flexDirection: "row", alignItems: "center", gap: theme.space[8] },
+  week: { flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: theme.space[16], marginTop: theme.space[16] },
+  streak: { ...theme.text.bodyStrong, color: theme.colors.black },
+  totals: { flexDirection: "row" },
+  totalRule: { width: theme.frame, backgroundColor: theme.colors.black, marginHorizontal: theme.space[16] },
+  total: { flex: 1, gap: theme.space[4] },
+  totalValue: { ...theme.text.displayM, color: theme.colors.black },
+  dev: { gap: theme.space[8] },
+  devTitle: { ...theme.text.bodyStrong, color: theme.colors.black },
 });

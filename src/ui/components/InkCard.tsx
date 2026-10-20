@@ -4,7 +4,7 @@ import { theme } from "../../core/theme";
 
 type InkCardProps = {
   children: ReactNode;
-  /** Bordure et fond rouges : état d'alerte (la Marque saigne). */
+  /** Cadre rouge : état d'alerte (la Marque saigne). */
   alert?: boolean;
   style?: StyleProp<ViewStyle>;
   /** Lue d'un seul tenant par TalkBack, avec ce libellé. */
@@ -12,7 +12,7 @@ type InkCardProps = {
   accessibilityLabel?: string;
 };
 
-/** Carte sombre : fond « inkRaised », filet « ash ». */
+/** Case cadrée, pour une case posée sur du papier (hors planche noire). */
 export function InkCard({ children, alert = false, style, accessible, accessibilityLabel }: InkCardProps) {
   return (
     <View
@@ -27,14 +27,10 @@ export function InkCard({ children, alert = false, style, accessible, accessibil
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: theme.colors.inkRaised,
-    borderWidth: 1,
-    borderColor: theme.colors.ash,
-    borderRadius: theme.radius[4],
+    backgroundColor: theme.colors.paper,
+    borderWidth: theme.frame,
+    borderColor: theme.colors.black,
     padding: theme.space[16],
   },
-  alert: {
-    borderColor: theme.colors.bloodGlow,
-    backgroundColor: "rgba(138,3,3,0.22)",
-  },
+  alert: { borderColor: theme.colors.red },
 });

@@ -16,7 +16,7 @@ const ICONS: Record<string, { on: IconName; off: IconName }> = {
 
 export default function TabsLayout() {
   const insets = useSafeAreaInsets();
-  const minimumBottomPadding = Platform.OS === "android" ? 16 : 8;
+  const minimumBottomPadding = Platform.OS === "android" ? 12 : 8;
   const bottomPadding = Math.max(insets.bottom, minimumBottomPadding);
 
   return (
@@ -24,24 +24,24 @@ export default function TabsLayout() {
       screenOptions={({ route }) => ({
         headerShown: false,
         tabBarShowLabel: true,
-        tabBarActiveTintColor: theme.colors.bloodEmber,
-        tabBarInactiveTintColor: theme.colors.boneDim,
+        tabBarActiveTintColor: theme.colors.black,
+        tabBarInactiveTintColor: theme.colors.blackSoft,
         tabBarStyle: {
-          backgroundColor: theme.colors.inkRaised,
-          borderTopColor: theme.colors.ash,
-          borderTopWidth: 1,
-          height: 56 + bottomPadding,
+          backgroundColor: theme.colors.paper,
+          borderTopColor: theme.colors.black,
+          borderTopWidth: 3,
+          height: 68 + bottomPadding,
           paddingTop: theme.space[8],
           paddingBottom: bottomPadding,
         },
-        tabBarLabelStyle: { ...theme.text.label },
-        tabBarIcon: ({ color, size, focused }) => {
+        tabBarLabelStyle: { ...theme.text.label, letterSpacing: 0, marginTop: theme.space[4] },
+        tabBarIcon: ({ color, focused }) => {
           const icon = ICONS[route.name] ?? { on: "ellipse", off: "ellipse-outline" };
 
+          // Indicateur Material : une pastille derrière l'icône active, ici encrée et à angles vifs.
           return (
-            <View style={styles.iconWrap}>
-              {focused ? <View style={styles.indicator} /> : null}
-              <Ionicons name={focused ? icon.on : icon.off} size={size} color={color} />
+            <View style={[styles.indicator, focused && styles.indicatorOn]}>
+              <Ionicons name={focused ? icon.on : icon.off} size={22} color={focused ? theme.colors.paper : color} />
             </View>
           );
         },
@@ -57,13 +57,6 @@ export default function TabsLayout() {
 }
 
 const styles = StyleSheet.create({
-  iconWrap: { alignItems: "center", justifyContent: "center" },
-  /** Repère de l'onglet actif, au-dessus de l'icône. */
-  indicator: {
-    position: "absolute",
-    top: -theme.space[8] - 2,
-    width: 24,
-    height: 2,
-    backgroundColor: theme.colors.bloodGlow,
-  },
+  indicator: { width: 56, height: 32, alignItems: "center", justifyContent: "center" },
+  indicatorOn: { backgroundColor: theme.colors.black },
 });
