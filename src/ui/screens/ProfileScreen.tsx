@@ -99,18 +99,22 @@ export function ProfileScreen() {
         <BrandMark visual={status.visual} width={40} />
       </Panel>
 
-      <View style={styles.statsRow}>
-        <Stat label="de série" value={streakLabel} />
-        <Stat label="meilleure série" value={`${bestStreak} ${bestStreak > 1 ? "jours" : "jour"}`} />
-      </View>
-      <View style={styles.statsRow}>
-        <Stat label="pas au total" value={formatInt(progress.totalSteps)} />
-        <Stat label="distance du tour" value={`${formatDecimal(progress.totalDistanceKm)} km`} />
-      </View>
-      <View style={styles.statsRow}>
-        <Stat label="chroniques" value={`${unlockedCount} / ${BERSERK_CHECKPOINTS.length}`} />
-        <Stat label="tour de Traque" value={`${progress.lap}`} />
-      </View>
+      {/* Le voyage d'abord : la distance en grand, le reste en liste réglée. */}
+      <Panel
+        accessible
+        accessibilityLabel={`${formatDecimal(progress.totalDistanceKm)} kilomètres parcourus dans ce tour, ${unlockedCount} chroniques sur ${BERSERK_CHECKPOINTS.length}`}
+      >
+        <Text {...theme.fitDisplayText} style={styles.bigFigure}>
+          {formatDecimal(progress.totalDistanceKm)}
+          <Text style={styles.bigUnit}> km</Text>
+        </Text>
+        <Text style={styles.small}>{`parcourus dans le tour ${progress.lap} · ${unlockedCount} chroniques sur ${BERSERK_CHECKPOINTS.length}`}</Text>
+      </Panel>
+      <Panel reversed>
+        <StatRow label="Série" value={streakLabel} />
+        <StatRow label="Meilleure série" value={`${bestStreak} ${bestStreak > 1 ? "jours" : "jour"}`} />
+        <StatRow label="Pas depuis le début" value={formatInt(progress.totalSteps)} last />
+      </Panel>
 
       <Panel style={styles.section}>
         <Text accessibilityRole="header" style={styles.heading}>
@@ -271,14 +275,14 @@ const HISTORY_PERIODS: { value: HistoryPeriod; label: string }[] = [
 
 const PERIOD_TOTAL_LABEL: Record<HistoryPeriod, string> = { week: "cette semaine", month: "ce mois", all: "au total" };
 
-function Stat({ label, value }: { label: string; value: string }) {
+function StatRow({ label, value, last = false }: { label: string; value: string; last?: boolean }) {
   return (
-    <Panel reversed style={styles.stat} accessible accessibilityLabel={`${value} ${label}`}>
+    <View style={[styles.statRow, !last && styles.statRowRule]} accessible accessibilityLabel={`${label} : ${value}`}>
+      <Text style={styles.statLabel}>{label}</Text>
       <Text {...theme.fitDisplayText} style={styles.statValue}>
         {value}
       </Text>
-      <Text style={styles.smallOnBlack}>{label}</Text>
-    </Panel>
+    </View>
   );
 }
 
@@ -298,8 +302,11 @@ const styles = StyleSheet.create({
   headerText: { flex: 1, gap: theme.space[4] },
   name: { ...theme.text.displayL, color: theme.colors.paper },
   subtitle: { ...theme.text.body, color: theme.colors.paperSoft },
-  statsRow: { flexDirection: "row", gap: theme.gutter },
-  stat: { flex: 1, gap: 2 },
+  bigFigure: { ...theme.text.displayXl, color: theme.colors.black },
+  bigUnit: { ...theme.text.displayM, letterSpacing: 0 },
+  statRow: { flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: theme.space[16], paddingVertical: theme.space[8] },
+  statRowRule: { borderBottomWidth: 1, borderBottomColor: theme.colors.toneDark },
+  statLabel: { ...theme.text.body, color: theme.colors.paperSoft, flexShrink: 1 },
   statValue: { ...theme.text.displayM, color: theme.colors.paper },
   section: { gap: theme.space[16] },
   heading: { ...theme.text.displayM, color: theme.colors.black },

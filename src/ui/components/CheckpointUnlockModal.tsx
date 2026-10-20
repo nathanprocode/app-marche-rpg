@@ -16,6 +16,7 @@ import { useUIStore } from "../../store/useUIStore";
 import { BrandMark } from "./BrandMark";
 import { CompanionSprite } from "./CompanionSprite";
 import { Button } from "./Button";
+import { SpeedLines } from "./SpeedLines";
 
 type CheckpointUnlockModalProps = {
   enabled: boolean;
@@ -85,6 +86,7 @@ export function CheckpointUnlockModal({ enabled }: CheckpointUnlockModalProps) {
               showsVerticalScrollIndicator={false}
             >
               <View style={styles.header}>
+                <SpeedLines style={styles.speedLines} />
                 <BrandMark visual={{ state: "bleeding", intensity: 0.9 }} width={20} />
                 <Text accessibilityRole="header" style={styles.title}>
                   {checkpoint.title}
@@ -121,7 +123,7 @@ export function CheckpointUnlockModal({ enabled }: CheckpointUnlockModalProps) {
               <Button label="Voir sur la carte" variant="secondary" onDark onPress={showOnMap} />
               <Button
                 label="Partager"
-                variant="secondary"
+                variant="text"
                 onDark
                 onPress={() =>
                   requestShare(
@@ -140,9 +142,11 @@ export function CheckpointUnlockModal({ enabled }: CheckpointUnlockModalProps) {
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: theme.colors.black },
   topRule: { position: "absolute", top: 0, left: 0, right: 0, height: theme.gutter, backgroundColor: theme.colors.redOnBlack, zIndex: 2 },
-  header: { alignItems: "center" },
+  header: { alignItems: "center", paddingVertical: theme.space[24] },
+  // Les lignes de concentration débordent de l'en-tête pour couvrir toute la largeur de la page.
+  speedLines: { top: -theme.space[48], bottom: -theme.space[24], left: -theme.space[16], right: -theme.space[16] },
   title: { ...theme.text.displayL, color: theme.colors.paper, marginTop: theme.space[16], textAlign: "center" },
-  meta: { ...theme.text.bodyStrong, color: theme.colors.redOnBlack, textAlign: "center", marginTop: theme.space[4] },
+  meta: { ...theme.text.bodyStrong, color: theme.colors.paperSoft, textAlign: "center", marginTop: theme.space[4] },
   content: { paddingHorizontal: theme.space[16], paddingBottom: theme.space[16] },
   // La case du manga, cadrée de papier comme une planche posée sur la page noire.
   plate: { marginTop: theme.space[24], borderWidth: theme.gutter, borderColor: theme.colors.paper, backgroundColor: theme.colors.paper },
@@ -158,6 +162,12 @@ const styles = StyleSheet.create({
   },
   companionText: { flex: 1, gap: 2 },
   companionName: { ...theme.text.displayS, color: theme.colors.black },
-  companionTitle: { ...theme.text.small, fontFamily: theme.fontFamily.gothicBold, color: theme.colors.red },
-  footer: { paddingHorizontal: theme.space[16], paddingTop: theme.space[16], gap: theme.space[8] },
+  companionTitle: { ...theme.text.small, fontFamily: theme.fontFamily.gothicBold, color: theme.colors.blackSoft },
+  footer: {
+    paddingHorizontal: theme.space[16],
+    paddingTop: theme.space[16],
+    gap: theme.space[8],
+    borderTopWidth: theme.frame,
+    borderTopColor: theme.colors.toneDark,
+  },
 });

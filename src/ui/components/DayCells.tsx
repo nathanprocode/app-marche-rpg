@@ -8,6 +8,8 @@ const CELL = 36;
 type DayCellsProps = {
   /** Les derniers jours, du plus ancien à aujourd'hui (voir lastDays). */
   days: HistoryDay[];
+  /** Jours connus de l'historique de ce téléphone : un jour absent n'est ni tenu ni manqué, juste inconnu. */
+  recordedDayKeys: ReadonlySet<string>;
   thresholdSteps: number;
   /** Cases posées dans une case inversée (fond noir). */
   reversed?: boolean;
@@ -15,15 +17,15 @@ type DayCellsProps = {
 
 /**
  * Les jours en cases : pleine quand l'objectif est tenu, barrée quand il a été manqué,
- * creuse (en pointillés) pour aujourd'hui tant qu'il n'est pas atteint.
+ * en pointillés pour aujourd'hui tant qu'il n'est pas atteint, vide quand le téléphone n'en sait rien.
  */
-export function DayCells({ days, thresholdSteps, reversed = false }: DayCellsProps) {
+export function DayCells({ days, thresholdSteps, recordedDayKeys, reversed = false }: DayCellsProps) {
   return (
     <View style={styles.row}>
       {days.map((day) => {
         const held = day.steps >= thresholdSteps;
-        const missed = !held && !day.isToday;
-        const status = held ? "objectif tenu" : missed ? "objectif manqué" : "en cours";
+        const missed = !held && !day.isToday && recordedDayKeys.has(day.dayKey);
+        const status = held ? "objectif tenu" : missed ? "objectif manqué" : day.isToday ? "en cours" : "pas de données";
 
         return (
           <View
@@ -35,6 +37,7 @@ export function DayCells({ days, thresholdSteps, reversed = false }: DayCellsPro
               reversed && styles.cellReversed,
               held && (reversed ? styles.heldReversed : styles.held),
               day.isToday && !held && styles.today,
+              !held && !missed && !day.isToday && styles.unknown,
             ]}
           >
             {missed ? (
@@ -65,6 +68,7 @@ const styles = StyleSheet.create({
   held: { backgroundColor: theme.colors.black },
   heldReversed: { backgroundColor: theme.colors.paper },
   today: { borderStyle: "dashed" },
+  unknown: { opacity: 0.4 },
   letter: { ...theme.text.label, letterSpacing: 0, color: theme.colors.black },
   letterHeld: { color: theme.colors.paper },
   letterReversed: { color: theme.colors.paper },

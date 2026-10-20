@@ -336,7 +336,7 @@ const styles = StyleSheet.create({
   thumbImage: { width: "100%", height: "100%" },
   chronicleText: { flex: 1, padding: theme.space[16], gap: theme.space[4] },
   chronicleTitle: { ...theme.text.displayS, color: theme.colors.black },
-  chronicleMeta: { ...theme.text.small, fontFamily: theme.fontFamily.gothicBold, color: theme.colors.red },
+  chronicleMeta: { ...theme.text.small, fontFamily: theme.fontFamily.gothicBold, color: theme.colors.blackSoft },
   chronicleDescription: { ...theme.text.small, color: theme.colors.blackSoft },
   locked: { flexDirection: "row", alignItems: "center", gap: theme.space[16], minHeight: 96 },
   lockedText: { flex: 1, gap: 2 },

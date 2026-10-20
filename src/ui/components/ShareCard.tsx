@@ -79,7 +79,7 @@ const styles = StyleSheet.create({
   topRule: { position: "absolute", top: 0, left: 0, right: 0, height: theme.gutter, backgroundColor: theme.colors.redOnBlack },
   header: { alignItems: "center" },
   title: { ...theme.text.displayM, color: theme.colors.paper, marginTop: theme.space[8], textAlign: "center", alignSelf: "stretch" },
-  kicker: { ...theme.text.small, fontFamily: theme.fontFamily.gothicBold, color: theme.colors.redOnBlack, marginTop: theme.space[4], textAlign: "center" },
+  kicker: { ...theme.text.small, fontFamily: theme.fontFamily.gothicBold, color: theme.colors.paperSoft, marginTop: theme.space[4], textAlign: "center" },
   subtitle: { ...theme.text.body, color: theme.colors.paperSoft, textAlign: "center", marginTop: theme.space[4] },
   middle: { flex: 1, minHeight: 0, justifyContent: "center", paddingVertical: theme.space[16] },
   mark: { alignItems: "center" },

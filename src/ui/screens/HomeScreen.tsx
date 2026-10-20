@@ -46,6 +46,7 @@ export function HomeScreen() {
   const stepsLeftToday = Math.max(0, threshold - stepsToday);
   // L'historique du jour peut avoir un temps de retard sur le compteur : le compteur fait foi pour aujourd'hui.
   const week = lastDays(history, new Date()).map((day) => (day.isToday ? { ...day, steps: stepsToday } : day));
+  const recordedDayKeys = new Set(Object.keys(history));
 
   const previousIndex = Math.max(
     0,
@@ -73,7 +74,7 @@ export function HomeScreen() {
         accessibilityLabel={`La Traque : ${formatDecimal(progress.totalDistanceKm)} kilomètres ${journeyLine}`}
       >
         {/* La trame encre la case à mesure qu'on avance dans la Traque. */}
-        <Screentone color={theme.colors.toneLight} step={5} dot={1.5} style={{ width: `${progress.progressPct}%` }} />
+        <Screentone color={theme.colors.tone} step={4} dot={1.3} style={{ width: `${progress.progressPct}%` }} />
         <View style={styles.journeyTop}>
           <Text {...theme.fitDisplayText} style={styles.km}>
             {formatDecimal(progress.totalDistanceKm)}
@@ -91,6 +92,8 @@ export function HomeScreen() {
         <Text style={styles.journeyLine}>{journeyLine}</Text>
         <View style={styles.journeyBar}>
           <ProgressBar pct={progress.progressPct} calm height={10} accessibilityLabel="Avancée dans la Traque" />
+          {/* « Tu es ici » : le seul repère rouge du voyage. */}
+          <View pointerEvents="none" style={[styles.hereTick, { left: `${Math.min(100, progress.progressPct)}%` }]} />
         </View>
       </Panel>
 
@@ -162,7 +165,7 @@ export function HomeScreen() {
           </View>
         </View>
         <View style={styles.week}>
-          <DayCells days={week} thresholdSteps={threshold} reversed />
+          <DayCells days={week} thresholdSteps={threshold} recordedDayKeys={recordedDayKeys} reversed />
           <Text
             style={[styles.streak, styles.onBlack]}
             accessibilityLabel={`Série : ${streakDays} ${streakDays > 1 ? "jours" : "jour"}`}
@@ -231,6 +234,7 @@ const styles = StyleSheet.create({
   iconButtonPressed: { backgroundColor: theme.colors.toneLight },
   journeyLine: { ...theme.text.bodyStrong, color: theme.colors.black },
   journeyBar: { marginTop: theme.space[16] },
+  hereTick: { position: "absolute", top: -6, width: 4, marginLeft: -2, height: 26, backgroundColor: theme.colors.red },
   row: { flexDirection: "row", gap: theme.gutter },
   next: { flex: 1, minHeight: 176, justifyContent: "space-between", gap: theme.space[16] },
   nextTitle: { ...theme.text.displayS, color: theme.colors.black },

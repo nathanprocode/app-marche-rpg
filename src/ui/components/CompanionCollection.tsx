@@ -94,7 +94,7 @@ const styles = StyleSheet.create({
   // flexGrow : toutes les cases d'une rangée prennent la hauteur de la plus haute.
   card: { flexGrow: 1, alignItems: "center", paddingVertical: theme.space[16], paddingHorizontal: theme.space[4], minHeight: 156 },
   name: { ...theme.text.displayS, fontSize: 16, lineHeight: 20, color: theme.colors.black, marginTop: theme.space[8], textAlign: "center" },
-  title: { ...theme.text.label, letterSpacing: 0, color: theme.colors.red, textAlign: "center", marginTop: 2 },
+  title: { ...theme.text.label, letterSpacing: 0, color: theme.colors.blackSoft, textAlign: "center", marginTop: 2 },
   nameLocked: { ...theme.text.displayS, fontSize: 16, lineHeight: 20, color: theme.colors.paperSoft, marginTop: theme.space[8] },
   titleLocked: { ...theme.text.label, letterSpacing: 0, color: theme.colors.paperSoft, textAlign: "center", marginTop: 2 },
   overlay: { flex: 1, justifyContent: "center", padding: theme.space[16], backgroundColor: "rgba(17,17,17,0.94)" },
@@ -112,6 +112,6 @@ const styles = StyleSheet.create({
   sheetContent: { alignItems: "center", padding: theme.space[24] },
   sheetName: { ...theme.text.displayL, color: theme.colors.black, textAlign: "center", marginTop: theme.space[16] },
   sheetTitle: { ...theme.text.bodyStrong, color: theme.colors.blackSoft, textAlign: "center" },
-  sheetMeta: { ...theme.text.small, fontFamily: theme.fontFamily.gothicBold, color: theme.colors.red, marginTop: theme.space[8], textAlign: "center" },
+  sheetMeta: { ...theme.text.small, fontFamily: theme.fontFamily.gothicBold, color: theme.colors.blackSoft, marginTop: theme.space[8], textAlign: "center" },
   sheetDescription: { ...theme.text.body, color: theme.colors.black, marginTop: theme.space[16] },
 });

@@ -10,14 +10,24 @@ type BandMarkerProps = {
   index: number;
   /** Tour de Traque, affiché seulement à partir du deuxième. */
   lap: number;
+  /** Décalage horizontal de l'étiquette (px) pour qu'elle reste entière dans l'écran. */
+  labelShiftX?: number;
 };
 
 const LABEL_LANE_WIDTH = 220;
 const LABEL_STAGGER = 22;
 
+/** Largeur moyenne d'un caractère de l'étiquette (texte 14 px gras), pour estimer si elle déborde. */
+export const BAND_LABEL_CHAR_PX = 8;
+
+/** Le texte affiché sous le point d'un ami. */
+export function bandLabel(name: string, lap: number): string {
+  return lap > 1 ? `${name} · tour ${lap}` : name;
+}
+
 /** Un ami de la Bande sur la carte : un point et son nom, rien d'autre (Guts reste le seul sprite). */
-export function BandMarker({ name, xPct, yPct, index, lap }: BandMarkerProps) {
-  const label = lap > 1 ? `${name} · tour ${lap}` : name;
+export function BandMarker({ name, xPct, yPct, index, lap, labelShiftX = 0 }: BandMarkerProps) {
+  const label = bandLabel(name, lap);
 
   return (
     <View
@@ -27,7 +37,7 @@ export function BandMarker({ name, xPct, yPct, index, lap }: BandMarkerProps) {
       style={[styles.slot, { left: `${xPct}%`, top: `${yPct}%` }]}
     >
       <View style={styles.dot} />
-      <View style={[styles.lane, { top: 14 + (index % 3) * LABEL_STAGGER }]}>
+      <View style={[styles.lane, { top: 14 + (index % 3) * LABEL_STAGGER, marginLeft: labelShiftX }]}>
         <View style={styles.chip}>
           <Text numberOfLines={1} style={styles.chipText}>
             {label}

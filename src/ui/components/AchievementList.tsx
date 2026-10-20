@@ -96,6 +96,6 @@ const styles = StyleSheet.create({
   onBlack: { color: theme.colors.paper },
   small: { ...theme.text.small, color: theme.colors.blackSoft },
   smallOnBlack: { ...theme.text.small, color: theme.colors.paperSoft },
-  date: { ...theme.text.small, fontFamily: theme.fontFamily.gothicBold, color: theme.colors.red, marginTop: theme.space[4] },
+  date: { ...theme.text.small, fontFamily: theme.fontFamily.gothicBold, color: theme.colors.black, marginTop: theme.space[4] },
   bar: { marginTop: theme.space[8] },
 });

@@ -19,20 +19,21 @@ const FIRE = { x: 0.24, y: 0.78 };
 
 /** Braises : écart horizontal au départ (px), retard, durée, dérive latérale (px), taille (px). */
 const EMBERS = [
-  { dx: -4, delay: 0, duration: 2200, sway: 10, size: 3, color: "#FFB347" },
-  { dx: 6, delay: 500, duration: 2600, sway: -8, size: 2, color: "#FF7A1A" },
-  { dx: 0, delay: 1100, duration: 2000, sway: 6, size: 3, color: "#FFD27A" },
-  { dx: -8, delay: 1500, duration: 2900, sway: -12, size: 2, color: "#FF7A1A" },
-  { dx: 3, delay: 1900, duration: 2400, sway: 14, size: 2, color: "#FFB347" },
-  { dx: 9, delay: 800, duration: 3100, sway: -6, size: 3, color: "#FF9A2E" },
+  // À l'encre : des braises rouges et blanches, comme le seul rouge de la planche.
+  { dx: -4, delay: 0, duration: 2200, sway: 10, size: 3, color: "#E8414A" },
+  { dx: 6, delay: 500, duration: 2600, sway: -8, size: 2, color: "#F3F3F0" },
+  { dx: 0, delay: 1100, duration: 2000, sway: 6, size: 3, color: "#E8414A" },
+  { dx: -8, delay: 1500, duration: 2900, sway: -12, size: 2, color: "#F3F3F0" },
+  { dx: 3, delay: 1900, duration: 2400, sway: 14, size: 2, color: "#E8414A" },
+  { dx: 9, delay: 800, duration: 3100, sway: -6, size: 3, color: "#B3121B" },
 ];
 
 /** Feuilles : position de départ (fraction de la largeur), retard, durée, balancement (px), couleur. */
 const LEAVES = [
-  { x: 0.18, delay: 0, duration: 7000, sway: 14, color: "#6B8E23" },
-  { x: 0.52, delay: 2600, duration: 8200, sway: -12, color: "#8B5A2B" },
-  { x: 0.78, delay: 1200, duration: 6800, sway: 10, color: "#556B2F" },
-  { x: 0.34, delay: 4300, duration: 7600, sway: -16, color: "#A0782C" },
+  { x: 0.18, delay: 0, duration: 7000, sway: 14, color: "#111111" },
+  { x: 0.52, delay: 2600, duration: 8200, sway: -12, color: "#4A4A47" },
+  { x: 0.78, delay: 1200, duration: 6800, sway: 10, color: "#111111" },
+  { x: 0.34, delay: 4300, duration: 7600, sway: -16, color: "#4A4A47" },
 ];
 
 /** Une boucle infinie de 0 à 1, avec un retard de départ. */
@@ -115,9 +116,9 @@ function FireGlow({ size, origin }: { size: number; origin: { x: number; y: numb
       <Svg width={size} height={size}>
         <Defs>
           <RadialGradient id="fireGlow" cx="50%" cy="50%" r="50%">
-            <Stop offset="0" stopColor="#FF9A2E" stopOpacity="0.9" />
-            <Stop offset="0.5" stopColor="#FF6A00" stopOpacity="0.35" />
-            <Stop offset="1" stopColor="#FF6A00" stopOpacity="0" />
+            <Stop offset="0" stopColor="#E8414A" stopOpacity="0.55" />
+            <Stop offset="0.5" stopColor="#B3121B" stopOpacity="0.25" />
+            <Stop offset="1" stopColor="#B3121B" stopOpacity="0" />
           </RadialGradient>
         </Defs>
         <Rect width={size} height={size} fill="url(#fireGlow)" />

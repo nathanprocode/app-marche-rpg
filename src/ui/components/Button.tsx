@@ -1,7 +1,7 @@
 import { ActivityIndicator, Pressable, StyleSheet, Text } from "react-native";
 import { theme } from "../../core/theme";
 
-type ButtonVariant = "primary" | "secondary" | "danger";
+type ButtonVariant = "primary" | "secondary" | "danger" | "text";
 
 type ButtonProps = {
   label: string;
@@ -13,7 +13,7 @@ type ButtonProps = {
   onDark?: boolean;
 };
 
-/** Bouton encré : plein (principal), cadré (secondaire) ou cadré de rouge (action destructrice). */
+/** Bouton encré : plein (principal), cadré (secondaire), cadré de rouge (destructeur) ou texte souligné (tertiaire). */
 export function Button({ label, onPress, variant = "primary", disabled = false, loading = false, onDark = false }: ButtonProps) {
   const isDisabled = disabled || loading;
   const isPrimary = variant === "primary";
@@ -37,7 +37,15 @@ export function Button({ label, onPress, variant = "primary", disabled = false, 
       {loading ? (
         <ActivityIndicator color={(isFilled ? tone.labelFilled : tone.label).color} />
       ) : (
-        <Text style={[styles.label, tone.label, isFilled && tone.labelFilled, variant === "danger" && tone.labelDanger]}>
+        <Text
+          style={[
+            styles.label,
+            tone.label,
+            isFilled && tone.labelFilled,
+            variant === "danger" && tone.labelDanger,
+            variant === "text" && styles.labelText,
+          ]}
+        >
           {label}
         </Text>
       )}
@@ -57,6 +65,7 @@ const styles = StyleSheet.create({
   },
   disabled: { opacity: 0.4 },
   label: { ...theme.text.bodyStrong, textAlign: "center" },
+  labelText: { textDecorationLine: "underline" },
 });
 
 /** Sur papier : principal noir plein, secondaire cadré de noir. */
@@ -64,6 +73,7 @@ const light = StyleSheet.create({
   primary: { backgroundColor: theme.colors.black, borderColor: theme.colors.black },
   secondary: { backgroundColor: theme.colors.paper, borderColor: theme.colors.black },
   danger: { backgroundColor: theme.colors.paper, borderColor: theme.colors.red },
+  text: { backgroundColor: "transparent", borderColor: "transparent" },
   pressedFilled: { backgroundColor: theme.colors.blackSoft, borderColor: theme.colors.blackSoft },
   pressedFramed: { backgroundColor: theme.colors.toneLight },
   label: { color: theme.colors.black },
@@ -76,6 +86,7 @@ const dark = StyleSheet.create({
   primary: { backgroundColor: theme.colors.paper, borderColor: theme.colors.paper },
   secondary: { backgroundColor: theme.colors.black, borderColor: theme.colors.paper },
   danger: { backgroundColor: theme.colors.black, borderColor: theme.colors.redOnBlack },
+  text: { backgroundColor: "transparent", borderColor: "transparent" },
   pressedFilled: { backgroundColor: theme.colors.toneLight, borderColor: theme.colors.toneLight },
   pressedFramed: { backgroundColor: theme.colors.toneDark },
   label: { color: theme.colors.paper },

@@ -43,7 +43,7 @@ import { usePlayerStore } from "../../store/usePlayerStore";
 import { useSocialStore } from "../../store/useSocialStore";
 import { useAuthStore } from "../../store/useAuthStore";
 import { useSettingsStore } from "../../store/useSettingsStore";
-import { BandMarker } from "../components/BandMarker";
+import { BAND_LABEL_CHAR_PX, BandMarker, bandLabel } from "../components/BandMarker";
 import { COMPANION_SPRITE_SIZE, CompanionMarker } from "../components/CompanionMarker";
 import { GutsMarker } from "../components/GutsMarker";
 import { MapSheet } from "../components/MapSheet";
@@ -342,9 +342,24 @@ export function MapScreen() {
                 index={index}
               />
             ))}
-            {friends.map(({ member, spot }, index) => (
-              <BandMarker key={member.uid} name={member.displayName} lap={member.lap} xPct={spot.x} yPct={spot.y} index={index} />
-            ))}
+            {friends.map(({ member, spot }, index) => {
+              // L'étiquette est centrée sous le point : on la fait glisser pour qu'elle reste entière dans l'écran.
+              const centerX = (spot.x / 100) * contentWidth + mapOffset.x;
+              const labelWidth = bandLabel(member.displayName, member.lap).length * BAND_LABEL_CHAR_PX + 2 * theme.space[8];
+              const idealLeft = centerX - labelWidth / 2;
+              const labelLeft = Math.max(LABEL_SCREEN_MARGIN, Math.min(idealLeft, viewport.width - LABEL_SCREEN_MARGIN - labelWidth));
+              return (
+                <BandMarker
+                  key={member.uid}
+                  name={member.displayName}
+                  lap={member.lap}
+                  xPct={spot.x}
+                  yPct={spot.y}
+                  index={index}
+                  labelShiftX={labelLeft - idealLeft}
+                />
+              );
+            })}
             <GutsMarker xPct={position.x} yPct={position.y} skin={gutsSkin} />
           </ImageBackground>
         </Animated.View>
@@ -455,7 +470,8 @@ const styles = StyleSheet.create({
   markerChipLane: { position: "absolute", top: 20, left: 0, width: 280, alignItems: "flex-start" },
   markerChip: {
     paddingHorizontal: theme.space[8],
-    paddingVertical: 2,
+    paddingTop: theme.space[4],
+    paddingBottom: 2,
     backgroundColor: theme.colors.black,
   },
   // Le prochain point s'affiche au-dessus, le dernier franchi en dessous : les étiquettes ne se chevauchent plus.
@@ -489,7 +505,7 @@ const styles = StyleSheet.create({
   },
   mapButtonPressed: { backgroundColor: theme.colors.blackSoft },
   title: { ...theme.text.displayM, color: theme.colors.black },
-  meta: { ...theme.text.small, fontFamily: theme.fontFamily.gothicBold, color: theme.colors.red },
+  meta: { ...theme.text.small, fontFamily: theme.fontFamily.gothicBold, color: theme.colors.blackSoft },
   description: { ...theme.text.body, color: theme.colors.blackSoft, marginTop: theme.space[16] },
   // Le prochain point dans une case noire, en bas de la fiche.
   nextRow: {

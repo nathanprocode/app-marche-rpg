@@ -108,7 +108,7 @@ const styles = StyleSheet.create({
   topRule: { position: "absolute", top: 0, left: 0, right: 0, height: theme.gutter, backgroundColor: theme.colors.redOnBlack, zIndex: 2 },
   header: { alignItems: "center" },
   title: { ...theme.text.displayL, color: theme.colors.paper, marginTop: theme.space[16], textAlign: "center" },
-  meta: { ...theme.text.bodyStrong, color: theme.colors.redOnBlack, textAlign: "center", marginTop: theme.space[4] },
+  meta: { ...theme.text.bodyStrong, color: theme.colors.paperSoft, textAlign: "center", marginTop: theme.space[4] },
   content: { paddingHorizontal: theme.space[16], paddingBottom: theme.space[16] },
   description: { ...theme.text.body, color: theme.colors.paperSoft, textAlign: "center", marginTop: theme.space[24] },
   stats: { marginTop: theme.space[24], padding: theme.space[16], gap: theme.space[16], backgroundColor: theme.colors.paper },
