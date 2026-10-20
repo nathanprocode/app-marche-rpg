@@ -66,6 +66,9 @@ const NEXT_LEG_GAP_PX = 10;
 /** Les points ne sont posés qu'autour de la zone visible (un cadre de marge de chaque côté), pour garder peu de vues. */
 const TRAIL_MARGIN = 1;
 const TRAIL_DOT_SIZE = TRAIL_DOT_PX + 2 * TRAIL_OUTLINE_PX;
+/** Largeur moyenne d'un caractère des étiquettes de la carte (Mincho 16 px), pour estimer si elles débordent. */
+const LABEL_CHAR_PX = 9;
+const LABEL_SCREEN_MARGIN = 8;
 
 function toMapPoint(xPct: number, yPct: number): Offset {
   return { x: (xPct / 100) * MAP_WIDTH, y: (yPct / 100) * MAP_HEIGHT };
@@ -305,12 +308,19 @@ export function MapScreen() {
               const isReached = checkpoint.kmThreshold <= progress.totalDistanceKm + REACHED_TOLERANCE_KM;
               const isNext = !isJourneyComplete && checkpoint.id === position.next.id;
               const isPrevious = checkpoint.id === position.previous.id;
+              // L'étiquette part du losange, mais glisse pour rester entière dans l'écran (largeur estimée du titre).
+              const slotLeft = (checkpoint.x / 100) * contentWidth + mapOffset.x - 8;
+              const labelWidth = checkpoint.title.length * LABEL_CHAR_PX + 2 * theme.space[8];
+              const labelLeft = Math.max(
+                LABEL_SCREEN_MARGIN,
+                Math.min(slotLeft, viewport.width - LABEL_SCREEN_MARGIN - labelWidth),
+              );
 
               return (
                 <View key={checkpoint.id} pointerEvents="none" style={[styles.markerSlot, { left: `${checkpoint.x}%`, top: `${checkpoint.y}%` }]}>
                   <View style={[styles.diamond, isReached ? styles.diamondReached : styles.diamondAhead]} />
                   {isPrevious || isNext ? (
-                    <View style={[styles.markerChipLane, isNext && styles.markerChipAbove]}>
+                    <View style={[styles.markerChipLane, { left: labelLeft - slotLeft }, isNext && styles.markerChipAbove]}>
                       <View style={styles.markerChip}>
                         <Text numberOfLines={1} style={styles.markerChipText}>
                           {checkpoint.title}
