@@ -69,6 +69,22 @@ const TRAIL_DOT_SIZE = TRAIL_DOT_PX + 2 * TRAIL_OUTLINE_PX;
 /** Largeur moyenne d'un caractère des étiquettes de la carte (Mincho 16 px), pour estimer si elles débordent. */
 const LABEL_CHAR_PX = 9;
 const LABEL_SCREEN_MARGIN = 8;
+const LABEL_FONT_PX = 16;
+/**
+ * Hauteur de ligne des étiquettes : la ligne réelle de Shippori Mincho (hampes 1,16 em + jambages 0,288 em, soit
+ * 23,2 px à 16 px), plus une marge pour l'arrondi en pixels d'Android. À 24 px pile, le haut ou le bas des lettres
+ * était rogné.
+ */
+const LABEL_LINE_PX = Math.ceil(LABEL_FONT_PX * 1.448) + 2;
+const LABEL_PADDING_Y = 3;
+const LABEL_HEIGHT = LABEL_LINE_PX + 2 * LABEL_PADDING_Y;
+/** Écart vertical entre le losange (16 px) et son étiquette, dessus ou dessous. */
+const LABEL_GAP = 4;
+const LABEL_TOP_BELOW = 16 + LABEL_GAP;
+const LABEL_TOP_ABOVE = -(LABEL_HEIGHT + LABEL_GAP + 4);
+/** Colonne des boutons zoom / recentrer, en haut à droite (voir styles.hud, styles.controls, styles.mapButton). */
+const MAP_BUTTON_PX = 48;
+const MAP_BUTTON_COUNT = 3;
 
 function toMapPoint(xPct: number, yPct: number): Offset {
   return { x: (xPct / 100) * MAP_WIDTH, y: (yPct / 100) * MAP_HEIGHT };
@@ -144,6 +160,10 @@ export function MapScreen() {
   const nextLegDots = isJourneyComplete
     ? []
     : dotsAlongPath(nextLegPath, (NEXT_LEG_DOT_PX + NEXT_LEG_GAP_PX) / zoom).filter((dot) => isInRect(dot, trailArea));
+  // Emprise à l'écran de la colonne de boutons, que les étiquettes des points ne doivent pas recouvrir.
+  const controlsTop = insets.top + theme.space[8];
+  const controlsBottom = controlsTop + MAP_BUTTON_COUNT * MAP_BUTTON_PX + (MAP_BUTTON_COUNT - 1) * theme.gutter;
+  const controlsWidth = theme.gutter * 2 + MAP_BUTTON_PX;
 
   /** Applique la vue à la transformation de la carte, sans rendu. */
   function applyTransform(view: MapView): void {
@@ -309,12 +329,13 @@ export function MapScreen() {
               const isNext = !isJourneyComplete && checkpoint.id === position.next.id;
               const isPrevious = checkpoint.id === position.previous.id;
               // L'étiquette part du losange, mais glisse pour rester entière dans l'écran (largeur estimée du titre).
+              // Dans la bande des boutons zoom / recentrer, elle s'arrête avant leur colonne.
               const slotLeft = (checkpoint.x / 100) * contentWidth + mapOffset.x - 8;
+              const labelTop = (checkpoint.y / 100) * contentHeight + mapOffset.y - 8 + (isNext ? LABEL_TOP_ABOVE : LABEL_TOP_BELOW);
+              const besideButtons = labelTop < controlsBottom && labelTop + LABEL_HEIGHT > controlsTop;
+              const labelRightEdge = viewport.width - LABEL_SCREEN_MARGIN - (besideButtons ? controlsWidth : 0);
               const labelWidth = checkpoint.title.length * LABEL_CHAR_PX + 2 * theme.space[8];
-              const labelLeft = Math.max(
-                LABEL_SCREEN_MARGIN,
-                Math.min(slotLeft, viewport.width - LABEL_SCREEN_MARGIN - labelWidth),
-              );
+              const labelLeft = Math.max(LABEL_SCREEN_MARGIN, Math.min(slotLeft, labelRightEdge - labelWidth));
 
               return (
                 <View key={checkpoint.id} pointerEvents="none" style={[styles.markerSlot, { left: `${checkpoint.x}%`, top: `${checkpoint.y}%` }]}>
@@ -367,7 +388,7 @@ export function MapScreen() {
 
       <View pointerEvents="none" style={[styles.topScrim, { height: insets.top + theme.space[96] }]} />
 
-      <View style={[styles.hud, { top: insets.top + theme.space[8] }]}>
+      <View style={[styles.hud, { top: controlsTop }]}>
         <View style={styles.distancePill} accessible accessibilityLabel={`${formatDecimal(progress.totalDistanceKm)} kilomètres sur ${GAME_CONFIG.totalGoalKm}`}>
           <Text style={styles.distanceValue}>{`${formatDecimal(progress.totalDistanceKm)} km`}</Text>
           <Text style={styles.distanceGoal}>{`sur ${formatInt(GAME_CONFIG.totalGoalKm)}`}</Text>
@@ -467,16 +488,21 @@ const styles = StyleSheet.create({
   diamondAhead: { backgroundColor: theme.colors.paper, borderColor: theme.colors.black },
   // Couloir large où l'étiquette prend la largeur de son texte. Sans lui, sur Android, l'étiquette ne peut pas
   // dépasser les 16 px du losange : le texte disparaît et il ne reste qu'un carré noir.
-  markerChipLane: { position: "absolute", top: 20, left: 0, width: 280, alignItems: "flex-start" },
+  markerChipLane: { position: "absolute", top: LABEL_TOP_BELOW, left: 0, width: 280, alignItems: "flex-start" },
   markerChip: {
     paddingHorizontal: theme.space[8],
-    paddingTop: theme.space[4],
-    paddingBottom: 2,
+    paddingVertical: LABEL_PADDING_Y,
     backgroundColor: theme.colors.black,
   },
   // Le prochain point s'affiche au-dessus, le dernier franchi en dessous : les étiquettes ne se chevauchent plus.
-  markerChipAbove: { top: -40 },
-  markerChipText: { ...theme.text.displayS, fontSize: 16, lineHeight: 24, color: theme.colors.paper },
+  markerChipAbove: { top: LABEL_TOP_ABOVE },
+  markerChipText: {
+    ...theme.text.displayS,
+    fontSize: LABEL_FONT_PX,
+    lineHeight: LABEL_LINE_PX,
+    includeFontPadding: false,
+    color: theme.colors.paper,
+  },
   hud: {
     position: "absolute",
     left: theme.gutter * 2,
@@ -497,8 +523,8 @@ const styles = StyleSheet.create({
   distanceGoal: { ...theme.text.small, color: theme.colors.paperSoft },
   controls: { gap: theme.gutter },
   mapButton: {
-    width: 48,
-    height: 48,
+    width: MAP_BUTTON_PX,
+    height: MAP_BUTTON_PX,
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: theme.colors.black,
