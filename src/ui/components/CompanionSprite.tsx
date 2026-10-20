@@ -19,7 +19,7 @@ export function CompanionSprite({ companion, size, tint, style }: CompanionSprit
         accessible={false}
         style={[styles.placeholder, { width: size, height: size }]}
       >
-        <Ionicons name="person" size={size * 0.7} color={tint ?? theme.colors.iron} />
+        <Ionicons name="person" size={size * 0.7} color={tint ?? theme.colors.tone} />
       </View>
     );
   }

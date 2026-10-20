@@ -3,7 +3,7 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 import { formatInt } from "../../core/format";
 import { theme } from "../../core/theme";
 import { ACHIEVEMENTS, type Achievement, type AchievementStats } from "../../features/achievements/achievements";
-import { InkCard } from "./InkCard";
+import { Panel } from "./Panel";
 import { ProgressBar } from "./ProgressBar";
 
 type AchievementListProps = {
@@ -43,9 +43,10 @@ export function AchievementList({ stats, unlocked, onShare }: AchievementListPro
         const status = dateISO ? `débloqué le ${formatUnlockDate(dateISO)}` : `${formatInt(value)} sur ${formatInt(target)}`;
 
         return (
-          <InkCard
+          <Panel
             key={achievement.id}
-            style={[styles.card, !dateISO && styles.locked]}
+            reversed={!dateISO}
+            style={styles.card}
             accessible
             accessibilityLabel={`${achievement.title}. ${achievement.description} ${status}`}
           >
@@ -53,17 +54,17 @@ export function AchievementList({ stats, unlocked, onShare }: AchievementListPro
               <Ionicons
                 name={(dateISO ? achievement.icon : "lock-closed-outline") as keyof typeof Ionicons.glyphMap}
                 size={22}
-                color={dateISO ? theme.colors.bone : theme.colors.boneDim}
+                color={theme.colors.paper}
               />
             </View>
             <View style={styles.text}>
-              <Text style={styles.title}>{achievement.title}</Text>
-              <Text style={styles.small}>{achievement.description}</Text>
+              <Text style={[styles.title, !dateISO && styles.onBlack]}>{achievement.title}</Text>
+              <Text style={dateISO ? styles.small : styles.smallOnBlack}>{achievement.description}</Text>
               {dateISO ? (
                 <Text style={styles.date}>{formatUnlockDate(dateISO)}</Text>
               ) : (
                 <View style={styles.bar}>
-                  <ProgressBar pct={pct} accessibilityLabel={`Avancement : ${achievement.title}`} />
+                  <ProgressBar reversed calm pct={pct} accessibilityLabel={`Avancement : ${achievement.title}`} />
                 </View>
               )}
             </View>
@@ -74,10 +75,10 @@ export function AchievementList({ stats, unlocked, onShare }: AchievementListPro
                 onPress={() => onShare(achievement)}
                 style={styles.share}
               >
-                <Ionicons name="share-outline" size={20} color={theme.colors.bone} />
+                <Ionicons name="share-outline" size={22} color={theme.colors.black} />
               </Pressable>
             ) : null}
-          </InkCard>
+          </Panel>
         );
       })}
     </>
@@ -86,14 +87,15 @@ export function AchievementList({ stats, unlocked, onShare }: AchievementListPro
 
 const styles = StyleSheet.create({
   card: { flexDirection: "row", alignItems: "center", gap: theme.space[16] },
-  locked: { opacity: 0.85 },
-  icon: { width: 44, height: 44, alignItems: "center", justifyContent: "center", borderRadius: 22, borderWidth: 1 },
-  iconDone: { backgroundColor: theme.colors.blood, borderColor: theme.colors.bloodGlow },
-  iconLocked: { borderColor: theme.colors.iron },
-  text: { flex: 1 },
-  share: { width: 44, height: 44, alignItems: "center", justifyContent: "center" },
-  title: { ...theme.text.bodyStrong, color: theme.colors.bone },
-  small: { ...theme.text.small, color: theme.colors.boneDim },
-  date: { ...theme.text.label, color: theme.colors.bloodEmber, marginTop: theme.space[4] },
+  icon: { width: 48, height: 48, alignItems: "center", justifyContent: "center" },
+  iconDone: { backgroundColor: theme.colors.black },
+  iconLocked: { borderWidth: theme.frame, borderColor: theme.colors.toneDark },
+  text: { flex: 1, gap: 2 },
+  share: { width: 48, height: 48, alignItems: "center", justifyContent: "center", borderWidth: theme.frame, borderColor: theme.colors.black },
+  title: { ...theme.text.displayS, fontSize: 18, lineHeight: 24, color: theme.colors.black },
+  onBlack: { color: theme.colors.paper },
+  small: { ...theme.text.small, color: theme.colors.blackSoft },
+  smallOnBlack: { ...theme.text.small, color: theme.colors.paperSoft },
+  date: { ...theme.text.small, fontFamily: theme.fontFamily.gothicBold, color: theme.colors.red, marginTop: theme.space[4] },
   bar: { marginTop: theme.space[8] },
 });
