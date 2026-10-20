@@ -23,9 +23,15 @@ import { AppearancePicker } from "../components/AppearancePicker";
 import { ChoiceRow } from "../components/ChoiceRow";
 import { BrandMark } from "../components/BrandMark";
 import { Button } from "../components/Button";
-import { InkCard } from "../components/InkCard";
+import { Panel } from "../components/Panel";
 import { Screen } from "../components/Screen";
 import { WeekChart } from "../components/WeekChart";
+
+/** Interrupteur Material, encré : piste noire quand il est activé. */
+const SWITCH_COLORS = {
+  thumbColor: theme.colors.paper,
+  trackColor: { false: theme.colors.tone, true: theme.colors.black },
+} as const;
 
 export function ProfileScreen() {
   const status = useBrandStore((state) => state.status);
@@ -68,6 +74,7 @@ export function ProfileScreen() {
   const days = lastDays(history, now, period === "week" ? 7 : period === "month" ? 30 : historySpanDays(history, now));
   const summary = summarizeDays(days, dailyGoal);
   const daysWithSteps = days.filter((day) => day.steps > 0).length;
+  const daysWithoutData = days.filter((day) => !day.recorded).length;
   const showChart = period !== "all";
 
   function confirmErase(): void {
@@ -82,68 +89,65 @@ export function ProfileScreen() {
   }
 
   return (
-    <Screen scroll>
-      <View style={styles.header}>
+    <Screen scroll variant="page">
+      <Panel reversed style={styles.header}>
         <View style={styles.headerText}>
-          <Text style={styles.label}>Profil</Text>
           <Text accessibilityRole="header" style={styles.name}>
             {userName ?? "Le Traqué"}
           </Text>
           <Text style={styles.subtitle}>{`${previous.arc} · point ${unlockedCount} sur ${BERSERK_CHECKPOINTS.length}${progress.lap > 1 ? ` · tour ${progress.lap}` : ""}`}</Text>
         </View>
-        <BrandMark visual={status.visual} width={44} />
-      </View>
+        <BrandMark visual={status.visual} width={40} />
+      </Panel>
 
-      <View style={styles.stats}>
-        <View style={styles.statsRow}>
-          <Stat label="Série" value={streakLabel} />
-          <Stat label="Meilleure série" value={`${bestStreak} ${bestStreak > 1 ? "jours" : "jour"}`} />
-        </View>
-        <View style={styles.statsRow}>
-          <Stat label="Pas au total" value={formatInt(progress.totalSteps)} />
-          <Stat label="Distance du tour" value={`${formatDecimal(progress.totalDistanceKm)} km`} />
-        </View>
-        <View style={styles.statsRow}>
-          <Stat label="Chroniques" value={`${unlockedCount} / ${BERSERK_CHECKPOINTS.length}`} />
-          <Stat label="Tour" value={`${progress.lap}`} />
-        </View>
-      </View>
+      {/* Le voyage d'abord : la distance en grand, le reste en liste réglée. */}
+      <Panel
+        accessible
+        accessibilityLabel={`${formatDecimal(progress.totalDistanceKm)} kilomètres parcourus dans ce tour, ${unlockedCount} chroniques sur ${BERSERK_CHECKPOINTS.length}`}
+      >
+        <Text {...theme.fitDisplayText} style={styles.bigFigure}>
+          {formatDecimal(progress.totalDistanceKm)}
+          <Text style={styles.bigUnit}> km</Text>
+        </Text>
+        <Text style={styles.small}>{`parcourus dans le tour ${progress.lap} · ${unlockedCount} chroniques sur ${BERSERK_CHECKPOINTS.length}`}</Text>
+      </Panel>
+      <Panel reversed>
+        <StatRow label="Série" value={streakLabel} />
+        <StatRow label="Meilleure série" value={`${bestStreak} ${bestStreak > 1 ? "jours" : "jour"}`} />
+        <StatRow label="Pas depuis le début" value={formatInt(progress.totalSteps)} last />
+      </Panel>
 
-      <View style={styles.week}>
-        <Text accessibilityRole="header" style={styles.label}>
+      <Panel style={styles.section}>
+        <Text accessibilityRole="header" style={styles.heading}>
           Historique
         </Text>
-        <ChoiceRow
-          options={HISTORY_PERIODS}
-          selected={period}
-          onSelect={setPeriod}
-          accessibilityPrefix="Période de l'historique"
-        />
-        <InkCard style={styles.weekCard}>
-          <View style={styles.weekSummary}>
-            <WeekFigure label={PERIOD_TOTAL_LABEL[period]} value={`${formatDecimal(summary.totalKm)} km`} />
-            <WeekFigure
-              label="Record"
-              value={summary.bestDay ? `${formatDecimal(summary.bestDay.km)} km` : "—"}
-              hint={summary.bestDay ? (summary.bestDay.isToday ? "aujourd'hui" : `${summary.bestDay.weekday} ${summary.bestDay.dayOfMonth}`) : undefined}
-            />
-            <WeekFigure label="Apaisée" value={`${summary.calmDays} / ${days.length} j`} />
-          </View>
-          {showChart ? <WeekChart key={period} days={days} thresholdSteps={dailyGoal} /> : null}
-          {daysWithSteps < 2 ? (
-            <Text style={styles.weekHint}>L'historique se remplit jour après jour sur ce téléphone.</Text>
-          ) : null}
-        </InkCard>
-      </View>
+        <ChoiceRow options={HISTORY_PERIODS} selected={period} onSelect={setPeriod} accessibilityPrefix="Période de l'historique" />
+        <View style={styles.weekSummary}>
+          <WeekFigure label={PERIOD_TOTAL_LABEL[period]} value={`${formatDecimal(summary.totalKm)} km`} />
+          <WeekFigure
+            label="record"
+            value={summary.bestDay ? `${formatDecimal(summary.bestDay.km)} km` : "—"}
+            hint={summary.bestDay ? (summary.bestDay.isToday ? "aujourd'hui" : `${summary.bestDay.weekday} ${summary.bestDay.dayOfMonth}`) : undefined}
+          />
+          {/* Sur les seuls jours connus : un jour absent de l'historique du téléphone n'est pas un jour manqué. */}
+          <WeekFigure
+            label="Marque apaisée"
+            value={summary.knownDays > 0 ? `${summary.calmDays} / ${summary.knownDays} j` : "—"}
+            hint={daysWithoutData > 0 ? `${daysWithoutData} j sans données` : undefined}
+          />
+        </View>
+        {showChart ? <WeekChart key={period} days={days} thresholdSteps={dailyGoal} /> : null}
+        {daysWithSteps < 2 ? <Text style={styles.small}>L'historique se remplit jour après jour sur ce téléphone.</Text> : null}
+      </Panel>
 
       {isGoalReached(progress) ? (
-        <View style={styles.nextLap}>
-          <Button label={`Commencer le tour ${progress.lap + 1}`} onPress={() => void startNextLap()} />
-        </View>
+        <Panel reversed>
+          <Button label={`Commencer le tour ${progress.lap + 1}`} onDark onPress={() => void startNextLap()} />
+        </Panel>
       ) : null}
 
-      <View style={styles.week}>
-        <Text accessibilityRole="header" style={styles.label}>
+      <Panel style={styles.section}>
+        <Text accessibilityRole="header" style={styles.heading}>
           Apparence
         </Text>
         <AppearancePicker
@@ -152,9 +156,12 @@ export function ProfileScreen() {
           selectedId={resolveGutsSkin(GUTS_SKINS, gutsSkinId, progress, BERSERK_CHECKPOINTS).id}
           onSelect={setGutsSkinId}
         />
-      </View>
+      </Panel>
 
-      <View style={styles.settings}>
+      <Panel>
+        <Text accessibilityRole="header" style={styles.heading}>
+          Réglages
+        </Text>
         <View style={styles.settingBlock}>
           <Text style={styles.settingTitle}>Objectif quotidien</Text>
           <Text style={styles.small}>Les pas à faire chaque jour pour apaiser la Marque et garder ta série.</Text>
@@ -168,7 +175,7 @@ export function ProfileScreen() {
         <View style={styles.settingRow}>
           <View style={styles.settingText}>
             <Text style={styles.settingTitle}>Rappel du soir</Text>
-            <Text style={styles.small}>
+            <Text style={[styles.small, reminderDenied && styles.warning]}>
               {reminderDenied
                 ? "Notifications refusées : autorise-les dans les réglages du téléphone."
                 : "Une notification si tu n'as pas atteint ton objectif."}
@@ -178,8 +185,7 @@ export function ProfileScreen() {
             accessibilityLabel="Rappel du soir"
             value={reminderEnabled}
             onValueChange={(enabled) => void handleReminderToggle(enabled)}
-            thumbColor={theme.colors.bone}
-            trackColor={{ false: theme.colors.ash, true: theme.colors.blood }}
+            {...SWITCH_COLORS}
           />
         </View>
         {reminderEnabled ? (
@@ -205,8 +211,7 @@ export function ProfileScreen() {
               // On sent tout de suite ce que fait l'option.
               if (enabled) vibrate("achievement");
             }}
-            thumbColor={theme.colors.bone}
-            trackColor={{ false: theme.colors.ash, true: theme.colors.blood }}
+            {...SWITCH_COLORS}
           />
         </View>
         <View style={styles.settingRow}>
@@ -218,20 +223,19 @@ export function ProfileScreen() {
             accessibilityLabel="Suivi permanent"
             value={isPermanentTrackingEnabled}
             onValueChange={setPermanentTrackingEnabled}
-            thumbColor={theme.colors.bone}
-            trackColor={{ false: theme.colors.ash, true: theme.colors.blood }}
+            {...SWITCH_COLORS}
           />
         </View>
-        <View style={[styles.settingRow, styles.settingRowLast]}>
+        <View style={styles.settingRow}>
           <View style={styles.settingText}>
             <Text style={styles.settingTitle}>Compte Google</Text>
             <Text style={styles.small}>Ta progression est sauvegardée dans le cloud.</Text>
           </View>
           <Text style={styles.connected}>Connecté</Text>
         </View>
-      </View>
+      </Panel>
 
-      <View style={styles.logout}>
+      <Panel style={styles.section}>
         <Button
           label="Partager ma progression"
           variant="secondary"
@@ -248,9 +252,6 @@ export function ProfileScreen() {
             )
           }
         />
-      </View>
-
-      <View style={styles.logout}>
         <Button
           label="Se déconnecter"
           variant="danger"
@@ -260,12 +261,12 @@ export function ProfileScreen() {
             void logout();
           }}
         />
-      </View>
+      </Panel>
 
-      <View style={styles.erase}>
-        <Text style={styles.small}>Efface ta progression, tes succès et ton historique, ici et dans le cloud.</Text>
-        <Button label="Recommencer à zéro" variant="danger" onPress={confirmErase} />
-      </View>
+      <Panel reversed style={styles.section}>
+        <Text style={styles.smallOnBlack}>Efface ta progression, tes succès et ton historique, ici et dans le cloud.</Text>
+        <Button label="Recommencer à zéro" variant="danger" onDark onPress={confirmErase} />
+      </Panel>
     </Screen>
   );
 }
@@ -278,64 +279,60 @@ const HISTORY_PERIODS: { value: HistoryPeriod; label: string }[] = [
   { value: "all", label: "Tout" },
 ];
 
-const PERIOD_TOTAL_LABEL: Record<HistoryPeriod, string> = { week: "Semaine", month: "Mois", all: "Total" };
+const PERIOD_TOTAL_LABEL: Record<HistoryPeriod, string> = { week: "cette semaine", month: "ce mois", all: "au total" };
 
-function Stat({ label, value }: { label: string; value: string }) {
+function StatRow({ label, value, last = false }: { label: string; value: string; last?: boolean }) {
   return (
-    <InkCard style={styles.stat} accessible accessibilityLabel={`${label} : ${value}`}>
-      <Text style={styles.label}>{label}</Text>
+    <View style={[styles.statRow, !last && styles.statRowRule]} accessible accessibilityLabel={`${label} : ${value}`}>
+      <Text style={styles.statLabel}>{label}</Text>
       <Text {...theme.fitDisplayText} style={styles.statValue}>
         {value}
       </Text>
-    </InkCard>
+    </View>
   );
 }
 
 function WeekFigure({ label, value, hint }: { label: string; value: string; hint?: string }) {
   return (
-    <View style={styles.weekFigure} accessible accessibilityLabel={`${label} : ${value}${hint ? `, ${hint}` : ""}`}>
-      <Text style={styles.label}>{label}</Text>
+    <View style={styles.weekFigure} accessible accessibilityLabel={`${value} ${label}${hint ? `, ${hint}` : ""}`}>
       <Text {...theme.fitDisplayText} style={styles.weekValue}>
         {value}
       </Text>
-      {hint ? <Text style={styles.small}>{hint}</Text> : null}
+      <Text style={styles.small}>{hint ? `${label}, ${hint}` : label}</Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  header: { flexDirection: "row", alignItems: "flex-start", justifyContent: "space-between", gap: theme.space[16] },
-  headerText: { flex: 1 },
-  label: { ...theme.text.label, color: theme.colors.boneDim },
-  name: { ...theme.text.displayL, color: theme.colors.bone, alignSelf: "stretch" },
-  subtitle: { ...theme.text.body, color: theme.colors.boneDim },
-  stats: { marginTop: theme.space[24], gap: theme.space[16] },
-  statsRow: { flexDirection: "row", gap: theme.space[16] },
-  stat: { flex: 1 },
-  statValue: { ...theme.text.displayM, color: theme.colors.bone, marginTop: theme.space[4] },
-  settings: { marginTop: theme.space[24] },
+  header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: theme.space[16] },
+  headerText: { flex: 1, gap: theme.space[4] },
+  name: { ...theme.text.displayL, color: theme.colors.paper },
+  subtitle: { ...theme.text.body, color: theme.colors.paperSoft },
+  bigFigure: { ...theme.text.displayXl, color: theme.colors.black },
+  bigUnit: { ...theme.text.displayM, letterSpacing: 0 },
+  statRow: { flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: theme.space[16], paddingVertical: theme.space[8] },
+  statRowRule: { borderBottomWidth: 1, borderBottomColor: theme.colors.toneDark },
+  statLabel: { ...theme.text.body, color: theme.colors.paperSoft, flexShrink: 1 },
+  statValue: { ...theme.text.displayM, color: theme.colors.paper },
+  section: { gap: theme.space[16] },
+  heading: { ...theme.text.displayM, color: theme.colors.black },
+  small: { ...theme.text.small, color: theme.colors.blackSoft },
+  smallOnBlack: { ...theme.text.small, color: theme.colors.paperSoft },
+  warning: { color: theme.colors.red },
+  weekSummary: { flexDirection: "row", gap: theme.space[16] },
+  weekFigure: { flex: 1, gap: 2 },
+  weekValue: { ...theme.text.displayS, color: theme.colors.black },
+  settingBlock: { gap: theme.space[8], paddingVertical: theme.space[16] },
+  settingBlockNoRule: { paddingBottom: theme.space[16] },
   settingRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: theme.space[16],
     paddingVertical: theme.space[16],
     borderTopWidth: 1,
-    borderTopColor: theme.colors.ash,
+    borderTopColor: theme.colors.black,
   },
-  settingRowLast: { borderBottomWidth: 1, borderBottomColor: theme.colors.ash },
-  settingText: { flex: 1 },
-  settingBlock: { gap: theme.space[8], paddingVertical: theme.space[16] },
-  settingBlockNoRule: { paddingBottom: theme.space[16] },
-  nextLap: { marginTop: theme.space[24] },
-  settingTitle: { ...theme.text.bodyStrong, color: theme.colors.bone },
-  small: { ...theme.text.small, color: theme.colors.boneDim },
-  connected: { ...theme.text.label, color: theme.colors.boneDim },
-  logout: { marginTop: theme.space[24] },
-  erase: { marginTop: theme.space[32], gap: theme.space[8] },
-  week: { marginTop: theme.space[24], gap: theme.space[8] },
-  weekCard: { gap: theme.space[16] },
-  weekSummary: { flexDirection: "row", gap: theme.space[16] },
-  weekFigure: { flex: 1 },
-  weekValue: { ...theme.text.displayS, color: theme.colors.bone },
-  weekHint: { ...theme.text.small, fontFamily: theme.fontFamily.bodyItalic, color: theme.colors.boneDim },
+  settingText: { flex: 1, gap: 2 },
+  settingTitle: { ...theme.text.bodyStrong, color: theme.colors.black },
+  connected: { ...theme.text.bodyStrong, color: theme.colors.black },
 });

@@ -77,7 +77,7 @@ export default function LoginRoute() {
   }, [forwardedParams, response]);
 
   return (
-    <Screen edges={["top", "bottom"]}>
+    <Screen edges={["top", "bottom"]} variant="page">
       <View style={styles.container}>
         <BrandMark visual={{ state: "active", intensity: 0.5 }} width={64} />
         <Text accessibilityRole="header" style={styles.title}>
@@ -86,7 +86,7 @@ export default function LoginRoute() {
         <Text style={styles.subtitle}>Le serment d'acier commence ici.</Text>
 
         <View style={styles.action}>
-          <Button label="Se connecter avec Google" onPress={() => void promptAsync()} disabled={!request} loading={loading} />
+          <Button label="Se connecter avec Google" onDark onPress={() => void promptAsync()} disabled={!request} loading={loading} />
         </View>
       </View>
     </Screen>
@@ -94,13 +94,8 @@ export default function LoginRoute() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: "center", alignItems: "center", gap: theme.space[16] },
-  title: { ...theme.text.displayL, color: theme.colors.bone, textAlign: "center", marginTop: theme.space[16], alignSelf: "stretch" },
-  subtitle: {
-    ...theme.text.body,
-    fontFamily: theme.fontFamily.bodyItalic,
-    color: theme.colors.boneDim,
-    textAlign: "center",
-  },
+  container: { flex: 1, justifyContent: "center", alignItems: "center", gap: theme.space[16], padding: theme.space[24] },
+  title: { ...theme.text.displayL, color: theme.colors.paper, textAlign: "center", marginTop: theme.space[16], alignSelf: "stretch" },
+  subtitle: { ...theme.text.body, color: theme.colors.paperSoft, textAlign: "center" },
   action: { alignSelf: "stretch", marginTop: theme.space[32] },
 });

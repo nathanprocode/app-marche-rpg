@@ -1,28 +1,30 @@
 /**
- * Palette « Encre & Sang ».
- * Les noms reprennent les slugs des maquettes (--color-ink, --color-bone…) et les variables Figma.
+ * Palette « Trame & Encre » : l'app se lit comme un tome de Berserk.
+ * Papier blanc froid, encre noire, deux valeurs de trame, et un seul rouge.
  */
-export const colors = {
-  /** Fond de l'app. */
-  ink: "#0C0A09",
-  /** Cartes sombres. */
-  inkRaised: "#171311",
-  /** Filets et pistes de progression. */
-  ash: "#2E2823",
-  /** Bordures actives. */
-  iron: "#5E6472",
-  /** Papier : cartes claires et texte principal. */
-  bone: "#E9E1CF",
-  /** Texte secondaire sur fond sombre. */
-  boneDim: "#B8AE98",
-  /** Texte secondaire sur papier. */
-  umber: "#5A5244",
-  /** Actions et progression. */
-  blood: "#8A0303",
-  /** Accent vif et alertes (graphismes, gros texte). */
-  bloodGlow: "#C1121F",
-  /** Texte rouge sur fond sombre (contraste 4,5:1 minimum). */
-  bloodEmber: "#E5484D",
+const palette = {
+  /** Papier : fond des cases. */
+  paper: "#F3F3F0",
+  /** Encre : texte, cadres, gouttières entre les cases, remplissages. */
+  black: "#111111",
+  /** Texte secondaire sur papier (contraste 8:1). */
+  blackSoft: "#4A4A47",
+  /** Trame dense : points de progression, cases verrouillées. Jamais pour du texte. */
+  tone: "#8C8C88",
+  /** Trame claire : filets secondaires, pistes vides. */
+  toneLight: "#C8C8C3",
+  /** Le seul rouge : la Marque, les alertes, le repère « tu es ici » (contraste 6:1 sur papier). */
+  red: "#B3121B",
+
+  // Cases inversées (fond noir), comme les scènes sombres de Miura.
+  /** Texte secondaire sur noir (contraste 9:1). */
+  paperSoft: "#B9B9B4",
+  /** Trame sur noir : points à peine visibles. */
+  toneDark: "#3A3A37",
+  /** Le rouge lisible sur noir (contraste 4,7:1). */
+  redOnBlack: "#E8414A",
 } as const;
+
+export const colors = palette;
 
 export type AppColors = typeof colors;

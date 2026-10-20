@@ -1,0 +1,148 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-20T00:00:00Z",
+  "title": "Design System: Marche du Faucon",
+  "extensions": {
+    "colorMeta": {
+      "paper": { "role": "primary", "displayName": "Papier froid", "canonical": "#F3F3F0", "tonalRamp": ["#2A2A22", "#4A4A3B", "#696954", "#88886D", "#A2A28B", "#BBBBAA", "#D6D6CC", "#F4F4F1"] },
+      "black": { "role": "primary", "displayName": "Encre", "canonical": "#111111", "tonalRamp": ["#262626", "#424242", "#5E5E5E", "#7A7A7A", "#969696", "#B3B3B3", "#D1D1D1", "#F2F2F2"] },
+      "red": { "role": "secondary", "displayName": "Rouge de la Marque", "canonical": "#B3121B", "tonalRamp": ["#46070A", "#780C12", "#AB111A", "#DE1622", "#EC414B", "#F1747B", "#F7ACB0", "#FDE8E9"] },
+      "red-on-black": { "role": "secondary", "displayName": "Rouge sur noir", "canonical": "#E8414A", "tonalRamp": ["#44080B", "#760E14", "#A8141C", "#DA1A25", "#E8444D", "#EE777D", "#F5ADB1", "#FCE8E9"] },
+      "black-soft": { "role": "neutral", "displayName": "Encre délavée", "canonical": "#4A4A47", "tonalRamp": ["#272725", "#444441", "#60605C", "#7D7D78", "#999994", "#B4B4B1", "#D2D2D0", "#F3F3F2"] },
+      "tone": { "role": "neutral", "displayName": "Trame dense", "canonical": "#8C8C88", "tonalRamp": ["#272726", "#434341", "#60605D", "#7C7C78", "#989895", "#B4B4B1", "#D2D2D0", "#F2F2F2"] },
+      "tone-light": { "role": "neutral", "displayName": "Trame claire", "canonical": "#C8C8C3", "tonalRamp": ["#282825", "#45453F", "#62625A", "#808075", "#9B9B92", "#B6B6AF", "#D3D3CF", "#F3F3F2"] },
+      "paper-soft": { "role": "neutral", "displayName": "Papier gris", "canonical": "#B9B9B4", "tonalRamp": ["#282825", "#454540", "#62625B", "#7F7F76", "#9A9A93", "#B5B5B0", "#D3D3D0", "#F3F3F2"] },
+      "tone-dark": { "role": "neutral", "displayName": "Trame sur noir", "canonical": "#3A3A37", "tonalRamp": ["#272725", "#444441", "#61615C", "#7E7E77", "#999994", "#B5B5B0", "#D2D2D0", "#F3F3F2"] }
+    },
+    "typographyMeta": {
+      "display-xl": { "displayName": "Display XL", "purpose": "Le kilométrage de la Traque, une fois par écran Marche." },
+      "display-l": { "displayName": "Display L", "purpose": "Titre d'écran, titre d'un écran d'événement." },
+      "display-m": { "displayName": "Display M", "purpose": "Unités des grands chiffres, totaux." },
+      "display-s": { "displayName": "Display S", "purpose": "Titre de case (prochain point, quête, chronique, compagnon)." },
+      "figure": { "displayName": "Figure", "purpose": "Chiffres de l'interface (pas du jour, Marque, km restants)." },
+      "body": { "displayName": "Body", "purpose": "Texte courant." },
+      "body-strong": { "displayName": "Body Strong", "purpose": "Libellés de boutons, ligne de voyage." },
+      "small": { "displayName": "Small", "purpose": "Légendes et texte secondaire." },
+      "label": { "displayName": "Label", "purpose": "Libellés de la barre d'onglets et lettres des jours." }
+    },
+    "shadows": [],
+    "motion": [
+      { "name": "event-fade", "value": "Modal animationType fade", "purpose": "Ouverture des écrans d'événement (point franchi, boss)." },
+      { "name": "toast-fade", "value": "250ms opacity", "purpose": "Entrée et sortie du bandeau de succès." },
+      { "name": "mark-intensity", "value": "320ms timing", "purpose": "Changement d'intensité de la Marque ; pulsation désactivée si les animations sont réduites." }
+    ],
+    "breakpoints": []
+  },
+  "components": [
+    {
+      "name": "Bouton principal",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Action principale sur papier : noir plein, angles vifs, 56 dp minimum.",
+      "html": "<button class=\"ds-btn-primary\">Continuer la marche</button>",
+      "css": ".ds-btn-primary { min-height: 56px; padding: 8px 16px; background: #111111; color: #F3F3F0; border: 2px solid #111111; border-radius: 0; font-family: 'Zen Kaku Gothic New', sans-serif; font-weight: 700; font-size: 16px; line-height: 24px; cursor: pointer; } .ds-btn-primary:hover, .ds-btn-primary:active { background: #4A4A47; border-color: #4A4A47; } .ds-btn-primary:focus-visible { outline: 2px solid #B3121B; outline-offset: 2px; } .ds-btn-primary:disabled { opacity: 0.4; }"
+    },
+    {
+      "name": "Bouton secondaire",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Action secondaire : papier cadré d'encre.",
+      "html": "<button class=\"ds-btn-secondary\">Voir sur la carte</button>",
+      "css": ".ds-btn-secondary { min-height: 56px; padding: 8px 16px; background: #F3F3F0; color: #111111; border: 2px solid #111111; border-radius: 0; font-family: 'Zen Kaku Gothic New', sans-serif; font-weight: 700; font-size: 16px; line-height: 24px; cursor: pointer; } .ds-btn-secondary:hover, .ds-btn-secondary:active { background: #C8C8C3; } .ds-btn-secondary:focus-visible { outline: 2px solid #B3121B; outline-offset: 2px; }"
+    },
+    {
+      "name": "Bouton destructeur",
+      "kind": "button",
+      "refersTo": "button-danger",
+      "description": "Action irréversible : cadre et texte rouges sur papier.",
+      "html": "<button class=\"ds-btn-danger\">Réinitialiser la progression</button>",
+      "css": ".ds-btn-danger { min-height: 56px; padding: 8px 16px; background: #F3F3F0; color: #B3121B; border: 2px solid #B3121B; border-radius: 0; font-family: 'Zen Kaku Gothic New', sans-serif; font-weight: 700; font-size: 16px; line-height: 24px; cursor: pointer; } .ds-btn-danger:hover, .ds-btn-danger:active { background: #C8C8C3; } .ds-btn-danger:focus-visible { outline: 2px solid #111111; outline-offset: 2px; }"
+    },
+    {
+      "name": "Boutons sur noir",
+      "kind": "button",
+      "refersTo": "button-primary-on-dark",
+      "description": "Dans une case inversée ou un écran d'événement, les couleurs s'inversent.",
+      "html": "<div class=\"ds-dark\"><button class=\"ds-btn-on-dark\">Continuer la marche</button><button class=\"ds-btn-on-dark-secondary\">Voir sur la carte</button></div>",
+      "css": ".ds-dark { display: flex; flex-direction: column; gap: 8px; padding: 16px; background: #111111; } .ds-btn-on-dark, .ds-btn-on-dark-secondary { min-height: 56px; padding: 8px 16px; border-radius: 0; font-family: 'Zen Kaku Gothic New', sans-serif; font-weight: 700; font-size: 16px; line-height: 24px; cursor: pointer; } .ds-btn-on-dark { background: #F3F3F0; color: #111111; border: 2px solid #F3F3F0; } .ds-btn-on-dark:hover, .ds-btn-on-dark:active { background: #C8C8C3; border-color: #C8C8C3; } .ds-btn-on-dark-secondary { background: #111111; color: #F3F3F0; border: 2px solid #F3F3F0; } .ds-btn-on-dark-secondary:hover, .ds-btn-on-dark-secondary:active { background: #3A3A37; } .ds-btn-on-dark:focus-visible, .ds-btn-on-dark-secondary:focus-visible { outline: 2px solid #E8414A; outline-offset: 2px; }"
+    },
+    {
+      "name": "Planche et cases",
+      "kind": "card",
+      "refersTo": "panel",
+      "description": "Page noire, cases de papier et case inversée séparées par la gouttière de 6 dp ; la case héros coupe son bas en biais et se remplit en trame.",
+      "html": "<div class=\"ds-page\"><div class=\"ds-panel ds-panel-hero\"><div class=\"ds-tone\" style=\"width:42%\"></div><div class=\"ds-km\">418,6<span> km</span></div><div class=\"ds-line\">sur 1 000 km · L'Âge d'or</div></div><div class=\"ds-row\"><div class=\"ds-panel\"><div class=\"ds-title\">La forteresse de Doldrey</div><div class=\"ds-small\">≈ 12 400 pas</div></div><div class=\"ds-panel ds-panel-reversed\"><div class=\"ds-tone ds-tone-dark\"></div></div></div></div>",
+      "css": ".ds-page { background: #111111; padding: 6px; display: flex; flex-direction: column; gap: 6px; max-width: 380px; } .ds-row { display: flex; gap: 6px; } .ds-row > .ds-panel { flex: 1; min-height: 120px; } .ds-panel { position: relative; overflow: hidden; background: #F3F3F0; color: #111111; padding: 16px; border-radius: 0; } .ds-panel-reversed { background: #111111; border: 2px solid #3A3A37; } .ds-panel-hero { padding-bottom: 40px; clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%); } .ds-panel-hero::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 24px; background: #111111; clip-path: polygon(100% 0, 100% 100%, 0 100%); } .ds-tone { position: absolute; top: 0; left: 0; bottom: 0; width: 100%; background-image: radial-gradient(#8C8C88 1.3px, transparent 1.4px); background-size: 4px 4px; pointer-events: none; } .ds-tone-dark { background-image: radial-gradient(#3A3A37 1.2px, transparent 1.3px); } .ds-km { position: relative; font-family: 'Shippori Mincho B1', serif; font-weight: 800; font-size: 72px; line-height: 76px; letter-spacing: -2px; } .ds-km span { font-size: 28px; letter-spacing: 0; } .ds-line { position: relative; font-family: 'Zen Kaku Gothic New', sans-serif; font-weight: 700; font-size: 16px; line-height: 24px; } .ds-title { font-family: 'Shippori Mincho B1', serif; font-weight: 800; font-size: 22px; line-height: 28px; } .ds-small { font-family: 'Zen Kaku Gothic New', sans-serif; font-size: 14px; line-height: 20px; color: #4A4A47; margin-top: 8px; }"
+    },
+    {
+      "name": "Rangée de choix",
+      "kind": "chip",
+      "refersTo": "choice-row-selected",
+      "description": "Choix exclusif : rangée cadrée, l'option choisie en encre pleine.",
+      "html": "<div class=\"ds-choices\" role=\"radiogroup\"><button class=\"ds-choice\">1 500</button><button class=\"ds-choice ds-choice-on\" aria-checked=\"true\">3 000</button><button class=\"ds-choice\">5 000</button><button class=\"ds-choice\">8 000</button></div>",
+      "css": ".ds-choices { display: flex; min-height: 48px; border: 2px solid #111111; background: #F3F3F0; max-width: 360px; } .ds-choice { flex: 1; padding: 8px 0; border: 0; border-radius: 0; background: transparent; color: #111111; font-family: 'Zen Kaku Gothic New', sans-serif; font-weight: 700; font-size: 14px; line-height: 20px; cursor: pointer; } .ds-choice:hover { background: #C8C8C3; } .ds-choice-on, .ds-choice-on:hover { background: #111111; color: #F3F3F0; } .ds-choice:focus-visible { outline: 2px solid #B3121B; outline-offset: -4px; }"
+    },
+    {
+      "name": "Barre d'onglets",
+      "kind": "nav",
+      "refersTo": "tab-bar",
+      "description": "Navigation Material à 5 onglets, indicateur encré à angles vifs.",
+      "html": "<nav class=\"ds-tabs\"><a class=\"ds-tab ds-tab-on\"><span class=\"ds-ind\"><svg width=\"22\" height=\"22\" viewBox=\"0 0 24 24\"><path d=\"M7 3c2 0 3 2 3 5s-1 6-3 6-3-3-3-6 1-5 3-5zm10 6c2 0 3 2 3 5s-1 6-3 6-3-3-3-6 1-5 3-5z\" fill=\"currentColor\"/></svg></span>Marche</a><a class=\"ds-tab\"><span class=\"ds-ind\"><svg width=\"22\" height=\"22\" viewBox=\"0 0 24 24\"><path d=\"M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2z\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"/></svg></span>Carte</a><a class=\"ds-tab\"><span class=\"ds-ind\"><svg width=\"22\" height=\"22\" viewBox=\"0 0 24 24\"><path d=\"M4 4h7v16H4zm9 0h7v16h-7z\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"/></svg></span>Quêtes</a></nav>",
+      "css": ".ds-tabs { display: flex; background: #F3F3F0; border-top: 3px solid #111111; padding: 8px 0 12px; max-width: 380px; } .ds-tab { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; color: #4A4A47; font-family: 'Zen Kaku Gothic New', sans-serif; font-weight: 700; font-size: 12px; line-height: 16px; cursor: pointer; text-decoration: none; } .ds-ind { width: 56px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 0; } .ds-tab:hover .ds-ind { background: #C8C8C3; } .ds-tab-on { color: #111111; } .ds-tab-on .ds-ind, .ds-tab-on:hover .ds-ind { background: #111111; color: #F3F3F0; } .ds-tab:focus-visible { outline: 2px solid #B3121B; }"
+    },
+    {
+      "name": "Barre encrée",
+      "kind": "custom",
+      "refersTo": "panel",
+      "description": "Barre de progression cadrée, remplissage plein ; trait rouge « tu es ici » sur la barre de la Traque.",
+      "html": "<div class=\"ds-bar-wrap\"><div class=\"ds-bar\"><div class=\"ds-fill\" style=\"width:42%\"></div></div><div class=\"ds-here\" style=\"left:42%\"></div></div><div class=\"ds-bar ds-bar-bleed\"><div class=\"ds-fill\" style=\"width:30%\"></div></div>",
+      "css": ".ds-bar-wrap { position: relative; max-width: 360px; margin-bottom: 16px; } .ds-bar { max-width: 360px; border: 2px solid #111111; background: #F3F3F0; height: 10px; } .ds-fill { height: 100%; background: #111111; transition: width 0.3s; } .ds-bar-bleed .ds-fill { background: #B3121B; } .ds-here { position: absolute; top: -6px; width: 4px; margin-left: -2px; height: 26px; background: #B3121B; }"
+    },
+    {
+      "name": "Cases du jour",
+      "kind": "custom",
+      "refersTo": "day-cell-held",
+      "description": "Sept carrés : plein (tenu), barré en rouge (manqué), pointillés (aujourd'hui), estompé (inconnu).",
+      "html": "<div class=\"ds-days\"><span class=\"ds-day ds-held\">L</span><span class=\"ds-day ds-held\">M</span><span class=\"ds-day ds-missed\">M</span><span class=\"ds-day ds-unknown\">J</span><span class=\"ds-day ds-held\">V</span><span class=\"ds-day ds-held\">S</span><span class=\"ds-day ds-today\">D</span></div>",
+      "css": ".ds-days { display: flex; gap: 4px; padding: 16px; background: #111111; } .ds-day { width: 36px; height: 36px; box-sizing: border-box; display: flex; align-items: center; justify-content: center; border: 2px solid #F3F3F0; color: #F3F3F0; font-family: 'Zen Kaku Gothic New', sans-serif; font-weight: 700; font-size: 12px; line-height: 16px; } .ds-held { background: #F3F3F0; color: #111111; } .ds-missed { background: linear-gradient(to top right, transparent calc(50% - 1px), #E8414A calc(50% - 1px), #E8414A calc(50% + 1px), transparent calc(50% + 1px)); } .ds-today { border-style: dashed; } .ds-unknown { opacity: 0.4; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "Le tome relié (Trame & Encre)",
+    "overview": "L'app se lit comme un tome de Berserk : chaque écran est une planche posée sur une page noire, découpée en cases séparées par une gouttière d'encre. La progression ne s'affiche pas dans des jauges décoratives ; elle se remplit en trame de points, comme une case qu'on encre au fil des pas. Papier blanc froid, encre noire, deux valeurs de trame et un seul rouge : rien d'autre. Les aplats sont francs, les angles vifs, la hiérarchie se fait par l'échelle des lettres et non par la couleur ou l'ombre.\n\nLe tome alterne cases claires et cases inversées, à l'image des scènes sombres de Miura : environ la moitié de la surface d'un écran est en noir (texte papier, rouge clair), le papier étant gardé pour ce qui doit se lire dehors d'un coup d'œil (kilométrage, prochain point). La densité est assumée : les collections et les listes s'empilent en cases serrées plutôt qu'en cartes aérées. Les cases du manga (`assets/panels/`) sont montrées telles quelles, cadrées de papier ; la carte et le camp passent par des dérivés à l'encre noir et blanc, jamais en couleurs.\n\nLe monde refuse l'arrangement par défaut du podomètre : pas d'anneau de pas, pas de cartes arrondies flottant sur un fond sombre, pas de dégradés. Les valeurs sont exprimées en px, à lire comme des dp (et des sp pour le texte) : la cible est Android, en React Native.",
+    "keyCharacteristics": [
+      "Planche noire, cases de papier ou inversées, gouttière de 6 px entre elles.",
+      "Angles vifs partout ; une seule case par écran peut couper son bas en biais.",
+      "Trame de points (motif, jamais dégradé) pour la progression et les cases verrouillées.",
+      "Un seul rouge, réservé à la Marque, au danger et au repère « tu es ici ».",
+      "Titres et grands chiffres en Mincho extra-gras ; toute l'interface en Gothic.",
+      "Lignes de concentration seulement pour les grands moments."
+    ],
+    "rules": [
+      { "name": "The One Red Rule", "body": "Un seul rouge, et seulement pour la Marque, le danger et « tu es ici ». Sur noir, on prend `red-on-black` ; jamais `red` sur `black`.", "section": "colors" },
+      { "name": "The Half-Dark Rule", "body": "Environ la moitié de la surface d'un écran est en cases inversées. Le papier est réservé à ce qui doit se lire en plein soleil (kilométrage, prochain point, totaux).", "section": "colors" },
+      { "name": "The Tone Is Dots Rule", "body": "La trame est un motif de points (`Screentone`), pas un dégradé ni une transparence. `tone` et `tone-dark` ne portent jamais de texte.", "section": "colors" },
+      { "name": "The Mincho Speaks Story Rule", "body": "Le Mincho est réservé aux titres et aux chiffres du voyage ; jamais pour un bouton, un libellé ou un paragraphe.", "section": "typography" },
+      { "name": "The Fit-On-One-Line Rule", "body": "Les grands chiffres suivent la taille de police d'Android, plafonnée à ×1,3, et se réduisent pour tenir sur une ligne sans sortir de l'écran. Toutes les hauteurs de ligne sont des multiples de 4.", "section": "typography" },
+      { "name": "The Gutter Is The Shadow Rule", "body": "Rien ne flotte : pas d'ombre portée, pas de flou, pas de carte surélevée. Deux cases se séparent par la gouttière, jamais par une ombre.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do poser chaque écran sur une page `black` et y séparer les cases par la gouttière de 6px.",
+      "Do garder environ la moitié de la surface en cases inversées, et le papier pour ce qui se lit dehors (kilométrage, prochain point).",
+      "Do exprimer la progression par la trame de points ou un remplissage plein, cadré de 2px.",
+      "Do réserver le rouge à la Marque, au danger et à « tu es ici », en `red-on-black` sur noir.",
+      "Do écrire titres et chiffres du voyage en Mincho, tout le reste en Gothic, en choisissant la graisse par la famille.",
+      "Do montrer les cases du manga intactes, cadrées de papier ; passer les autres illustrations à l'encre noir et blanc avec du rouge.",
+      "Do garder des cibles de 48px au moins (56px pour les boutons) qui grandissent avec le texte."
+    ],
+    "donts": [
+      "Don't arrondir un coin : pas de rayon sur les cases, boutons, barres ou indicateurs.",
+      "Don't utiliser d'ombre, de flou ou de dégradé ; la trame est un motif de points, pas un dégradé.",
+      "Don't introduire une deuxième teinte d'accent ni des illustrations en couleurs.",
+      "Don't couper en biais plus d'une case par écran.",
+      "Don't poser de texte en `tone` ou `tone-dark`.",
+      "Don't mettre de lignes de concentration en décor : elles marquent un événement.",
+      "Don't revenir à l'arrangement du podomètre générique (anneau des pas, cartes arrondies flottantes sur fond sombre)."
+    ]
+  }
+}

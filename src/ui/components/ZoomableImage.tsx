@@ -238,7 +238,7 @@ function ZoomButton({ label, icon, disabled, onPress }: ZoomButtonProps) {
       onPress={onPress}
       style={[styles.button, disabled && styles.buttonDisabled]}
     >
-      <Ionicons name={icon} size={20} color={theme.colors.bone} />
+      <Ionicons name={icon} size={22} color={theme.colors.paper} />
     </Pressable>
   );
 }
@@ -259,9 +259,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 1,
-    borderColor: theme.colors.iron,
-    borderRadius: theme.radius[4],
-    backgroundColor: theme.colors.inkRaised,
+    borderColor: theme.colors.paper,
+    backgroundColor: theme.colors.black,
   },
   buttonDisabled: { opacity: 0.4 },
 });

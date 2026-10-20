@@ -11,6 +11,7 @@ export const space = {
   128: 128,
 } as const;
 
-export const radius = {
-  4: 4,
-} as const;
+/** Gouttière noire entre deux cases, et épaisseur des cadres. */
+export const gutter = 6;
+export const frame = 2;
+

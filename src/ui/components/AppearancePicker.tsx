@@ -64,7 +64,7 @@ function SkinThumb({ skin, locked }: { skin: GutsSkin; locked: boolean }) {
       <Image
         source={sprite.image}
         resizeMode="stretch"
-        tintColor={locked ? theme.colors.ash : undefined}
+        tintColor={locked ? theme.colors.toneLight : undefined}
         accessibilityIgnoresInvertColors
         style={{ width: sheetWidth, height: THUMB_HEIGHT }}
       />
@@ -79,17 +79,16 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: theme.space[16],
     padding: theme.space[8],
-    borderWidth: 1,
-    borderColor: theme.colors.ash,
-    borderRadius: theme.radius[4],
+    borderWidth: theme.frame,
+    borderColor: theme.colors.toneLight,
   },
-  rowSelected: { borderColor: theme.colors.bone },
-  rowLocked: { borderStyle: "dashed", borderColor: theme.colors.iron },
+  rowSelected: { borderColor: theme.colors.black },
+  rowLocked: { borderStyle: "dashed", borderColor: theme.colors.tone },
   thumb: { height: THUMB_HEIGHT, overflow: "hidden" },
   text: { flex: 1, gap: theme.space[4] },
-  name: { ...theme.text.bodyStrong, color: theme.colors.bone },
-  nameLocked: { ...theme.text.bodyStrong, color: theme.colors.boneDim },
-  small: { ...theme.text.small, color: theme.colors.boneDim },
-  credit: { ...theme.text.small, fontFamily: theme.fontFamily.bodyItalic, color: theme.colors.boneDim },
-  worn: { ...theme.text.label, color: theme.colors.bone },
+  name: { ...theme.text.bodyStrong, color: theme.colors.black },
+  nameLocked: { ...theme.text.bodyStrong, color: theme.colors.blackSoft },
+  small: { ...theme.text.small, color: theme.colors.blackSoft },
+  credit: { ...theme.text.small, color: theme.colors.blackSoft },
+  worn: { ...theme.text.label, color: theme.colors.black },
 });

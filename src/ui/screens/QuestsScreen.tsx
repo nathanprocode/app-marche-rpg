@@ -22,10 +22,10 @@ import { DuelCard } from "../components/DuelCard";
 import { AchievementList } from "../components/AchievementList";
 import { CompanionCollection } from "../components/CompanionCollection";
 import { EnemyCollection } from "../components/EnemyCollection";
-import { InkCard } from "../components/InkCard";
-import { PaperCard } from "../components/PaperCard";
+import { Panel } from "../components/Panel";
 import { ProgressBar } from "../components/ProgressBar";
 import { Screen } from "../components/Screen";
+import { Screentone } from "../components/Screentone";
 import { ZoomableImage } from "../components/ZoomableImage";
 
 type QuestsTab = "daily" | "chronicles" | "companions" | "enemies" | "achievements";
@@ -71,12 +71,13 @@ export function QuestsScreen() {
   const achievementCount = ACHIEVEMENTS.filter((achievement) => achievements[achievement.id]).length;
 
   return (
-    <Screen scroll>
-      <Text accessibilityRole="header" style={styles.title}>
-        Quêtes
-      </Text>
+    <Screen scroll variant="page">
+      <Panel reversed>
+        <Text accessibilityRole="header" style={styles.title}>
+          Quêtes
+        </Text>
 
-      <View accessibilityRole="tablist" style={styles.tabs}>
+        <View accessibilityRole="tablist" style={styles.tabs}>
         <TabButton label="Du jour" selected={tab === "daily"} onPress={() => setTab("daily")} />
         <TabButton
           label="Chroniques"
@@ -102,7 +103,8 @@ export function QuestsScreen() {
           selected={tab === "achievements"}
           onPress={() => setTab("achievements")}
         />
-      </View>
+        </View>
+      </Panel>
 
       <View style={styles.list}>
         {tab === "daily" ? (
@@ -132,16 +134,17 @@ export function QuestsScreen() {
                 <ChronicleCard key={checkpoint.id} checkpoint={checkpoint} onOpenPanel={setLightboxPanel} />
               ))}
               {nextLocked ? (
-                <View style={styles.locked}>
-                  <Ionicons name="lock-closed-outline" size={24} color={theme.colors.boneDim} />
+                <Panel reversed style={styles.locked}>
+                  <Screentone color={theme.colors.toneDark} step={4} dot={1.2} />
+                  <Ionicons name="lock-closed" size={24} color={theme.colors.paper} />
                   <View style={styles.lockedText}>
                     <Text style={styles.lockedTitle}>{nextLocked.title}</Text>
-                    <Text style={styles.small}>
+                    <Text style={styles.smallOnBlack}>
                       {`Encore ${formatDecimal(Math.max(0, nextLocked.kmThreshold - progress.totalDistanceKm))} km avant de la lire`}
                     </Text>
                   </View>
                   <Text style={styles.lockedKm}>{`${formatInt(nextLocked.kmThreshold)} km`}</Text>
-                </View>
+                </Panel>
               ) : null}
             </>
           )}
@@ -155,7 +158,7 @@ export function QuestsScreen() {
             style={styles.closeButton}
             onPress={() => setLightboxPanel(null)}
           >
-            <Ionicons name="close" size={24} color={theme.colors.bone} />
+            <Ionicons name="close" size={24} color={theme.colors.paper} />
           </Pressable>
           {lightboxPanel ? (
             <ZoomableImage source={lightboxPanel} accessibilityLabel="Planche du manga, agrandissable en pinçant" />
@@ -239,25 +242,21 @@ function QuestRow({ quest }: { quest: Quest }) {
   const status = quest.done ? "accomplie" : `en cours, ${quest.right}`;
 
   return (
-    <InkCard style={styles.quest} accessible accessibilityLabel={`${quest.title}, ${status}. ${quest.description}`}>
-      {quest.done ? (
-        <View style={styles.questDone}>
-          <Ionicons name="checkmark" size={16} color={theme.colors.bone} />
-        </View>
-      ) : (
-        <View style={styles.questOpen} />
-      )}
+    <Panel style={styles.quest} accessible accessibilityLabel={`${quest.title}, ${status}. ${quest.description}`}>
+      <View style={[styles.questBox, quest.done && styles.questBoxDone]}>
+        {quest.done ? <Ionicons name="checkmark" size={20} color={theme.colors.paper} /> : null}
+      </View>
       <View style={styles.questText}>
         <Text style={styles.questTitle}>{quest.title}</Text>
         <Text style={styles.small}>{quest.description}</Text>
         {quest.done ? null : (
           <View style={styles.questBar}>
-            <ProgressBar pct={quest.pct} />
+            <ProgressBar pct={quest.pct} calm />
           </View>
         )}
       </View>
       <Text style={styles.questRight}>{quest.right}</Text>
-    </InkCard>
+    </Panel>
   );
 }
 
@@ -276,104 +275,92 @@ function ChronicleCard({ checkpoint, onOpenPanel }: ChronicleCardProps) {
       disabled={!panel}
       onPress={() => panel && onOpenPanel(panel)}
     >
-      <PaperCard style={styles.chronicle}>
+      <Panel padded={false} style={styles.chronicle}>
         <View style={styles.chronicleThumb}>
           {panel ? (
-            <View pointerEvents="none" style={styles.thumbBlend}>
-              <Image source={panel} style={styles.thumbImage} resizeMode="cover" accessibilityIgnoresInvertColors />
-            </View>
+            <Image source={panel} style={styles.thumbImage} resizeMode="cover" accessibilityIgnoresInvertColors />
           ) : (
-            <Ionicons name="book-outline" size={32} color={theme.colors.umber} />
+            <Ionicons name="book-outline" size={32} color={theme.colors.paper} />
           )}
         </View>
         <View style={styles.chronicleText}>
-          <Text style={styles.chronicleKicker}>{`${formatInt(checkpoint.kmThreshold)} km · ${checkpoint.arc}`}</Text>
           <Text style={styles.chronicleTitle}>{checkpoint.title}</Text>
+          <Text style={styles.chronicleMeta}>{`${formatInt(checkpoint.kmThreshold)} km · ${checkpoint.arc}`}</Text>
           <Text style={styles.chronicleDescription}>
             {checkpoint.description}
           </Text>
         </View>
-      </PaperCard>
+      </Panel>
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
-  title: { ...theme.text.displayL, color: theme.colors.bone },
-  tabs: {
-    marginTop: theme.space[16],
-    flexDirection: "row",
-    flexWrap: "wrap",
-    minHeight: 48,
-    borderWidth: 1,
-    borderColor: theme.colors.ash,
-    borderRadius: theme.radius[4],
-    overflow: "hidden",
+  title: { ...theme.text.displayL, color: theme.colors.paper },
+  // Les onglets : des cases dans l'en-tête noir ; l'onglet ouvert est la case de papier.
+  tabs: { marginTop: theme.space[16], flexDirection: "row", flexWrap: "wrap", gap: theme.gutter },
+  tabButton: {
+    flexBasis: "30%",
+    flexGrow: 1,
+    minHeight: 56,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: theme.space[8],
+    paddingHorizontal: theme.space[4],
+    borderWidth: theme.frame,
+    borderColor: theme.colors.toneDark,
   },
-  tabButton: { flexBasis: "50%", flexGrow: 1, alignItems: "center", justifyContent: "center", paddingVertical: theme.space[8] },
-  tabButtonSelected: { backgroundColor: theme.colors.bone },
-  tabLabel: { ...theme.text.label, fontSize: 14, lineHeight: 20, color: theme.colors.boneDim, textAlign: "center" },
-  tabCount: { ...theme.text.small, color: theme.colors.boneDim, textAlign: "center" },
-  tabLabelSelected: { color: theme.colors.ink },
-  list: { marginTop: theme.space[24], gap: theme.space[16] },
-  small: { ...theme.text.small, color: theme.colors.boneDim },
+  tabButtonSelected: { backgroundColor: theme.colors.paper, borderColor: theme.colors.paper },
+  tabLabel: { ...theme.text.label, letterSpacing: 0, fontSize: 14, lineHeight: 20, color: theme.colors.paper, textAlign: "center" },
+  tabCount: { ...theme.text.small, color: theme.colors.paperSoft, textAlign: "center" },
+  tabLabelSelected: { color: theme.colors.black },
+  list: { gap: theme.gutter },
+  smallOnBlack: { ...theme.text.small, color: theme.colors.paperSoft },
   quest: { flexDirection: "row", alignItems: "center", gap: theme.space[16] },
-  questDone: {
+  questBox: {
     width: 32,
     height: 32,
     alignItems: "center",
     justifyContent: "center",
-    borderRadius: 16,
-    backgroundColor: theme.colors.blood,
-    borderWidth: 1,
-    borderColor: theme.colors.bloodGlow,
+    borderWidth: theme.frame,
+    borderColor: theme.colors.black,
   },
-  questOpen: { width: 32, height: 32, borderRadius: 16, borderWidth: 1, borderColor: theme.colors.iron },
-  questText: { flex: 1 },
-  questTitle: { ...theme.text.bodyStrong, color: theme.colors.bone },
+  questBoxDone: { backgroundColor: theme.colors.black },
+  questText: { flex: 1, gap: 2 },
+  questTitle: { ...theme.text.displayS, color: theme.colors.black },
+  small: { ...theme.text.small, color: theme.colors.blackSoft },
   questBar: { marginTop: theme.space[8] },
-  questRight: { ...theme.text.label, color: theme.colors.boneDim, textAlign: "right" },
-  chronicle: { flexDirection: "row", padding: 0, minHeight: 120 },
-  chronicleThumb: { width: 112, alignItems: "center", justifyContent: "center", backgroundColor: theme.colors.bone },
-  thumbBlend: { ...StyleSheet.absoluteFillObject, mixBlendMode: "multiply" },
+  questRight: { ...theme.text.bodyStrong, color: theme.colors.black, textAlign: "right" },
+  chronicle: { flexDirection: "row", minHeight: 136 },
+  chronicleThumb: { width: 112, alignItems: "center", justifyContent: "center", backgroundColor: theme.colors.black },
   thumbImage: { width: "100%", height: "100%" },
-  chronicleText: { flex: 1, paddingVertical: 12, paddingHorizontal: theme.space[16], gap: theme.space[4] },
-  chronicleKicker: { ...theme.text.label, color: theme.colors.blood },
-  chronicleTitle: { ...theme.text.displayS, color: theme.colors.ink },
-  chronicleDescription: { ...theme.text.small, color: theme.colors.umber },
-  locked: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: theme.space[16],
-    padding: theme.space[16],
-    borderWidth: 1,
-    borderStyle: "dashed",
-    borderColor: theme.colors.iron,
-    borderRadius: theme.radius[4],
-  },
-  lockedText: { flex: 1 },
-  lockedTitle: { ...theme.text.body, color: theme.colors.bone },
-  lockedKm: { ...theme.text.displayS, color: theme.colors.boneDim },
+  chronicleText: { flex: 1, padding: theme.space[16], gap: theme.space[4] },
+  chronicleTitle: { ...theme.text.displayS, color: theme.colors.black },
+  chronicleMeta: { ...theme.text.small, fontFamily: theme.fontFamily.gothicBold, color: theme.colors.blackSoft },
+  chronicleDescription: { ...theme.text.small, color: theme.colors.blackSoft },
+  locked: { flexDirection: "row", alignItems: "center", gap: theme.space[16], minHeight: 96 },
+  lockedText: { flex: 1, gap: 2 },
+  lockedTitle: { ...theme.text.displayS, color: theme.colors.paper },
+  lockedKm: { ...theme.text.displayS, color: theme.colors.paper },
   // En haut, la place du bouton Fermer ; la planche et ses boutons de zoom occupent le reste.
   lightbox: {
     flex: 1,
-    backgroundColor: "rgba(12,10,9,0.96)",
+    backgroundColor: "rgba(17,17,17,0.97)",
     paddingHorizontal: theme.space[16],
-    paddingTop: theme.space[48] + 44 + theme.space[16],
+    paddingTop: theme.space[48] + 48 + theme.space[16],
     paddingBottom: theme.space[32],
   },
   closeButton: {
     position: "absolute",
     top: theme.space[48],
-    right: theme.space[24],
+    right: theme.space[16],
     zIndex: 2,
-    width: 44,
-    height: 44,
+    width: 48,
+    height: 48,
     alignItems: "center",
     justifyContent: "center",
-    borderWidth: 1,
-    borderColor: theme.colors.iron,
-    borderRadius: theme.radius[4],
-    backgroundColor: theme.colors.inkRaised,
+    borderWidth: theme.frame,
+    borderColor: theme.colors.paper,
+    backgroundColor: theme.colors.black,
   },
 });

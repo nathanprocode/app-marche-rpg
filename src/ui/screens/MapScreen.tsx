@@ -43,12 +43,13 @@ import { usePlayerStore } from "../../store/usePlayerStore";
 import { useSocialStore } from "../../store/useSocialStore";
 import { useAuthStore } from "../../store/useAuthStore";
 import { useSettingsStore } from "../../store/useSettingsStore";
-import { BandMarker } from "../components/BandMarker";
+import { BAND_LABEL_CHAR_PX, BandMarker, bandLabel } from "../components/BandMarker";
 import { COMPANION_SPRITE_SIZE, CompanionMarker } from "../components/CompanionMarker";
 import { GutsMarker } from "../components/GutsMarker";
 import { MapSheet } from "../components/MapSheet";
 
-const worldMapAsset = require("../../../assets/map/world-map.png");
+// Version encrée de la carte (gravure en noir et blanc) : la piste rouge s'y lit d'un coup d'œil.
+const worldMapAsset = require("../../../assets/map/world-map-ink.png");
 const MAP_WIDTH = 1448;
 const MAP_HEIGHT = 1086;
 const MAP_SIZE = { width: MAP_WIDTH, height: MAP_HEIGHT };
@@ -65,6 +66,25 @@ const NEXT_LEG_GAP_PX = 10;
 /** Les points ne sont posés qu'autour de la zone visible (un cadre de marge de chaque côté), pour garder peu de vues. */
 const TRAIL_MARGIN = 1;
 const TRAIL_DOT_SIZE = TRAIL_DOT_PX + 2 * TRAIL_OUTLINE_PX;
+/** Largeur moyenne d'un caractère des étiquettes de la carte (Mincho 16 px), pour estimer si elles débordent. */
+const LABEL_CHAR_PX = 9;
+const LABEL_SCREEN_MARGIN = 8;
+const LABEL_FONT_PX = 16;
+/**
+ * Hauteur de ligne des étiquettes : la ligne réelle de Shippori Mincho (hampes 1,16 em + jambages 0,288 em, soit
+ * 23,2 px à 16 px), plus une marge pour l'arrondi en pixels d'Android. À 24 px pile, le haut ou le bas des lettres
+ * était rogné.
+ */
+const LABEL_LINE_PX = Math.ceil(LABEL_FONT_PX * 1.448) + 2;
+const LABEL_PADDING_Y = 3;
+const LABEL_HEIGHT = LABEL_LINE_PX + 2 * LABEL_PADDING_Y;
+/** Écart vertical entre le losange (16 px) et son étiquette, dessus ou dessous. */
+const LABEL_GAP = 4;
+const LABEL_TOP_BELOW = 16 + LABEL_GAP;
+const LABEL_TOP_ABOVE = -(LABEL_HEIGHT + LABEL_GAP + 4);
+/** Colonne des boutons zoom / recentrer, en haut à droite (voir styles.hud, styles.controls, styles.mapButton). */
+const MAP_BUTTON_PX = 48;
+const MAP_BUTTON_COUNT = 3;
 
 function toMapPoint(xPct: number, yPct: number): Offset {
   return { x: (xPct / 100) * MAP_WIDTH, y: (yPct / 100) * MAP_HEIGHT };
@@ -140,6 +160,10 @@ export function MapScreen() {
   const nextLegDots = isJourneyComplete
     ? []
     : dotsAlongPath(nextLegPath, (NEXT_LEG_DOT_PX + NEXT_LEG_GAP_PX) / zoom).filter((dot) => isInRect(dot, trailArea));
+  // Emprise à l'écran de la colonne de boutons, que les étiquettes des points ne doivent pas recouvrir.
+  const controlsTop = insets.top + theme.space[8];
+  const controlsBottom = controlsTop + MAP_BUTTON_COUNT * MAP_BUTTON_PX + (MAP_BUTTON_COUNT - 1) * theme.gutter;
+  const controlsWidth = theme.gutter * 2 + MAP_BUTTON_PX;
 
   /** Applique la vue à la transformation de la carte, sans rendu. */
   function applyTransform(view: MapView): void {
@@ -304,12 +328,20 @@ export function MapScreen() {
               const isReached = checkpoint.kmThreshold <= progress.totalDistanceKm + REACHED_TOLERANCE_KM;
               const isNext = !isJourneyComplete && checkpoint.id === position.next.id;
               const isPrevious = checkpoint.id === position.previous.id;
+              // L'étiquette part du losange, mais glisse pour rester entière dans l'écran (largeur estimée du titre).
+              // Dans la bande des boutons zoom / recentrer, elle s'arrête avant leur colonne.
+              const slotLeft = (checkpoint.x / 100) * contentWidth + mapOffset.x - 8;
+              const labelTop = (checkpoint.y / 100) * contentHeight + mapOffset.y - 8 + (isNext ? LABEL_TOP_ABOVE : LABEL_TOP_BELOW);
+              const besideButtons = labelTop < controlsBottom && labelTop + LABEL_HEIGHT > controlsTop;
+              const labelRightEdge = viewport.width - LABEL_SCREEN_MARGIN - (besideButtons ? controlsWidth : 0);
+              const labelWidth = checkpoint.title.length * LABEL_CHAR_PX + 2 * theme.space[8];
+              const labelLeft = Math.max(LABEL_SCREEN_MARGIN, Math.min(slotLeft, labelRightEdge - labelWidth));
 
               return (
                 <View key={checkpoint.id} pointerEvents="none" style={[styles.markerSlot, { left: `${checkpoint.x}%`, top: `${checkpoint.y}%` }]}>
                   <View style={[styles.diamond, isReached ? styles.diamondReached : styles.diamondAhead]} />
                   {isPrevious || isNext ? (
-                    <View style={[styles.markerChipLane, isNext && styles.markerChipAbove]}>
+                    <View style={[styles.markerChipLane, { left: labelLeft - slotLeft }, isNext && styles.markerChipAbove]}>
                       <View style={styles.markerChip}>
                         <Text numberOfLines={1} style={styles.markerChipText}>
                           {checkpoint.title}
@@ -331,9 +363,24 @@ export function MapScreen() {
                 index={index}
               />
             ))}
-            {friends.map(({ member, spot }, index) => (
-              <BandMarker key={member.uid} name={member.displayName} lap={member.lap} xPct={spot.x} yPct={spot.y} index={index} />
-            ))}
+            {friends.map(({ member, spot }, index) => {
+              // L'étiquette est centrée sous le point : on la fait glisser pour qu'elle reste entière dans l'écran.
+              const centerX = (spot.x / 100) * contentWidth + mapOffset.x;
+              const labelWidth = bandLabel(member.displayName, member.lap).length * BAND_LABEL_CHAR_PX + 2 * theme.space[8];
+              const idealLeft = centerX - labelWidth / 2;
+              const labelLeft = Math.max(LABEL_SCREEN_MARGIN, Math.min(idealLeft, viewport.width - LABEL_SCREEN_MARGIN - labelWidth));
+              return (
+                <BandMarker
+                  key={member.uid}
+                  name={member.displayName}
+                  lap={member.lap}
+                  xPct={spot.x}
+                  yPct={spot.y}
+                  index={index}
+                  labelShiftX={labelLeft - idealLeft}
+                />
+              );
+            })}
             <GutsMarker xPct={position.x} yPct={position.y} skin={gutsSkin} />
           </ImageBackground>
         </Animated.View>
@@ -341,7 +388,7 @@ export function MapScreen() {
 
       <View pointerEvents="none" style={[styles.topScrim, { height: insets.top + theme.space[96] }]} />
 
-      <View style={[styles.hud, { top: insets.top + theme.space[8] }]}>
+      <View style={[styles.hud, { top: controlsTop }]}>
         <View style={styles.distancePill} accessible accessibilityLabel={`${formatDecimal(progress.totalDistanceKm)} kilomètres sur ${GAME_CONFIG.totalGoalKm}`}>
           <Text style={styles.distanceValue}>{`${formatDecimal(progress.totalDistanceKm)} km`}</Text>
           <Text style={styles.distanceGoal}>{`sur ${formatInt(GAME_CONFIG.totalGoalKm)}`}</Text>
@@ -357,24 +404,29 @@ export function MapScreen() {
         onCoveredHeightChange={setSheetHeight}
         header={
           <>
-            <Text style={styles.kicker}>
-              {`Point franchi · ${formatInt(position.previous.kmThreshold)} km · ${position.previous.arc}`}
-            </Text>
             <Text accessibilityRole="header" style={styles.title}>
               {position.previous.title}
+            </Text>
+            <Text style={styles.meta}>
+              {`Point franchi · ${formatInt(position.previous.kmThreshold)} km · ${position.previous.arc}`}
             </Text>
           </>
         }
       >
         <Text style={styles.description}>{position.previous.description}</Text>
 
-        <View style={styles.nextRow}>
-          <View style={styles.nextText}>
-            <Text style={styles.nextLabel}>{isJourneyComplete ? "Périple accompli" : "Prochain point"}</Text>
-            <Text style={styles.nextTitle}>
-              {isJourneyComplete ? "Tu as atteint le dernier souvenir de la Traque." : position.next.title}
-            </Text>
-          </View>
+        <View
+          style={styles.nextRow}
+          accessible
+          accessibilityLabel={
+            isJourneyComplete
+              ? "Périple accompli : tu as atteint le dernier souvenir de la Traque."
+              : `Prochain point : ${position.next.title}, dans ${formatDecimal(remainingKm)} kilomètres`
+          }
+        >
+          <Text style={styles.nextTitle}>
+            {isJourneyComplete ? "Tu as atteint le dernier souvenir de la Traque." : `Prochain : ${position.next.title}`}
+          </Text>
           {isJourneyComplete ? null : <Text style={styles.nextKm}>{`${formatDecimal(remainingKm)} km`}</Text>}
         </View>
       </MapSheet>
@@ -390,60 +442,71 @@ type MapButtonProps = {
 
 function MapButton({ label, icon, onPress }: MapButtonProps) {
   return (
-    <Pressable accessibilityRole="button" accessibilityLabel={label} onPress={onPress} style={styles.mapButton}>
-      <Ionicons name={icon} size={20} color={theme.colors.bone} />
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      onPress={onPress}
+      style={({ pressed }) => [styles.mapButton, pressed && styles.mapButtonPressed]}
+    >
+      <Ionicons name={icon} size={22} color={theme.colors.paper} />
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
   // overflow hidden : la fiche baissée descend sous l'écran, elle ne doit pas déborder sur la barre d'onglets.
-  root: { flex: 1, overflow: "hidden", backgroundColor: theme.colors.ink },
-  mapViewport: { ...StyleSheet.absoluteFillObject, overflow: "hidden", backgroundColor: theme.colors.ink },
+  root: { flex: 1, overflow: "hidden", backgroundColor: theme.colors.black },
+  mapViewport: { ...StyleSheet.absoluteFillObject, overflow: "hidden", backgroundColor: theme.colors.black },
   mapContent: { position: "absolute", top: 0, left: 0 },
   mapImage: { resizeMode: "stretch" },
+  // Le chemin parcouru, à l'encre rouge, cerné de papier pour se détacher de la gravure.
   trailDot: {
     position: "absolute",
     width: TRAIL_DOT_SIZE,
     height: TRAIL_DOT_SIZE,
     borderRadius: TRAIL_DOT_SIZE / 2,
     borderWidth: TRAIL_OUTLINE_PX,
-    borderColor: "rgba(233,225,207,0.9)",
-    backgroundColor: theme.colors.blood,
+    borderColor: theme.colors.paper,
+    backgroundColor: theme.colors.red,
   },
   nextLegDot: {
     position: "absolute",
     width: NEXT_LEG_DOT_PX,
     height: NEXT_LEG_DOT_PX,
     borderRadius: NEXT_LEG_DOT_PX / 2,
-    backgroundColor: theme.colors.ink,
-    opacity: 0.55,
+    backgroundColor: theme.colors.black,
   },
-  topScrim: { position: "absolute", top: 0, left: 0, right: 0, backgroundColor: "rgba(12,10,9,0.55)" },
+  topScrim: { position: "absolute", top: 0, left: 0, right: 0, backgroundColor: "rgba(17,17,17,0.55)" },
   markerSlot: { position: "absolute", width: 16, height: 16, marginLeft: -8, marginTop: -8 },
   diamond: {
     width: 16,
     height: 16,
-    borderWidth: 2,
+    borderWidth: theme.frame,
     transform: [{ rotate: "45deg" }],
   },
-  diamondReached: { backgroundColor: theme.colors.bloodGlow, borderColor: theme.colors.bone },
-  diamondAhead: { backgroundColor: theme.colors.bone, borderColor: theme.colors.bloodGlow },
+  diamondReached: { backgroundColor: theme.colors.red, borderColor: theme.colors.paper },
+  diamondAhead: { backgroundColor: theme.colors.paper, borderColor: theme.colors.black },
   // Couloir large où l'étiquette prend la largeur de son texte. Sans lui, sur Android, l'étiquette ne peut pas
   // dépasser les 16 px du losange : le texte disparaît et il ne reste qu'un carré noir.
-  markerChipLane: { position: "absolute", top: 20, left: 0, width: 280, alignItems: "flex-start" },
+  markerChipLane: { position: "absolute", top: LABEL_TOP_BELOW, left: 0, width: 280, alignItems: "flex-start" },
   markerChip: {
     paddingHorizontal: theme.space[8],
-    paddingVertical: 2,
-    backgroundColor: "rgba(12,10,9,0.88)",
+    paddingVertical: LABEL_PADDING_Y,
+    backgroundColor: theme.colors.black,
   },
   // Le prochain point s'affiche au-dessus, le dernier franchi en dessous : les étiquettes ne se chevauchent plus.
-  markerChipAbove: { top: -40 },
-  markerChipText: { ...theme.text.displayS, fontSize: 16, lineHeight: 24, color: theme.colors.bone },
+  markerChipAbove: { top: LABEL_TOP_ABOVE },
+  markerChipText: {
+    ...theme.text.displayS,
+    fontSize: LABEL_FONT_PX,
+    lineHeight: LABEL_LINE_PX,
+    includeFontPadding: false,
+    color: theme.colors.paper,
+  },
   hud: {
     position: "absolute",
-    left: theme.space[24],
-    right: theme.space[24],
+    left: theme.gutter * 2,
+    right: theme.gutter * 2,
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "flex-start",
@@ -452,41 +515,34 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "baseline",
     gap: theme.space[8],
-    paddingVertical: theme.space[8],
+    paddingVertical: theme.space[4],
     paddingHorizontal: theme.space[16],
-    backgroundColor: "rgba(12,10,9,0.9)",
-    borderWidth: 1,
-    borderColor: theme.colors.ash,
-    borderRadius: theme.radius[4],
+    backgroundColor: theme.colors.black,
   },
-  distanceValue: { ...theme.text.displayM, color: theme.colors.bone },
-  distanceGoal: { ...theme.text.small, color: theme.colors.boneDim },
-  controls: { gap: theme.space[8] },
+  distanceValue: { ...theme.text.displayM, color: theme.colors.paper },
+  distanceGoal: { ...theme.text.small, color: theme.colors.paperSoft },
+  controls: { gap: theme.gutter },
   mapButton: {
-    width: 44,
-    height: 44,
+    width: MAP_BUTTON_PX,
+    height: MAP_BUTTON_PX,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "rgba(12,10,9,0.9)",
-    borderWidth: 1,
-    borderColor: theme.colors.ash,
-    borderRadius: theme.radius[4],
+    backgroundColor: theme.colors.black,
   },
-  kicker: { ...theme.text.label, color: theme.colors.blood },
-  title: { ...theme.text.displayM, color: theme.colors.ink },
-  description: { ...theme.text.small, color: theme.colors.umber, marginTop: theme.space[8] },
+  mapButtonPressed: { backgroundColor: theme.colors.blackSoft },
+  title: { ...theme.text.displayM, color: theme.colors.black },
+  meta: { ...theme.text.small, fontFamily: theme.fontFamily.gothicBold, color: theme.colors.blackSoft },
+  description: { ...theme.text.body, color: theme.colors.blackSoft, marginTop: theme.space[16] },
+  // Le prochain point dans une case noire, en bas de la fiche.
   nextRow: {
     marginTop: theme.space[16],
-    paddingTop: theme.space[16],
-    borderTopWidth: 1,
-    borderTopColor: "rgba(12,10,9,0.25)",
+    padding: theme.space[16],
+    backgroundColor: theme.colors.black,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     gap: theme.space[16],
   },
-  nextText: { flex: 1 },
-  nextLabel: { ...theme.text.label, color: theme.colors.umber },
-  nextTitle: { ...theme.text.bodyStrong, color: theme.colors.ink },
-  nextKm: { ...theme.text.displayM, color: theme.colors.blood },
+  nextTitle: { ...theme.text.bodyStrong, color: theme.colors.paper, flex: 1 },
+  nextKm: { ...theme.text.displayM, color: theme.colors.paper },
 });

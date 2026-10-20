@@ -8,7 +8,7 @@ import { useAuthStore } from "../../store/useAuthStore";
 import { usePlayerStore } from "../../store/usePlayerStore";
 import { useSocialStore, type BandError } from "../../store/useSocialStore";
 import { Button } from "../components/Button";
-import { InkCard } from "../components/InkCard";
+import { Panel } from "../components/Panel";
 import { Screen } from "../components/Screen";
 
 const ERROR_TEXT: Record<BandError, string> = {
@@ -48,11 +48,12 @@ export function BandScreen() {
     : undefined;
 
   return (
-    <Screen scroll>
-      <Text style={styles.label}>Bande</Text>
-      <Text accessibilityRole="header" style={styles.title}>
-        {code ? "Ta bande" : "Marcher à plusieurs"}
-      </Text>
+    <Screen scroll variant="page">
+      <Panel reversed>
+        <Text accessibilityRole="header" style={styles.title}>
+          {code ? "Ta bande" : "Marcher à plusieurs"}
+        </Text>
+      </Panel>
 
       {code ? (
         <BandView
@@ -64,34 +65,39 @@ export function BandScreen() {
           onLeave={() => void leaveBand()}
         />
       ) : (
-        <View style={styles.block}>
-          <Text style={styles.body}>
-            Une bande, c'est tes amis sur la même carte : tu vois jusqu'où chacun est arrivé, et eux te voient. Seuls ton
-            nom, ta distance, ton tour et ta série sont partagés.
-          </Text>
-          <Button label="Créer une bande" onPress={() => void createBand()} loading={isBusy} />
-          <InkCard style={styles.joinCard}>
-            <Text style={styles.bodyStrong}>Rejoindre une bande</Text>
+        <>
+          <Panel style={styles.block}>
+            <Text style={styles.body}>
+              Une bande, c'est tes amis sur la même carte : tu vois jusqu'où chacun est arrivé, et eux te voient. Seuls ton
+              nom, ta distance, ton tour et ta série sont partagés.
+            </Text>
+            <Button label="Créer une bande" onPress={() => void createBand()} loading={isBusy} />
+          </Panel>
+          <Panel style={styles.block}>
+            <Text style={styles.heading}>Rejoindre une bande</Text>
             <Text style={styles.small}>Demande le code à l'ami qui l'a créée.</Text>
             <TextInput
               accessibilityLabel="Code de la bande"
               value={input}
               onChangeText={setInput}
               placeholder="FAUCON-XXXXXX"
-              placeholderTextColor={theme.colors.iron}
+              placeholderTextColor={theme.colors.blackSoft}
+              selectionColor={theme.colors.red}
               autoCapitalize="characters"
               autoCorrect={false}
               style={styles.input}
             />
             <Button label="Rejoindre" variant="secondary" onPress={() => void joinBand(input)} disabled={isBusy || !input.trim()} />
-          </InkCard>
-        </View>
+          </Panel>
+        </>
       )}
 
       {error ? (
-        <Text accessibilityRole="alert" style={styles.error}>
-          {ERROR_TEXT[error]}
-        </Text>
+        <Panel reversed>
+          <Text accessibilityRole="alert" style={styles.error}>
+            {ERROR_TEXT[error]}
+          </Text>
+        </Panel>
       ) : null}
     </Screen>
   );
@@ -117,84 +123,86 @@ function BandView({ code, ranking, myId, isLoading, isBusy, onLeave }: BandViewP
   }
 
   return (
-    <View style={styles.block}>
-      <InkCard style={styles.codeCard}>
-        <Text style={styles.label}>Code à donner à tes amis</Text>
+    <>
+      <Panel style={styles.block}>
         <Text selectable {...theme.fitDisplayText} style={styles.code}>
           {shownCode}
         </Text>
+        <Text style={styles.small}>Le code à donner à tes amis pour qu'ils te rejoignent.</Text>
         <Button label="Envoyer le code" variant="secondary" onPress={share} />
-      </InkCard>
+      </Panel>
 
-      <Text accessibilityRole="header" style={styles.label}>
-        Classement
-      </Text>
-      {isLoading && ranking.length <= 1 ? <Text style={styles.small}>Chargement de la bande…</Text> : null}
+      {isLoading && ranking.length <= 1 ? (
+        <Panel>
+          <Text style={styles.small}>Chargement de la bande…</Text>
+        </Panel>
+      ) : null}
       {ranking.map((member, index) => {
         const isMe = member.uid === myId;
         const detail = `${reachedTitle(member.totalDistanceKm)} · série ${member.streakDays} ${member.streakDays > 1 ? "jours" : "jour"}`;
         const lapText = member.lap > 1 ? `Tour ${member.lap} · ` : "";
         return (
-          <InkCard
+          // Ta ligne est la case noire du classement.
+          <Panel
             key={member.uid}
+            reversed={isMe}
             accessible
             accessibilityLabel={`${index + 1}. ${member.displayName}${isMe ? " (toi)" : ""}, ${lapText}${formatDecimal(member.totalDistanceKm)} kilomètres. ${detail}`}
-            style={[styles.memberCard, isMe && styles.me]}
+            style={styles.memberCard}
           >
-            <Text style={styles.rank}>{index + 1}</Text>
+            <Text style={[styles.rank, isMe && styles.onBlack]}>{index + 1}</Text>
             <View style={styles.memberText}>
-              <Text numberOfLines={1} style={styles.bodyStrong}>
+              <Text numberOfLines={1} style={[styles.heading, isMe && styles.onBlack]}>
                 {isMe ? `${member.displayName} (toi)` : member.displayName}
               </Text>
-              <Text style={styles.small}>{detail}</Text>
+              <Text style={isMe ? styles.smallOnBlack : styles.small}>{detail}</Text>
               {isMe ? null : <Text style={styles.small}>{`Vu ${freshnessLabel(member.updatedAtISO, now)}`}</Text>}
             </View>
             <View style={styles.km}>
-              <Text {...theme.fitDisplayText} style={styles.kmValue}>{`${formatDecimal(member.totalDistanceKm)} km`}</Text>
-              {member.lap > 1 ? <Text style={styles.small}>{`tour ${member.lap}`}</Text> : null}
+              <Text {...theme.fitDisplayText} style={[styles.kmValue, isMe && styles.onBlack]}>
+                {`${formatDecimal(member.totalDistanceKm)} km`}
+              </Text>
+              {member.lap > 1 ? <Text style={isMe ? styles.smallOnBlack : styles.small}>{`tour ${member.lap}`}</Text> : null}
             </View>
-          </InkCard>
+          </Panel>
         );
       })}
-      {ranking.length <= 1 && !isLoading ? (
-        <Text style={styles.small}>Tu es seul pour l'instant : envoie le code à tes amis pour qu'ils te rejoignent.</Text>
-      ) : null}
-      <Text style={styles.small}>
-        La position des amis se met à jour quand ils ouvrent l'app ou marchent avec elle ouverte : elle peut avoir un peu de retard.
-      </Text>
 
-      <View style={styles.leave}>
+      <Panel style={styles.block}>
+        {ranking.length <= 1 && !isLoading ? (
+          <Text style={styles.small}>Tu es seul pour l'instant : envoie le code à tes amis pour qu'ils te rejoignent.</Text>
+        ) : null}
+        <Text style={styles.small}>
+          La position des amis se met à jour quand ils ouvrent l'app ou marchent avec elle ouverte : elle peut avoir un peu de retard.
+        </Text>
         <Button label="Quitter la bande" variant="danger" onPress={onLeave} loading={isBusy} />
-      </View>
-    </View>
+      </Panel>
+    </>
   );
 }
 
 const styles = StyleSheet.create({
-  label: { ...theme.text.label, color: theme.colors.boneDim },
-  title: { ...theme.text.displayL, color: theme.colors.bone },
-  block: { marginTop: theme.space[16], gap: theme.space[16] },
-  body: { ...theme.text.body, color: theme.colors.boneDim },
-  bodyStrong: { ...theme.text.bodyStrong, color: theme.colors.bone },
-  small: { ...theme.text.small, color: theme.colors.boneDim },
-  error: { ...theme.text.body, color: theme.colors.bloodEmber, marginTop: theme.space[16] },
-  joinCard: { gap: theme.space[8] },
+  title: { ...theme.text.displayL, color: theme.colors.paper },
+  block: { gap: theme.space[16] },
+  heading: { ...theme.text.displayS, color: theme.colors.black },
+  body: { ...theme.text.body, color: theme.colors.black },
+  small: { ...theme.text.small, color: theme.colors.blackSoft },
+  smallOnBlack: { ...theme.text.small, color: theme.colors.paperSoft },
+  onBlack: { color: theme.colors.paper },
+  error: { ...theme.text.bodyStrong, color: theme.colors.redOnBlack },
   input: {
     ...theme.text.bodyStrong,
-    minHeight: 48,
+    minHeight: 56,
     paddingHorizontal: theme.space[16],
-    color: theme.colors.bone,
-    borderWidth: 1,
-    borderColor: theme.colors.iron,
-    borderRadius: theme.radius[4],
+    color: theme.colors.black,
+    backgroundColor: theme.colors.paper,
+    borderWidth: theme.frame,
+    borderColor: theme.colors.black,
   },
-  codeCard: { gap: theme.space[8] },
-  code: { ...theme.text.displayM, color: theme.colors.bone },
+  code: { ...theme.text.displayM, color: theme.colors.black },
   memberCard: { flexDirection: "row", alignItems: "center", gap: theme.space[16] },
-  me: { borderColor: theme.colors.bloodGlow },
-  rank: { ...theme.text.displayM, color: theme.colors.boneDim, width: 28, textAlign: "center" },
-  memberText: { flex: 1 },
-  km: { alignItems: "flex-end", maxWidth: 110 },
-  kmValue: { ...theme.text.displayS, color: theme.colors.bone },
-  leave: { marginTop: theme.space[16] },
+  rank: { ...theme.text.displayL, color: theme.colors.black, width: 32, textAlign: "center" },
+  memberText: { flex: 1, gap: 2 },
+  km: { alignItems: "flex-end", maxWidth: 120 },
+  kmValue: { ...theme.text.displayS, color: theme.colors.black },
 });

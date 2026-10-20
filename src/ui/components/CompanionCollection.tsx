@@ -7,7 +7,7 @@ import { COMPANIONS, type Companion } from "../../data/companions";
 import { BERSERK_CHECKPOINTS } from "../../data/map/berserk-checkpoints";
 import { isCompanionMet } from "../../features/companions/journey";
 import { CompanionSprite } from "./CompanionSprite";
-import { PaperCard } from "./PaperCard";
+import { Panel } from "./Panel";
 
 type CompanionCollectionProps = {
   unlockedCheckpointIds: string[];
@@ -17,7 +17,7 @@ function meetingPoint(companion: Companion) {
   return BERSERK_CHECKPOINTS.find((checkpoint) => checkpoint.id === companion.metAtCheckpointId)!;
 }
 
-/** Onglet « Compagnons » des Quêtes : les rencontrés en couleur, les autres en silhouette. */
+/** Onglet « Compagnons » des Quêtes : les rencontrés sur papier, les autres en silhouette dans une case noire. */
 export function CompanionCollection({ unlockedCheckpointIds }: CompanionCollectionProps) {
   const [opened, setOpened] = useState<Companion | null>(null);
 
@@ -33,11 +33,11 @@ export function CompanionCollection({ unlockedCheckpointIds }: CompanionCollecti
               onPress={() => setOpened(companion)}
               style={styles.cell}
             >
-              <PaperCard style={styles.card}>
-                <CompanionSprite companion={companion} size={88} />
+              <Panel padded={false} style={styles.card}>
+                <CompanionSprite companion={companion} size={72} />
                 <Text style={styles.name}>{companion.name}</Text>
                 <Text style={styles.title}>{companion.title}</Text>
-              </PaperCard>
+              </Panel>
             </Pressable>
           ) : (
             <View
@@ -46,12 +46,12 @@ export function CompanionCollection({ unlockedCheckpointIds }: CompanionCollecti
               accessibilityLabel={`Compagnon inconnu, rencontré à ${formatInt(meetingPoint(companion).kmThreshold)} kilomètres`}
               style={styles.cell}
             >
-              <View style={[styles.card, styles.cardLocked]}>
+              <Panel reversed padded={false} style={styles.card}>
                 {/* La silhouette : tintColor repeint tous les pixels opaques du sprite. */}
-                <CompanionSprite companion={companion} size={88} tint={theme.colors.ash} style={styles.silhouette} />
+                <CompanionSprite companion={companion} size={72} tint={theme.colors.toneDark} />
                 <Text style={styles.nameLocked}>Inconnu</Text>
                 <Text style={styles.titleLocked}>{`À ${formatInt(meetingPoint(companion).kmThreshold)} km`}</Text>
-              </View>
+              </Panel>
             </View>
           ),
         )}
@@ -60,27 +60,27 @@ export function CompanionCollection({ unlockedCheckpointIds }: CompanionCollecti
       <Modal visible={opened !== null} transparent animationType="fade" onRequestClose={() => setOpened(null)}>
         <View style={styles.overlay}>
           {opened ? (
-            <PaperCard style={styles.sheet}>
+            <Panel padded={false} style={styles.sheet}>
               <Pressable
                 accessibilityRole="button"
                 accessibilityLabel="Fermer la fiche"
                 onPress={() => setOpened(null)}
                 style={styles.close}
               >
-                <Ionicons name="close" size={24} color={theme.colors.ink} />
+                <Ionicons name="close" size={24} color={theme.colors.black} />
               </Pressable>
               <ScrollView contentContainerStyle={styles.sheetContent}>
                 <CompanionSprite companion={opened} size={160} />
-                <Text style={styles.sheetKicker}>
-                  {`Première rencontre · ${meetingPoint(opened).title} · ${formatInt(meetingPoint(opened).kmThreshold)} km`}
-                </Text>
                 <Text accessibilityRole="header" style={styles.sheetName}>
                   {opened.name}
                 </Text>
                 <Text style={styles.sheetTitle}>{opened.title}</Text>
+                <Text style={styles.sheetMeta}>
+                  {`Première rencontre · ${meetingPoint(opened).title} · ${formatInt(meetingPoint(opened).kmThreshold)} km`}
+                </Text>
                 <Text style={styles.sheetDescription}>{opened.description}</Text>
               </ScrollView>
-            </PaperCard>
+            </Panel>
           ) : null}
         </View>
       </Modal>
@@ -89,42 +89,29 @@ export function CompanionCollection({ unlockedCheckpointIds }: CompanionCollecti
 }
 
 const styles = StyleSheet.create({
-  grid: { flexDirection: "row", flexWrap: "wrap", gap: theme.space[16] },
-  cell: { flexBasis: "45%", flexGrow: 1 },
-  // flexGrow : toutes les cartes d'une rangée prennent la hauteur de la plus grande.
-  card: { flexGrow: 1, alignItems: "center", paddingVertical: theme.space[16], minHeight: 184 },
-  cardLocked: {
-    borderWidth: 1,
-    borderStyle: "dashed",
-    borderColor: theme.colors.iron,
-    borderRadius: theme.radius[4],
-    paddingHorizontal: theme.space[8],
-  },
-  silhouette: { opacity: 0.9 },
-  name: { ...theme.text.displayS, color: theme.colors.ink, marginTop: theme.space[8], textAlign: "center" },
-  title: { ...theme.text.label, color: theme.colors.blood, textAlign: "center" },
-  nameLocked: { ...theme.text.displayS, color: theme.colors.boneDim, marginTop: theme.space[8] },
-  titleLocked: { ...theme.text.label, color: theme.colors.boneDim, textAlign: "center" },
-  overlay: {
-    flex: 1,
-    justifyContent: "center",
-    padding: theme.space[24],
-    backgroundColor: "rgba(12,10,9,0.92)",
-  },
+  grid: { flexDirection: "row", flexWrap: "wrap", gap: theme.gutter },
+  cell: { flexBasis: "31%", flexGrow: 1 },
+  // flexGrow : toutes les cases d'une rangée prennent la hauteur de la plus haute.
+  card: { flexGrow: 1, alignItems: "center", paddingVertical: theme.space[16], paddingHorizontal: theme.space[4], minHeight: 156 },
+  name: { ...theme.text.displayS, fontSize: 16, lineHeight: 20, color: theme.colors.black, marginTop: theme.space[8], textAlign: "center" },
+  title: { ...theme.text.label, letterSpacing: 0, color: theme.colors.blackSoft, textAlign: "center", marginTop: 2 },
+  nameLocked: { ...theme.text.displayS, fontSize: 16, lineHeight: 20, color: theme.colors.paperSoft, marginTop: theme.space[8] },
+  titleLocked: { ...theme.text.label, letterSpacing: 0, color: theme.colors.paperSoft, textAlign: "center", marginTop: 2 },
+  overlay: { flex: 1, justifyContent: "center", padding: theme.space[16], backgroundColor: "rgba(17,17,17,0.94)" },
   sheet: { maxHeight: "86%", padding: 0 },
   close: {
     position: "absolute",
     top: theme.space[8],
     right: theme.space[8],
     zIndex: 2,
-    width: 44,
-    height: 44,
+    width: 48,
+    height: 48,
     alignItems: "center",
     justifyContent: "center",
   },
   sheetContent: { alignItems: "center", padding: theme.space[24] },
-  sheetKicker: { ...theme.text.label, color: theme.colors.blood, marginTop: theme.space[16], textAlign: "center" },
-  sheetName: { ...theme.text.displayL, color: theme.colors.ink, textAlign: "center" },
-  sheetTitle: { ...theme.text.bodyStrong, color: theme.colors.umber, textAlign: "center" },
-  sheetDescription: { ...theme.text.body, color: theme.colors.ink, marginTop: theme.space[16] },
+  sheetName: { ...theme.text.displayL, color: theme.colors.black, textAlign: "center", marginTop: theme.space[16] },
+  sheetTitle: { ...theme.text.bodyStrong, color: theme.colors.blackSoft, textAlign: "center" },
+  sheetMeta: { ...theme.text.small, fontFamily: theme.fontFamily.gothicBold, color: theme.colors.blackSoft, marginTop: theme.space[8], textAlign: "center" },
+  sheetDescription: { ...theme.text.body, color: theme.colors.black, marginTop: theme.space[16] },
 });

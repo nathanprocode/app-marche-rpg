@@ -82,22 +82,22 @@ export function BossEventModal({ enabled }: BossEventModalProps) {
             >
               <View style={styles.header}>
                 <BrandMark visual={{ state: "bleeding", intensity: 0.9 }} width={20} />
-                <Text style={styles.kicker}>{screen.kicker}</Text>
                 <Text accessibilityRole="header" style={styles.title}>
                   {screen.title}
                 </Text>
+                <Text style={styles.meta}>{screen.kicker}</Text>
               </View>
               <Image source={screen.image} style={styles.sprite} resizeMode="contain" accessibilityIgnoresInvertColors />
               <Text style={styles.text}>{screen.text}</Text>
               {screen.achievementTitle ? (
                 <View style={styles.reward} accessible accessibilityLabel={`Succès débloqué : ${screen.achievementTitle}`}>
-                  <Text style={styles.rewardKicker}>Succès débloqué</Text>
                   <Text style={styles.rewardTitle}>{screen.achievementTitle}</Text>
+                  <Text style={styles.rewardMeta}>Succès débloqué</Text>
                 </View>
               ) : null}
             </ScrollView>
             <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, theme.space[16]) + theme.space[16] }]}>
-              <Button label="Continuer la marche" onPress={dismiss} />
+              <Button label="Continuer la marche" onDark onPress={dismiss} />
             </View>
           </>
         ) : null}
@@ -107,31 +107,23 @@ export function BossEventModal({ enabled }: BossEventModalProps) {
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: theme.colors.ink },
-  topRule: { position: "absolute", top: 0, left: 0, right: 0, height: 4, backgroundColor: theme.colors.bloodGlow, zIndex: 2 },
-  content: { paddingHorizontal: theme.space[24], paddingBottom: theme.space[16], alignItems: "center" },
+  screen: { flex: 1, backgroundColor: theme.colors.black },
+  topRule: { position: "absolute", top: 0, left: 0, right: 0, height: theme.gutter, backgroundColor: theme.colors.redOnBlack, zIndex: 2 },
   header: { alignItems: "center" },
-  kicker: { ...theme.text.label, color: theme.colors.bloodEmber, marginTop: theme.space[16], textAlign: "center" },
-  title: { ...theme.text.displayL, color: theme.colors.bone, marginTop: theme.space[8], textAlign: "center" },
+  title: { ...theme.text.displayL, color: theme.colors.paper, marginTop: theme.space[16], textAlign: "center" },
+  meta: { ...theme.text.bodyStrong, color: theme.colors.redOnBlack, textAlign: "center", marginTop: theme.space[4] },
+  content: { paddingHorizontal: theme.space[16], paddingBottom: theme.space[16], alignItems: "center" },
   sprite: { width: "100%", height: 280, marginTop: theme.space[24] },
-  text: {
-    ...theme.text.body,
-    fontFamily: theme.fontFamily.bodyItalic,
-    color: theme.colors.boneDim,
-    textAlign: "center",
-    marginTop: theme.space[24],
-  },
+  text: { ...theme.text.body, color: theme.colors.paperSoft, textAlign: "center", marginTop: theme.space[24] },
   reward: {
     alignSelf: "stretch",
     alignItems: "center",
     marginTop: theme.space[24],
     padding: theme.space[16],
-    backgroundColor: theme.colors.inkRaised,
-    borderWidth: 1,
-    borderColor: theme.colors.bloodGlow,
-    borderRadius: theme.radius[4],
+    backgroundColor: theme.colors.paper,
+    gap: 2,
   },
-  rewardKicker: { ...theme.text.label, color: theme.colors.bloodEmber },
-  rewardTitle: { ...theme.text.displayS, color: theme.colors.bone },
-  footer: { paddingHorizontal: theme.space[24], paddingTop: theme.space[16] },
+  rewardTitle: { ...theme.text.displayS, color: theme.colors.black },
+  rewardMeta: { ...theme.text.small, fontFamily: theme.fontFamily.gothicBold, color: theme.colors.red },
+  footer: { paddingHorizontal: theme.space[16], paddingTop: theme.space[16] },
 });
