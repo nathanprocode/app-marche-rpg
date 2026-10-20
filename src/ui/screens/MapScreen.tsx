@@ -48,7 +48,8 @@ import { COMPANION_SPRITE_SIZE, CompanionMarker } from "../components/CompanionM
 import { GutsMarker } from "../components/GutsMarker";
 import { MapSheet } from "../components/MapSheet";
 
-const worldMapAsset = require("../../../assets/map/world-map.png");
+// Version encrée de la carte (gravure en noir et blanc) : la piste rouge s'y lit d'un coup d'œil.
+const worldMapAsset = require("../../../assets/map/world-map-ink.png");
 const MAP_WIDTH = 1448;
 const MAP_HEIGHT = 1086;
 const MAP_SIZE = { width: MAP_WIDTH, height: MAP_HEIGHT };
@@ -357,24 +358,29 @@ export function MapScreen() {
         onCoveredHeightChange={setSheetHeight}
         header={
           <>
-            <Text style={styles.kicker}>
-              {`Point franchi · ${formatInt(position.previous.kmThreshold)} km · ${position.previous.arc}`}
-            </Text>
             <Text accessibilityRole="header" style={styles.title}>
               {position.previous.title}
+            </Text>
+            <Text style={styles.meta}>
+              {`Point franchi · ${formatInt(position.previous.kmThreshold)} km · ${position.previous.arc}`}
             </Text>
           </>
         }
       >
         <Text style={styles.description}>{position.previous.description}</Text>
 
-        <View style={styles.nextRow}>
-          <View style={styles.nextText}>
-            <Text style={styles.nextLabel}>{isJourneyComplete ? "Périple accompli" : "Prochain point"}</Text>
-            <Text style={styles.nextTitle}>
-              {isJourneyComplete ? "Tu as atteint le dernier souvenir de la Traque." : position.next.title}
-            </Text>
-          </View>
+        <View
+          style={styles.nextRow}
+          accessible
+          accessibilityLabel={
+            isJourneyComplete
+              ? "Périple accompli : tu as atteint le dernier souvenir de la Traque."
+              : `Prochain point : ${position.next.title}, dans ${formatDecimal(remainingKm)} kilomètres`
+          }
+        >
+          <Text style={styles.nextTitle}>
+            {isJourneyComplete ? "Tu as atteint le dernier souvenir de la Traque." : `Prochain : ${position.next.title}`}
+          </Text>
           {isJourneyComplete ? null : <Text style={styles.nextKm}>{`${formatDecimal(remainingKm)} km`}</Text>}
         </View>
       </MapSheet>
@@ -390,60 +396,65 @@ type MapButtonProps = {
 
 function MapButton({ label, icon, onPress }: MapButtonProps) {
   return (
-    <Pressable accessibilityRole="button" accessibilityLabel={label} onPress={onPress} style={styles.mapButton}>
-      <Ionicons name={icon} size={20} color={theme.colors.bone} />
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      onPress={onPress}
+      style={({ pressed }) => [styles.mapButton, pressed && styles.mapButtonPressed]}
+    >
+      <Ionicons name={icon} size={22} color={theme.colors.paper} />
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
   // overflow hidden : la fiche baissée descend sous l'écran, elle ne doit pas déborder sur la barre d'onglets.
-  root: { flex: 1, overflow: "hidden", backgroundColor: theme.colors.ink },
-  mapViewport: { ...StyleSheet.absoluteFillObject, overflow: "hidden", backgroundColor: theme.colors.ink },
+  root: { flex: 1, overflow: "hidden", backgroundColor: theme.colors.black },
+  mapViewport: { ...StyleSheet.absoluteFillObject, overflow: "hidden", backgroundColor: theme.colors.black },
   mapContent: { position: "absolute", top: 0, left: 0 },
   mapImage: { resizeMode: "stretch" },
+  // Le chemin parcouru, à l'encre rouge, cerné de papier pour se détacher de la gravure.
   trailDot: {
     position: "absolute",
     width: TRAIL_DOT_SIZE,
     height: TRAIL_DOT_SIZE,
     borderRadius: TRAIL_DOT_SIZE / 2,
     borderWidth: TRAIL_OUTLINE_PX,
-    borderColor: "rgba(233,225,207,0.9)",
-    backgroundColor: theme.colors.blood,
+    borderColor: theme.colors.paper,
+    backgroundColor: theme.colors.red,
   },
   nextLegDot: {
     position: "absolute",
     width: NEXT_LEG_DOT_PX,
     height: NEXT_LEG_DOT_PX,
     borderRadius: NEXT_LEG_DOT_PX / 2,
-    backgroundColor: theme.colors.ink,
-    opacity: 0.55,
+    backgroundColor: theme.colors.black,
   },
-  topScrim: { position: "absolute", top: 0, left: 0, right: 0, backgroundColor: "rgba(12,10,9,0.55)" },
+  topScrim: { position: "absolute", top: 0, left: 0, right: 0, backgroundColor: "rgba(17,17,17,0.55)" },
   markerSlot: { position: "absolute", width: 16, height: 16, marginLeft: -8, marginTop: -8 },
   diamond: {
     width: 16,
     height: 16,
-    borderWidth: 2,
+    borderWidth: theme.frame,
     transform: [{ rotate: "45deg" }],
   },
-  diamondReached: { backgroundColor: theme.colors.bloodGlow, borderColor: theme.colors.bone },
-  diamondAhead: { backgroundColor: theme.colors.bone, borderColor: theme.colors.bloodGlow },
+  diamondReached: { backgroundColor: theme.colors.red, borderColor: theme.colors.paper },
+  diamondAhead: { backgroundColor: theme.colors.paper, borderColor: theme.colors.black },
   // Couloir large où l'étiquette prend la largeur de son texte. Sans lui, sur Android, l'étiquette ne peut pas
   // dépasser les 16 px du losange : le texte disparaît et il ne reste qu'un carré noir.
   markerChipLane: { position: "absolute", top: 20, left: 0, width: 280, alignItems: "flex-start" },
   markerChip: {
     paddingHorizontal: theme.space[8],
     paddingVertical: 2,
-    backgroundColor: "rgba(12,10,9,0.88)",
+    backgroundColor: theme.colors.black,
   },
   // Le prochain point s'affiche au-dessus, le dernier franchi en dessous : les étiquettes ne se chevauchent plus.
   markerChipAbove: { top: -40 },
-  markerChipText: { ...theme.text.displayS, fontSize: 16, lineHeight: 24, color: theme.colors.bone },
+  markerChipText: { ...theme.text.displayS, fontSize: 16, lineHeight: 24, color: theme.colors.paper },
   hud: {
     position: "absolute",
-    left: theme.space[24],
-    right: theme.space[24],
+    left: theme.gutter * 2,
+    right: theme.gutter * 2,
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "flex-start",
@@ -452,41 +463,34 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "baseline",
     gap: theme.space[8],
-    paddingVertical: theme.space[8],
+    paddingVertical: theme.space[4],
     paddingHorizontal: theme.space[16],
-    backgroundColor: "rgba(12,10,9,0.9)",
-    borderWidth: 1,
-    borderColor: theme.colors.ash,
-    borderRadius: theme.radius[4],
+    backgroundColor: theme.colors.black,
   },
-  distanceValue: { ...theme.text.displayM, color: theme.colors.bone },
-  distanceGoal: { ...theme.text.small, color: theme.colors.boneDim },
-  controls: { gap: theme.space[8] },
+  distanceValue: { ...theme.text.displayM, color: theme.colors.paper },
+  distanceGoal: { ...theme.text.small, color: theme.colors.paperSoft },
+  controls: { gap: theme.gutter },
   mapButton: {
-    width: 44,
-    height: 44,
+    width: 48,
+    height: 48,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "rgba(12,10,9,0.9)",
-    borderWidth: 1,
-    borderColor: theme.colors.ash,
-    borderRadius: theme.radius[4],
+    backgroundColor: theme.colors.black,
   },
-  kicker: { ...theme.text.label, color: theme.colors.blood },
-  title: { ...theme.text.displayM, color: theme.colors.ink },
-  description: { ...theme.text.small, color: theme.colors.umber, marginTop: theme.space[8] },
+  mapButtonPressed: { backgroundColor: theme.colors.blackSoft },
+  title: { ...theme.text.displayM, color: theme.colors.black },
+  meta: { ...theme.text.small, fontFamily: theme.fontFamily.gothicBold, color: theme.colors.red },
+  description: { ...theme.text.body, color: theme.colors.blackSoft, marginTop: theme.space[16] },
+  // Le prochain point dans une case noire, en bas de la fiche.
   nextRow: {
     marginTop: theme.space[16],
-    paddingTop: theme.space[16],
-    borderTopWidth: 1,
-    borderTopColor: "rgba(12,10,9,0.25)",
+    padding: theme.space[16],
+    backgroundColor: theme.colors.black,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     gap: theme.space[16],
   },
-  nextText: { flex: 1 },
-  nextLabel: { ...theme.text.label, color: theme.colors.umber },
-  nextTitle: { ...theme.text.bodyStrong, color: theme.colors.ink },
-  nextKm: { ...theme.text.displayM, color: theme.colors.blood },
+  nextTitle: { ...theme.text.bodyStrong, color: theme.colors.paper, flex: 1 },
+  nextKm: { ...theme.text.displayM, color: theme.colors.paper },
 });

@@ -129,12 +129,13 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    paddingHorizontal: theme.space[24],
+    paddingHorizontal: theme.space[16],
     paddingTop: theme.space[8],
-    paddingBottom: theme.space[24],
-    backgroundColor: theme.colors.bone,
-    borderTopWidth: 1,
-    borderTopColor: theme.colors.ink,
+    paddingBottom: theme.space[16],
+    backgroundColor: theme.colors.paper,
+    // Une gouttière épaisse au-dessus de la fiche : elle se lit comme une case posée sur la carte.
+    borderTopWidth: theme.gutter,
+    borderTopColor: theme.colors.black,
   },
   // Zone de toucher bien plus grande que le trait de la poignée (44 px de haut au total).
   grabberZone: {
@@ -143,6 +144,6 @@ const styles = StyleSheet.create({
     paddingBottom: theme.space[16],
     paddingHorizontal: theme.space[24],
   },
-  grabber: { width: 32, height: 4, backgroundColor: "rgba(12,10,9,0.25)" },
+  grabber: { width: 40, height: 4, backgroundColor: theme.colors.black },
   hidden: { opacity: 0 },
 });

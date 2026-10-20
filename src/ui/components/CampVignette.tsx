@@ -1,12 +1,13 @@
 import { useState } from "react";
-import { Image, Platform, StyleSheet, Text, View, type LayoutChangeEvent, type ViewStyle } from "react-native";
+import { Image, StyleSheet, Text, View, type LayoutChangeEvent } from "react-native";
 import { theme } from "../../core/theme";
 import type { CampScene } from "../../features/camp/campScene";
 import { CampAmbience } from "./CampAmbience";
 
+// Versions encrées (noir et blanc contrasté) des scènes en pixel art, en attendant des scènes dessinées à l'encre.
 const CAMP_IMAGES = {
-  day: require("../../../assets/camp/camp-day.jpg"),
-  night: require("../../../assets/camp/camp-night.jpg"),
+  day: require("../../../assets/camp/camp-day-ink.jpg"),
+  night: require("../../../assets/camp/camp-night-ink.jpg"),
 };
 
 const CAMP_DESCRIPTIONS = {
@@ -19,7 +20,7 @@ type CampVignetteProps = {
 };
 
 /**
- * Le camp, en pixel art couleur : une fenêtre sur le monde, posée pleine largeur dans une case noire.
+ * Le camp : une fenêtre sur le monde, posée pleine largeur dans une case noire. Seules les braises restent en couleur.
  * La phrase d'ambiance suit l'heure et l'état de la Marque (voir features/camp/campScene).
  */
 export function CampVignette({ scene }: CampVignetteProps) {
@@ -31,39 +32,25 @@ export function CampVignette({ scene }: CampVignetteProps) {
   }
 
   return (
-    <View style={styles.root}>
-      <View style={styles.frame}>
-        {/* Le ratio est porté par un conteneur : sur une image en largeur 100 %, le web l'ignore. */}
-        <View style={styles.window} onLayout={handleWindowLayout}>
-          <View style={[styles.image, INK_FILTER]}>
-            <Image
-              source={CAMP_IMAGES[scene.time]}
-              style={styles.image}
-              resizeMode="cover"
-              accessibilityRole="image"
-              accessibilityLabel={CAMP_DESCRIPTIONS[scene.time]}
-              accessibilityIgnoresInvertColors
-            />
-          </View>
-          <CampAmbience time={scene.time} width={size.width} height={size.height} />
-        </View>
+    <View>
+      {/* Le ratio est porté par un conteneur : sur une image en largeur 100 %, le web l'ignore. */}
+      <View style={styles.window} onLayout={handleWindowLayout}>
+        <Image
+          source={CAMP_IMAGES[scene.time]}
+          style={styles.image}
+          resizeMode="cover"
+          accessibilityRole="image"
+          accessibilityLabel={CAMP_DESCRIPTIONS[scene.time]}
+          accessibilityIgnoresInvertColors
+        />
+        <CampAmbience time={scene.time} width={size.width} height={size.height} />
       </View>
       <Text style={styles.line}>{scene.line}</Text>
     </View>
   );
 }
 
-// En attendant une scène dessinée à l'encre : l'image passe en noir et blanc contrasté
-// (filtres Android avec la nouvelle architecture ; les braises de CampAmbience restent en couleur).
-// Le web attend la syntaxe CSS en texte.
-const INK_FILTER: ViewStyle =
-  Platform.OS === "web"
-    ? ({ filter: "grayscale(1) contrast(1.5) brightness(0.85)" } as unknown as ViewStyle)
-    : { filter: [{ grayscale: 1 }, { contrast: 1.5 }, { brightness: 0.85 }] };
-
 const styles = StyleSheet.create({
-  root: {},
-  frame: {},
   window: { width: "100%", aspectRatio: 16 / 9, overflow: "hidden" },
   // Taille explicite : sinon le web reprend la taille d'origine de l'image et la centre mal.
   image: { width: "100%", height: "100%" },
