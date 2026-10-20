@@ -8,3 +8,4 @@ npm-debug.log*
 # Impeccable : brouillons de la page de choix
 .impeccable/mocks/
 .impeccable/config.local.json
+.impeccable/review/

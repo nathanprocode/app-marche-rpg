@@ -64,7 +64,8 @@ export function Panel({
 
 const styles = StyleSheet.create({
   panel: { backgroundColor: theme.colors.paper, overflow: "hidden" },
-  reversed: { backgroundColor: theme.colors.black },
+  // Une case noire posée sur la gouttière noire : un cadre gris foncé garde la lecture en cases.
+  reversed: { backgroundColor: theme.colors.black, borderWidth: theme.frame, borderColor: theme.colors.toneDark },
   padded: { padding: theme.space[16] },
   slantRoom: { paddingBottom: theme.space[16] + SLANT_HEIGHT },
   // Largeur explicite : sur le web, un SVG absolu ne s'étire pas entre left et right.
