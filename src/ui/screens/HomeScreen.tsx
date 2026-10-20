@@ -15,11 +15,14 @@ import { useBrandStore } from "../../store/useBrandStore";
 import { usePedometerStore } from "../../store/usePedometerStore";
 import { usePlayerStore } from "../../store/usePlayerStore";
 import { useSettingsStore } from "../../store/useSettingsStore";
+import { ArcSilhouette, silhouetteForArc } from "../components/ArcSilhouette";
 import { BrandMark } from "../components/BrandMark";
+import { BrandWatermark } from "../components/BrandWatermark";
 import { Button } from "../components/Button";
 import { CampVignette } from "../components/CampVignette";
 import { DayCells } from "../components/DayCells";
 import { DuelCard } from "../components/DuelCard";
+import { MotionLines } from "../components/MotionLines";
 import { Panel } from "../components/Panel";
 import { ProgressBar } from "../components/ProgressBar";
 import { Screen } from "../components/Screen";
@@ -75,6 +78,8 @@ export function HomeScreen() {
       >
         {/* La trame encre la case à mesure qu'on avance dans la Traque. */}
         <Screentone color={theme.colors.tone} step={4} dot={1.3} style={{ width: `${progress.progressPct}%` }} />
+        {/* Devant la trame, la route qui reste : des lignes de mouvement en trame claire. */}
+        <MotionLines style={{ left: `${progress.progressPct}%`, width: `${100 - progress.progressPct}%` }} />
         <View style={styles.journeyTop}>
           <Text {...theme.fitDisplayText} style={styles.km}>
             {formatDecimal(progress.totalDistanceKm)}
@@ -99,6 +104,8 @@ export function HomeScreen() {
 
       <View style={styles.row}>
         <Panel style={styles.next}>
+          {/* L'objet de l'arc en cours, en trame, coupé par le coin de la case. */}
+          <ArcSilhouette name={silhouetteForArc(previous.arc)} height={250} style={styles.silhouette} />
           {next ? (
             <>
               <Text style={styles.nextTitle}>{next.title}</Text>
@@ -139,6 +146,8 @@ export function HomeScreen() {
       </View>
 
       <Panel reversed>
+        {/* La Marque en filigrane, coupée par le bord : rouge sombre tant qu'elle saigne. */}
+        <BrandWatermark width={96} color={isCalm ? theme.colors.toneDark : theme.colors.red} style={styles.watermark} />
         <View style={styles.todayRow}>
           <View
             style={styles.todayCol}
@@ -244,6 +253,8 @@ const styles = StyleSheet.create({
   smallOnBlack: { ...theme.text.small, color: theme.colors.paperSoft },
   figureUnit: { ...theme.text.bodyStrong },
   small: { ...theme.text.small, color: theme.colors.blackSoft },
+  silhouette: { position: "absolute", right: 18, bottom: -70, transform: [{ rotate: "32deg" }] },
+  watermark: { position: "absolute", right: -14, top: -6, transform: [{ rotate: "-10deg" }] },
   lockedPanel: { flex: 1, minHeight: 176, justifyContent: "flex-end" },
   lockedCaption: { margin: theme.space[8], padding: theme.space[8], backgroundColor: theme.colors.paper, gap: 2 },
   lockedText: { ...theme.text.bodyStrong, color: theme.colors.black },

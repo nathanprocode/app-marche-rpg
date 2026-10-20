@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
 import { SafeAreaView, type Edge } from "react-native-safe-area-context";
 import { theme } from "../../core/theme";
+import { PageHatching } from "./PageHatching";
 import { PanelCascade } from "./PanelCascade";
 
 type ScreenProps = {
@@ -23,6 +24,7 @@ export function Screen({ children, scroll = false, edges = ["top"], variant = "l
 
   return (
     <SafeAreaView style={[styles.safe, isPage && styles.page]} edges={edges}>
+      {isPage ? <PageHatching /> : null}
       {scroll ? (
         <ScrollView contentContainerStyle={contentStyle} showsVerticalScrollIndicator={false}>
           {/* Les planches des onglets se remplissent case après case à chaque arrivée sur l'écran. */}

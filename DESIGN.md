@@ -171,6 +171,7 @@ Le monde refuse l'arrangement par défaut du podomètre : pas d'anneau de pas, p
 - Un seul rouge, réservé à la Marque, au danger et au repère « tu es ici ».
 - Titres et grands chiffres en Mincho extra-gras ; toute l'interface en Gothic.
 - Lignes de concentration seulement pour les grands moments.
+- Décors de fond en trame ou en trame claire, jamais en aplat noir sous du texte : lignes de mouvement (case de la Traque), Marque en filigrane (case du jour, rouge sombre quand elle saigne), objet de l'arc en silhouette (case du prochain point), hachures de la page noire.
 
 ## Colors
 
