@@ -1,6 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { useEffect, useRef, useState } from "react";
+import { AccessibilityInfo, Pressable, StyleSheet, Text, View } from "react-native";
 import { GAME_CONFIG } from "../../core/constants/game";
 import { formatDecimal, formatInt } from "../../core/format";
 import { theme } from "../../core/theme";
@@ -27,6 +28,10 @@ import { Panel } from "../components/Panel";
 import { ProgressBar } from "../components/ProgressBar";
 import { Screen } from "../components/Screen";
 import { Screentone } from "../components/Screentone";
+import { TrackingNotice } from "../components/TrackingNotice";
+
+/** Durée pendant laquelle le bouton de synchronisation montre sa coche après un appui. */
+const SYNC_CONFIRM_MS = 1500;
 
 export function HomeScreen() {
   const router = useRouter();
@@ -41,6 +46,20 @@ export function HomeScreen() {
   const resetProgressionDev = usePlayerStore((state) => state.resetProgressionDev);
   const streakDays = useBrandStore((state) => state.status.streakDays);
   const threshold = useSettingsStore((state) => state.dailyGoal);
+  const [justSynced, setJustSynced] = useState(false);
+  const syncTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => {
+    if (syncTimerRef.current) clearTimeout(syncTimerRef.current);
+  }, []);
+
+  /** Recalcule la journée, puis le confirme : la coche remplace un instant les flèches. */
+  async function handleSync(): Promise<void> {
+    await runDailySync();
+    setJustSynced(true);
+    AccessibilityInfo.announceForAccessibility("Journée à jour");
+    if (syncTimerRef.current) clearTimeout(syncTimerRef.current);
+    syncTimerRef.current = setTimeout(() => setJustSynced(false), SYNC_CONFIRM_MS);
+  }
 
   const activeDuels = computeDuels(BOSS_ENCOUNTERS, progress.lapSteps, BERSERK_CHECKPOINTS).filter(
     (duel) => duel.state === "active",
@@ -88,10 +107,10 @@ export function HomeScreen() {
           <Pressable
             accessibilityRole="button"
             accessibilityLabel="Synchroniser la journée"
-            onPress={() => void runDailySync()}
+            onPress={() => void handleSync()}
             style={({ pressed }) => [styles.iconButton, pressed && styles.iconButtonPressed]}
           >
-            <Ionicons name="refresh" size={20} color={theme.colors.black} />
+            <Ionicons name={justSynced ? "checkmark" : "refresh"} size={20} color={theme.colors.black} />
           </Pressable>
         </View>
         <Text style={styles.journeyLine}>{journeyLine}</Text>
@@ -148,6 +167,8 @@ export function HomeScreen() {
       <Panel reversed>
         {/* La Marque en filigrane, coupée par le bord : rouge sombre tant qu'elle saigne. */}
         <BrandWatermark width={96} color={isCalm ? theme.colors.toneDark : theme.colors.red} style={styles.watermark} />
+        {/* Si les pas ne sont pas comptés, on le dit ici, au-dessus du « 0 pas » qui sinon tromperait. */}
+        <TrackingNotice />
         <View style={styles.todayRow}>
           <View
             style={styles.todayCol}
