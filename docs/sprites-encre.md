@@ -31,7 +31,11 @@ Les silhouettes « Inconnu » des collections se déduisent des nouveaux sprites
 
 ## La consigne de génération
 
-À coller dans le générateur d'images en remplaçant `[PERSONNAGE]`. La consigne est en anglais : les générateurs la suivent mieux.
+**Générateur retenu : ChatGPT** (comparé à Gemini et Grok le 21/10/2026 : c'est lui qui rend le mieux l'encre de Miura).
+Méthode : tous les personnages dans **la même conversation**, et **l'image de Guts jointe comme référence** à chaque fois
+(premier sprite validé, `assets/companions/` n'en a pas : garder l'original généré à part).
+
+Première image (Guts) : la consigne ci-dessous, en remplaçant `[PERSONNAGE]`. La consigne est en anglais : les générateurs la suivent mieux.
 
 ```
 Pixel art game sprite, full body, three-quarter view facing right, standing, [PERSONNAGE].
@@ -47,13 +51,34 @@ Exemples pour `[PERSONNAGE]` :
 - `a tall swordsman with short spiky black hair, black cloak, iron prosthetic left arm, a huge slab-like greatsword on his back`
 - `a slender knight with long wavy white hair, ornate plate armour, a long cape, a sabre at his hip`
 
+Personnages suivants, avec l'image de Guts jointe :
+
+```
+Use the attached Guts image as the style reference.
+Same style, same proportions, same pixel size, same line thickness and same halftone screentone as the reference.
+Same framing: full body, three-quarter view facing right, standing, feet touching the bottom edge, plain flat off-white background.
+
+New character: [PERSONNAGE].
+
+Strictly 1-bit: pure black (#111111) and off-white paper (#F3F3F0) only, mid-tones as halftone dot screentone, no grey shading, no gradients, no colour.
+```
+
+Personnage clair (cheveux ou armure blancs, comme Griffith) : ajouter avant la dernière ligne
+`His hair and armour are white: keep them as off-white paper with crisp black outlines, and put the weight in solid black shadows (inside of the cape, armour joints, shadow side of the hair and body) so he has as much solid black as the reference.`
+Grand monstre : ajouter `He fills the whole height of the image.`
+Si le style dérive : relancer, ou répondre `Closer to the reference image: more solid black, same screentone.`
+
 Pour chaque personnage, décrire sa silhouette et ses objets tels qu'ils apparaissent dans les fiches (`src/data/companions.ts`, `src/data/enemies.ts`) ; ne rien inventer de l'histoire.
 
-## La retouche (avant d'ajouter une image à l'appli)
+## La mise au format (avant d'ajouter une image à l'appli)
 
-1. Garder la meilleure image ; effacer les défauts (mains, armes déformées, pixels isolés).
-2. Remplacer le fond par de la transparence.
-3. Ramener l'image aux valeurs du style (encre, papier, trame, rouge) et à 192 px de haut ; ajouter le liseré papier.
+1. Garder la meilleure image ; vérifier les défauts (mains, armes déformées).
+2. Si l'image est en `.webp` (ChatGPT), la convertir :
+   `powershell -ExecutionPolicy Bypass -File scripts/webp-to-png.ps1 casca.webp casca.png`
+3. La mettre au format : `node scripts/ink-sprite.js casca.png assets/companions/casca.png`
+   Le script retire le fond, recadre, réduit à 192 px, ramène l'image à l'encre, la trame dense, la trame légère et le
+   papier, puis ajoute le contour noir et le liseré papier (lisible sur la carte de nuit).
 4. Comparer avec les sprites déjà faits : mêmes proportions, même épaisseur de contour, même densité de trame.
 
-Les étapes 2 et 3 seront automatisées par un script dès qu'une première image générée sera disponible pour le régler.
+Faits : Casca et Griffith (21/10/2026). Le Guts généré servira aux planches de marche de la carte, qui demandent plusieurs
+images (une par pas) : à faire à part.
