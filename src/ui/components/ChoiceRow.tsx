@@ -10,7 +10,7 @@ type ChoiceRowProps<T extends number | string> = {
   disabled?: boolean;
 };
 
-/** Rangée de choix exclusifs (un seul sélectionné), du même style que les onglets des Quêtes. */
+/** Rangée de choix exclusifs (un seul sélectionné), du même style que les onglets de la Collection. */
 export function ChoiceRow<T extends number | string>({
   options,
   selected,

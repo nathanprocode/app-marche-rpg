@@ -18,7 +18,7 @@ function meetingPoint(enemy: Enemy) {
   return BERSERK_CHECKPOINTS.find((checkpoint) => checkpoint.id === enemy.metAtCheckpointId)!;
 }
 
-/** Onglet « Ennemis » des Quêtes : les ennemis croisés sur papier, les autres en silhouette dans une case noire. */
+/** Onglet « Ennemis » de la Collection : les ennemis croisés sur papier, les autres en silhouette dans une case noire. */
 export function EnemyCollection({ unlockedCheckpointIds, bossVictories }: EnemyCollectionProps) {
   const [opened, setOpened] = useState<Enemy | null>(null);
   const defeated = victoriousEncounterIds(bossVictories);

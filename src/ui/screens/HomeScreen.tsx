@@ -8,6 +8,7 @@ import { theme } from "../../core/theme";
 import { BERSERK_CHECKPOINTS } from "../../data/map/berserk-checkpoints";
 import { BOSS_ENCOUNTERS } from "../../data/bosses";
 import { computeDuels } from "../../features/bosses/duel";
+import { nextStreakMilestone } from "../../features/brandOfSacrifice/streakMilestones";
 import { resolveCampScene } from "../../features/camp/campScene";
 import { lastDays } from "../../features/history/weekHistory";
 import { deriveBrandState } from "../../features/progression/engine";
@@ -69,6 +70,7 @@ export function HomeScreen() {
   // L'historique du jour peut avoir un temps de retard sur le compteur : le compteur fait foi pour aujourd'hui.
   const week = lastDays(history, new Date()).map((day) => (day.isToday ? { ...day, steps: stepsToday } : day));
   const recordedDayKeys = new Set(Object.keys(history));
+  const streakTarget = nextStreakMilestone(streakDays);
 
   const previousIndex = Math.max(
     0,
@@ -198,8 +200,8 @@ export function HomeScreen() {
           <DayCells days={week} thresholdSteps={threshold} recordedDayKeys={recordedDayKeys} reversed />
           <Text
             style={[styles.streak, styles.onBlack]}
-            accessibilityLabel={`Série : ${streakDays} ${streakDays > 1 ? "jours" : "jour"}`}
-          >{`Série ${streakDays} j`}</Text>
+            accessibilityLabel={`Série : ${streakDays} ${streakDays > 1 ? "jours" : "jour"}${streakTarget ? `, prochain palier ${streakTarget} jours` : ""}`}
+          >{streakTarget ? `Série ${streakDays} / ${streakTarget} j` : `Série ${streakDays} j`}</Text>
         </View>
       </Panel>
 

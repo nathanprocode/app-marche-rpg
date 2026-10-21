@@ -10,7 +10,7 @@ type IconName = keyof typeof Ionicons.glyphMap;
 const ICONS: Record<string, { on: IconName; off: IconName }> = {
   index: { on: "footsteps", off: "footsteps-outline" },
   map: { on: "map", off: "map-outline" },
-  quests: { on: "book", off: "book-outline" },
+  quests: { on: "albums", off: "albums-outline" },
   band: { on: "people", off: "people-outline" },
   profile: { on: "person", off: "person-outline" },
 };
@@ -53,7 +53,8 @@ export default function TabsLayout() {
     >
       <Tabs.Screen name="index" options={{ title: "Marche" }} />
       <Tabs.Screen name="map" options={{ title: "Carte" }} />
-      <Tabs.Screen name="quests" options={{ title: "Quêtes" }} />
+      {/* La route garde son nom « quests » : seul le libellé change. */}
+      <Tabs.Screen name="quests" options={{ title: "Collection" }} />
       <Tabs.Screen name="band" options={{ title: "Bande" }} />
       <Tabs.Screen name="profile" options={{ title: "Profil" }} />
     </Tabs>

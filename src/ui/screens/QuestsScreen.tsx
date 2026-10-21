@@ -7,48 +7,32 @@ import { COMPANIONS } from "../../data/companions";
 import { ENEMIES, enemyStatus } from "../../data/enemies";
 import { BERSERK_CHECKPOINTS, type BerserkCheckpoint } from "../../data/map/berserk-checkpoints";
 import { BERSERK_PANEL_IMAGES } from "../../data/map/berserk-panels";
-import { BOSS_ENCOUNTERS } from "../../data/bosses";
-import { computeDuels, victoriousEncounterIds } from "../../features/bosses/duel";
+import { victoriousEncounterIds } from "../../features/bosses/duel";
 import { buildAchievementStats } from "../../features/achievements/stats";
 import { ACHIEVEMENTS } from "../../features/achievements/achievements";
 import { isCompanionMet } from "../../features/companions/journey";
-import { useBrandStore } from "../../store/useBrandStore";
-import { usePedometerStore } from "../../store/usePedometerStore";
 import { buildAchievementCard } from "../../features/share/shareCards";
 import { usePlayerStore } from "../../store/usePlayerStore";
 import { useShareStore } from "../../store/useShareStore";
-import { useSettingsStore } from "../../store/useSettingsStore";
-import { DuelCard } from "../components/DuelCard";
 import { AchievementList } from "../components/AchievementList";
 import { CompanionCollection } from "../components/CompanionCollection";
 import { EnemyCollection } from "../components/EnemyCollection";
 import { Panel } from "../components/Panel";
-import { ProgressBar } from "../components/ProgressBar";
 import { Screen } from "../components/Screen";
 import { Screentone } from "../components/Screentone";
 import { ZoomableImage } from "../components/ZoomableImage";
 
-type QuestsTab = "daily" | "chronicles" | "companions" | "enemies" | "achievements";
+type CollectionTab = "chronicles" | "companions" | "enemies" | "achievements";
 
-const STREAK_MILESTONES = [3, 7, 14, 30, 60, 100, 365];
-
-type Quest = {
-  id: string;
-  title: string;
-  description: string;
-  done: boolean;
-  right: string;
-  pct: number;
-};
-
+/**
+ * Onglet « Collection » : ce que le voyage a amassé (chroniques, compagnons, ennemis, succès).
+ * Les objectifs du jour (Marque, série, duels, prochain point) vivent sur l'accueil.
+ */
 export function QuestsScreen() {
-  const [tab, setTab] = useState<QuestsTab>("daily");
+  const [tab, setTab] = useState<CollectionTab>("chronicles");
   const [lightboxPanel, setLightboxPanel] = useState<ImageSourcePropType | null>(null);
-  const stepsToday = usePedometerStore((state) => state.stepsToday);
   const progress = usePlayerStore((state) => state.progress);
   const unlockedIds = usePlayerStore((state) => state.unlockedCheckpoints);
-  const streakDays = useBrandStore((state) => state.status.streakDays);
-  const dailyGoal = useSettingsStore((state) => state.dailyGoal);
   const bestStreak = usePlayerStore((state) => state.bestStreak);
   const bestDaySteps = usePlayerStore((state) => state.bestDaySteps);
   const bossVictories = usePlayerStore((state) => state.bossVictories);
@@ -59,12 +43,6 @@ export function QuestsScreen() {
   const chronicles = [...unlocked].reverse();
   const nextLocked = BERSERK_CHECKPOINTS.find((checkpoint) => !unlockedIds.includes(checkpoint.id)) ?? null;
   const metCount = COMPANIONS.filter((companion) => isCompanionMet(companion, unlockedIds)).length;
-  // Le prochain point se lit sur la distance du tour : au deuxième tour, toutes les chroniques sont déjà lues.
-  const nextOnRoute = BERSERK_CHECKPOINTS.find((checkpoint) => checkpoint.kmThreshold > progress.totalDistanceKm + 0.0001) ?? null;
-  const quests = buildQuests(stepsToday, streakDays, progress.totalDistanceKm, progress.currentSegmentProgressPct, nextOnRoute, dailyGoal);
-  const activeDuels = computeDuels(BOSS_ENCOUNTERS, progress.lapSteps, BERSERK_CHECKPOINTS).filter(
-    (duel) => duel.state === "active",
-  );
   const defeatedIds = victoriousEncounterIds(bossVictories);
   const enemiesMet = ENEMIES.filter((enemy) => enemyStatus(enemy, unlockedIds, defeatedIds) !== "unknown").length;
   const achievementStats = buildAchievementStats(progress, unlockedIds, bestStreak, bestDaySteps, bossVictories);
@@ -74,11 +52,10 @@ export function QuestsScreen() {
     <Screen scroll variant="page">
       <Panel reversed>
         <Text accessibilityRole="header" style={styles.title}>
-          Quêtes
+          Collection
         </Text>
 
         <View accessibilityRole="tablist" style={styles.tabs}>
-        <TabButton label="Du jour" selected={tab === "daily"} onPress={() => setTab("daily")} />
         <TabButton
           label="Chroniques"
           count={[unlocked.length, BERSERK_CHECKPOINTS.length]}
@@ -107,16 +84,7 @@ export function QuestsScreen() {
       </Panel>
 
       <View style={styles.list}>
-        {tab === "daily" ? (
-          <>
-            {activeDuels.map((duel) => (
-              <DuelCard key={duel.encounter.id} duel={duel} />
-            ))}
-            {quests.map((quest) => (
-              <QuestRow key={quest.id} quest={quest} />
-            ))}
-          </>
-        ) : tab === "companions" ? (
+        {tab === "companions" ? (
           <CompanionCollection unlockedCheckpointIds={unlockedIds} />
         ) : tab === "enemies" ? (
           <EnemyCollection unlockedCheckpointIds={unlockedIds} bossVictories={bossVictories} />
@@ -169,49 +137,6 @@ export function QuestsScreen() {
   );
 }
 
-function buildQuests(
-  stepsToday: number,
-  streakDays: number,
-  totalKm: number,
-  segmentPct: number,
-  nextLocked: BerserkCheckpoint | null,
-  threshold: number,
-): Quest[] {
-  const streakTarget = STREAK_MILESTONES.find((milestone) => milestone > streakDays) ?? streakDays;
-
-  const quests: Quest[] = [
-    {
-      id: "threshold",
-      title: "Apaiser la Marque",
-      description: `Franchir ${formatInt(threshold)} pas dans la journée`,
-      done: stepsToday >= threshold,
-      right: stepsToday >= threshold ? "Accomplie" : `${formatInt(stepsToday)} / ${formatInt(threshold)}`,
-      pct: (stepsToday / threshold) * 100,
-    },
-    {
-      id: "streak",
-      title: "Tenir la série",
-      description: `Marcher ${streakTarget} jours d'affilée sans laisser la Marque saigner`,
-      done: false,
-      right: `${streakDays} / ${streakTarget}`,
-      pct: (streakDays / streakTarget) * 100,
-    },
-  ];
-
-  if (nextLocked) {
-    quests.push({
-      id: "checkpoint",
-      title: "Atteindre le prochain point",
-      description: `${nextLocked.title} · ${formatDecimal(Math.max(0, nextLocked.kmThreshold - totalKm))} km restants`,
-      done: false,
-      right: `${Math.round(segmentPct)} %`,
-      pct: segmentPct,
-    });
-  }
-
-  return quests;
-}
-
 type TabButtonProps = {
   label: string;
   /** [débloqués, total] : affiché sous le libellé, sur sa propre ligne. */
@@ -229,34 +154,13 @@ function TabButton({ label, count, selected, onPress }: TabButtonProps) {
       onPress={onPress}
       style={[styles.tabButton, selected && styles.tabButtonSelected]}
     >
-      <Text style={[styles.tabLabel, selected && styles.tabLabelSelected]}>{label}</Text>
+      <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} style={[styles.tabLabel, selected && styles.tabLabelSelected]}>
+        {label}
+      </Text>
       {count ? (
         <Text style={[styles.tabCount, selected && styles.tabLabelSelected]}>{`${count[0]} / ${count[1]}`}</Text>
       ) : null}
     </Pressable>
-  );
-}
-
-function QuestRow({ quest }: { quest: Quest }) {
-  // Une seule phrase pour TalkBack : la coche seule ne dit pas que la quête est accomplie.
-  const status = quest.done ? "accomplie" : `en cours, ${quest.right}`;
-
-  return (
-    <Panel style={styles.quest} accessible accessibilityLabel={`${quest.title}, ${status}. ${quest.description}`}>
-      <View style={[styles.questBox, quest.done && styles.questBoxDone]}>
-        {quest.done ? <Ionicons name="checkmark" size={20} color={theme.colors.paper} /> : null}
-      </View>
-      <View style={styles.questText}>
-        <Text style={styles.questTitle}>{quest.title}</Text>
-        <Text style={styles.small}>{quest.description}</Text>
-        {quest.done ? null : (
-          <View style={styles.questBar}>
-            <ProgressBar pct={quest.pct} calm />
-          </View>
-        )}
-      </View>
-      <Text style={styles.questRight}>{quest.right}</Text>
-    </Panel>
   );
 }
 
@@ -297,11 +201,10 @@ function ChronicleCard({ checkpoint, onOpenPanel }: ChronicleCardProps) {
 
 const styles = StyleSheet.create({
   title: { ...theme.text.displayL, color: theme.colors.paper },
-  // Les onglets : des cases dans l'en-tête noir ; l'onglet ouvert est la case de papier.
-  tabs: { marginTop: theme.space[16], flexDirection: "row", flexWrap: "wrap", gap: theme.gutter },
+  // Les onglets : quatre cases sur une ligne dans l'en-tête noir ; l'onglet ouvert est la case de papier.
+  tabs: { marginTop: theme.space[16], flexDirection: "row", gap: theme.gutter },
   tabButton: {
-    flexBasis: "30%",
-    flexGrow: 1,
+    flex: 1,
     minHeight: 56,
     alignItems: "center",
     justifyContent: "center",
@@ -311,26 +214,11 @@ const styles = StyleSheet.create({
     borderColor: theme.colors.toneDark,
   },
   tabButtonSelected: { backgroundColor: theme.colors.paper, borderColor: theme.colors.paper },
-  tabLabel: { ...theme.text.label, letterSpacing: 0, fontSize: 14, lineHeight: 20, color: theme.colors.paper, textAlign: "center" },
+  tabLabel: { ...theme.text.label, letterSpacing: 0, fontSize: 13, lineHeight: 18, color: theme.colors.paper, textAlign: "center" },
   tabCount: { ...theme.text.small, color: theme.colors.paperSoft, textAlign: "center" },
   tabLabelSelected: { color: theme.colors.black },
   list: { gap: theme.gutter },
   smallOnBlack: { ...theme.text.small, color: theme.colors.paperSoft },
-  quest: { flexDirection: "row", alignItems: "center", gap: theme.space[16] },
-  questBox: {
-    width: 32,
-    height: 32,
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: theme.frame,
-    borderColor: theme.colors.black,
-  },
-  questBoxDone: { backgroundColor: theme.colors.black },
-  questText: { flex: 1, gap: 2 },
-  questTitle: { ...theme.text.displayS, color: theme.colors.black },
-  small: { ...theme.text.small, color: theme.colors.blackSoft },
-  questBar: { marginTop: theme.space[8] },
-  questRight: { ...theme.text.bodyStrong, color: theme.colors.black, textAlign: "right" },
   chronicle: { flexDirection: "row", minHeight: 136 },
   chronicleThumb: { width: 112, alignItems: "center", justifyContent: "center", backgroundColor: theme.colors.black },
   thumbImage: { width: "100%", height: "100%" },
