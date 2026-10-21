@@ -25,7 +25,7 @@ Les silhouettes « Inconnu » des collections se déduisent des nouveaux sprites
 
 - PNG transparent, **192 px de haut**, personnage entier, pieds sur le bord bas.
 - Vue de trois quarts, tourné vers la droite.
-- Même taille de pixel et mêmes proportions pour tous (environ 5 têtes de haut, comme les sprites actuels).
+- Même taille de pixel et mêmes proportions pour tous (environ 7 têtes de haut, comme le Guts de référence).
 - Lisible à 48–80 px à l'écran, dehors.
 - Planches de marche de la carte : même nombre d'images et même hauteur que les planches actuelles.
 
@@ -33,7 +33,7 @@ Les silhouettes « Inconnu » des collections se déduisent des nouveaux sprites
 
 **Générateur retenu : ChatGPT** (comparé à Gemini et Grok le 21/10/2026 : c'est lui qui rend le mieux l'encre de Miura).
 Méthode : tous les personnages dans **la même conversation**, et **l'image de Guts jointe comme référence** à chaque fois
-(premier sprite validé, `assets/companions/` n'en a pas : garder l'original généré à part).
+(`docs/sprites-reference/guts.webp`, l'original généré).
 
 Première image (Guts) : la consigne ci-dessous, en remplaçant `[PERSONNAGE]`. La consigne est en anglais : les générateurs la suivent mieux.
 
