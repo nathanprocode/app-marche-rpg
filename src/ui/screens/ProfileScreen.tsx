@@ -1,23 +1,20 @@
+import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
 import { useState } from "react";
-import { Alert, StyleSheet, Switch, Text, View } from "react-native";
-import { DAILY_GOAL_OPTIONS } from "../../core/constants/game";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 import { formatDecimal, formatInt } from "../../core/format";
 import { theme } from "../../core/theme";
 import { GUTS_SKINS } from "../../data/gutsSkins";
 import { BERSERK_CHECKPOINTS } from "../../data/map/berserk-checkpoints";
 import { historySpanDays, lastDays, summarizeDays } from "../../features/history/weekHistory";
-import { vibrate } from "../../features/haptics/haptics";
 import { isGoalReached } from "../../features/progression/selectors";
-import { REMINDER_HOUR_OPTIONS } from "../../features/reminders/eveningReminder";
-import { requestReminderPermission } from "../../features/reminders/reminderScheduler";
 import { resolveGutsSkin, unlockedSkins } from "../../features/skins/gutsSkin";
-import { eraseAllProgress } from "../../features/runtime/eraseProgress";
 import { buildProgressCard } from "../../features/share/shareCards";
 import { useShareStore } from "../../store/useShareStore";
 import { useAuthStore } from "../../store/useAuthStore";
 import { useBrandStore } from "../../store/useBrandStore";
 import { usePedometerStore } from "../../store/usePedometerStore";
-import { flushCloudSave, usePlayerStore } from "../../store/usePlayerStore";
+import { usePlayerStore } from "../../store/usePlayerStore";
 import { useSettingsStore } from "../../store/useSettingsStore";
 import { AppearancePicker } from "../components/AppearancePicker";
 import { ChoiceRow } from "../components/ChoiceRow";
@@ -27,45 +24,21 @@ import { Panel } from "../components/Panel";
 import { Screen } from "../components/Screen";
 import { WeekChart } from "../components/WeekChart";
 
-/** Interrupteur Material, encré : piste noire quand il est activé. */
-const SWITCH_COLORS = {
-  thumbColor: theme.colors.paper,
-  trackColor: { false: theme.colors.tone, true: theme.colors.black },
-} as const;
-
+/** Profil : qui tu es dans le tome, ta série, ton historique et ton apparence. Les réglages sont derrière l'engrenage. */
 export function ProfileScreen() {
+  const router = useRouter();
   const status = useBrandStore((state) => state.status);
   const progress = usePlayerStore((state) => state.progress);
   const unlockedCount = usePlayerStore((state) => state.unlockedCheckpoints.length);
-  const isPermanentTrackingEnabled = usePlayerStore((state) => state.isPermanentTrackingEnabled);
-  const setPermanentTrackingEnabled = usePlayerStore((state) => state.setPermanentTrackingEnabled);
   const userName = useAuthStore((state) => state.userName);
-  const logout = useAuthStore((state) => state.logout);
   const history = usePedometerStore((state) => state.history);
   const bestStreak = usePlayerStore((state) => state.bestStreak);
   const startNextLap = usePlayerStore((state) => state.startNextLap);
   const dailyGoal = useSettingsStore((state) => state.dailyGoal);
-  const setDailyGoal = useSettingsStore((state) => state.setDailyGoal);
-  const reminderEnabled = useSettingsStore((state) => state.eveningReminderEnabled);
-  const reminderHour = useSettingsStore((state) => state.eveningReminderHour);
-  const setReminderEnabled = useSettingsStore((state) => state.setEveningReminderEnabled);
-  const setReminderHour = useSettingsStore((state) => state.setEveningReminderHour);
-  const hapticsEnabled = useSettingsStore((state) => state.hapticsEnabled);
-  const setHapticsEnabled = useSettingsStore((state) => state.setHapticsEnabled);
   const gutsSkinId = useSettingsStore((state) => state.gutsSkinId);
   const setGutsSkinId = useSettingsStore((state) => state.setGutsSkinId);
-  const [reminderDenied, setReminderDenied] = useState(false);
   const requestShare = useShareStore((state) => state.requestShare);
   const [period, setPeriod] = useState<HistoryPeriod>("week");
-
-  async function handleReminderToggle(enabled: boolean): Promise<void> {
-    if (enabled && !(await requestReminderPermission())) {
-      setReminderDenied(true);
-      return;
-    }
-    setReminderDenied(false);
-    setReminderEnabled(enabled);
-  }
 
   const previous =
     BERSERK_CHECKPOINTS.find((checkpoint) => checkpoint.id === progress.currentCheckpointId) ?? BERSERK_CHECKPOINTS[0];
@@ -77,17 +50,6 @@ export function ProfileScreen() {
   const daysWithoutData = days.filter((day) => !day.recorded).length;
   const showChart = period !== "all";
 
-  function confirmErase(): void {
-    Alert.alert(
-      "Recommencer à zéro ?",
-      "Ta progression, ta série, tes succès, tes chroniques et ton historique seront effacés, sur ce téléphone et dans le cloud. Tes réglages sont conservés. Cette action est irréversible.",
-      [
-        { text: "Annuler", style: "cancel" },
-        { text: "Tout effacer", style: "destructive", onPress: () => void eraseAllProgress() },
-      ],
-    );
-  }
-
   return (
     <Screen scroll variant="page">
       <Panel reversed style={styles.header}>
@@ -98,23 +60,40 @@ export function ProfileScreen() {
           <Text style={styles.subtitle}>{`${previous.arc} · point ${unlockedCount} sur ${BERSERK_CHECKPOINTS.length}${progress.lap > 1 ? ` · tour ${progress.lap}` : ""}`}</Text>
         </View>
         <BrandMark visual={status.visual} width={40} />
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Réglages"
+          onPress={() => router.push("/settings")}
+          style={({ pressed }) => [styles.settingsButton, pressed && styles.settingsButtonPressed]}
+        >
+          <Ionicons name="settings-outline" size={22} color={theme.colors.paper} />
+        </Pressable>
       </Panel>
 
-      {/* Le voyage d'abord : la distance en grand, le reste en liste réglée. */}
-      <Panel
-        accessible
-        accessibilityLabel={`${formatDecimal(progress.totalDistanceKm)} kilomètres parcourus dans ce tour, ${unlockedCount} chroniques sur ${BERSERK_CHECKPOINTS.length}`}
-      >
-        <Text {...theme.fitDisplayText} style={styles.bigFigure}>
-          {formatDecimal(progress.totalDistanceKm)}
-          <Text style={styles.bigUnit}> km</Text>
-        </Text>
-        <Text style={styles.small}>{`parcourus dans le tour ${progress.lap} · ${unlockedCount} chroniques sur ${BERSERK_CHECKPOINTS.length}`}</Text>
-      </Panel>
-      <Panel reversed>
-        <StatRow label="Série" value={streakLabel} />
-        <StatRow label="Meilleure série" value={`${bestStreak} ${bestStreak > 1 ? "jours" : "jour"}`} />
-        <StatRow label="Pas depuis le début" value={formatInt(progress.totalSteps)} last />
+      {/* La distance en grand est sur l'accueil : ici, la série et le total, puis de quoi les partager. */}
+      <Panel reversed style={styles.section}>
+        <View>
+          <StatRow label="Série" value={streakLabel} />
+          <StatRow label="Meilleure série" value={`${bestStreak} ${bestStreak > 1 ? "jours" : "jour"}`} />
+          <StatRow label="Pas depuis le début" value={formatInt(progress.totalSteps)} last />
+        </View>
+        <Button
+          label="Partager ma progression"
+          variant="secondary"
+          onDark
+          onPress={() =>
+            requestShare(
+              buildProgressCard({
+                totalKm: progress.totalDistanceKm,
+                lap: progress.lap,
+                streakDays: status.streakDays,
+                bestStreak,
+                totalSteps: progress.totalSteps,
+                arc: previous.arc,
+              }),
+            )
+          }
+        />
       </Panel>
 
       <Panel style={styles.section}>
@@ -157,116 +136,6 @@ export function ProfileScreen() {
           onSelect={setGutsSkinId}
         />
       </Panel>
-
-      <Panel>
-        <Text accessibilityRole="header" style={styles.heading}>
-          Réglages
-        </Text>
-        <View style={styles.settingBlock}>
-          <Text style={styles.settingTitle}>Objectif quotidien</Text>
-          <Text style={styles.small}>Les pas à faire chaque jour pour apaiser la Marque et garder ta série.</Text>
-          <ChoiceRow
-            options={DAILY_GOAL_OPTIONS.map((steps) => ({ value: steps, label: formatInt(steps) }))}
-            selected={dailyGoal}
-            onSelect={setDailyGoal}
-            accessibilityPrefix="Objectif quotidien en pas"
-          />
-        </View>
-        <View style={styles.settingRow}>
-          <View style={styles.settingText}>
-            <Text style={styles.settingTitle}>Rappel du soir</Text>
-            <Text style={[styles.small, reminderDenied && styles.warning]}>
-              {reminderDenied
-                ? "Notifications refusées : autorise-les dans les réglages du téléphone."
-                : "Une notification si tu n'as pas atteint ton objectif."}
-            </Text>
-          </View>
-          <Switch
-            accessibilityLabel="Rappel du soir"
-            value={reminderEnabled}
-            onValueChange={(enabled) => void handleReminderToggle(enabled)}
-            {...SWITCH_COLORS}
-          />
-        </View>
-        {reminderEnabled ? (
-          <View style={styles.settingBlockNoRule}>
-            <ChoiceRow
-              options={REMINDER_HOUR_OPTIONS.map((hour) => ({ value: hour, label: `${hour} h` }))}
-              selected={reminderHour}
-              onSelect={setReminderHour}
-              accessibilityPrefix="Heure du rappel"
-            />
-          </View>
-        ) : null}
-        <View style={styles.settingRow}>
-          <View style={styles.settingText}>
-            <Text style={styles.settingTitle}>Vibrations</Text>
-            <Text style={styles.small}>Une vibration brève à chaque point franchi, succès ou objectif du jour atteint.</Text>
-          </View>
-          <Switch
-            accessibilityLabel="Vibrations"
-            value={hapticsEnabled}
-            onValueChange={(enabled) => {
-              setHapticsEnabled(enabled);
-              // On sent tout de suite ce que fait l'option.
-              if (enabled) vibrate("achievement");
-            }}
-            {...SWITCH_COLORS}
-          />
-        </View>
-        <View style={styles.settingRow}>
-          <View style={styles.settingText}>
-            <Text style={styles.settingTitle}>Suivi permanent</Text>
-            <Text style={styles.small}>Garde le décompte des pas en arrière-plan grâce à une notification permanente.</Text>
-          </View>
-          <Switch
-            accessibilityLabel="Suivi permanent"
-            value={isPermanentTrackingEnabled}
-            onValueChange={setPermanentTrackingEnabled}
-            {...SWITCH_COLORS}
-          />
-        </View>
-        <View style={styles.settingRow}>
-          <View style={styles.settingText}>
-            <Text style={styles.settingTitle}>Compte Google</Text>
-            <Text style={styles.small}>Ta progression est sauvegardée dans le cloud.</Text>
-          </View>
-          <Text style={styles.connected}>Connecté</Text>
-        </View>
-      </Panel>
-
-      <Panel style={styles.section}>
-        <Button
-          label="Partager ma progression"
-          variant="secondary"
-          onPress={() =>
-            requestShare(
-              buildProgressCard({
-                totalKm: progress.totalDistanceKm,
-                lap: progress.lap,
-                streakDays: status.streakDays,
-                bestStreak,
-                totalSteps: progress.totalSteps,
-                arc: previous.arc,
-              }),
-            )
-          }
-        />
-        <Button
-          label="Se déconnecter"
-          variant="danger"
-          onPress={() => {
-            // La sauvegarde cloud en attente part avant la déconnexion (le local, lui, est déjà à jour).
-            flushCloudSave();
-            void logout();
-          }}
-        />
-      </Panel>
-
-      <Panel reversed style={styles.section}>
-        <Text style={styles.smallOnBlack}>Efface ta progression, tes succès et ton historique, ici et dans le cloud.</Text>
-        <Button label="Recommencer à zéro" variant="danger" onDark onPress={confirmErase} />
-      </Panel>
     </Screen>
   );
 }
@@ -308,8 +177,15 @@ const styles = StyleSheet.create({
   headerText: { flex: 1, gap: theme.space[4] },
   name: { ...theme.text.displayL, color: theme.colors.paper },
   subtitle: { ...theme.text.body, color: theme.colors.paperSoft },
-  bigFigure: { ...theme.text.displayXl, color: theme.colors.black },
-  bigUnit: { ...theme.text.displayM, letterSpacing: 0 },
+  settingsButton: {
+    width: 48,
+    height: 48,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: theme.frame,
+    borderColor: theme.colors.paper,
+  },
+  settingsButtonPressed: { backgroundColor: theme.colors.blackSoft },
   statRow: { flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: theme.space[16], paddingVertical: theme.space[8] },
   statRowRule: { borderBottomWidth: 1, borderBottomColor: theme.colors.toneDark },
   statLabel: { ...theme.text.body, color: theme.colors.paperSoft, flexShrink: 1 },
@@ -317,22 +193,7 @@ const styles = StyleSheet.create({
   section: { gap: theme.space[16] },
   heading: { ...theme.text.displayM, color: theme.colors.black },
   small: { ...theme.text.small, color: theme.colors.blackSoft },
-  smallOnBlack: { ...theme.text.small, color: theme.colors.paperSoft },
-  warning: { color: theme.colors.red },
   weekSummary: { flexDirection: "row", gap: theme.space[16] },
   weekFigure: { flex: 1, gap: 2 },
   weekValue: { ...theme.text.displayS, color: theme.colors.black },
-  settingBlock: { gap: theme.space[8], paddingVertical: theme.space[16] },
-  settingBlockNoRule: { paddingBottom: theme.space[16] },
-  settingRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: theme.space[16],
-    paddingVertical: theme.space[16],
-    borderTopWidth: 1,
-    borderTopColor: theme.colors.black,
-  },
-  settingText: { flex: 1, gap: 2 },
-  settingTitle: { ...theme.text.bodyStrong, color: theme.colors.black },
-  connected: { ...theme.text.bodyStrong, color: theme.colors.black },
 });

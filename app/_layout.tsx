@@ -198,6 +198,7 @@ export default function RootLayout() {
         <Stack.Screen name="login" />
         <Stack.Screen name="oauthredirect" />
         <Stack.Screen name="(tabs)" />
+        <Stack.Screen name="settings" />
       </Stack>
       <CheckpointUnlockModal enabled={isAuthenticated && isProgressLoaded} />
       <BossEventModal enabled={isAuthenticated && isProgressLoaded} />
