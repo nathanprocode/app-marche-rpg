@@ -1,12 +1,14 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { useEffect, useRef, useState } from "react";
+import { AccessibilityInfo, Pressable, StyleSheet, Text, View } from "react-native";
 import { GAME_CONFIG } from "../../core/constants/game";
 import { formatDecimal, formatInt } from "../../core/format";
 import { theme } from "../../core/theme";
 import { BERSERK_CHECKPOINTS } from "../../data/map/berserk-checkpoints";
 import { BOSS_ENCOUNTERS } from "../../data/bosses";
 import { computeDuels } from "../../features/bosses/duel";
+import { nextStreakMilestone } from "../../features/brandOfSacrifice/streakMilestones";
 import { resolveCampScene } from "../../features/camp/campScene";
 import { lastDays } from "../../features/history/weekHistory";
 import { deriveBrandState } from "../../features/progression/engine";
@@ -27,6 +29,10 @@ import { Panel } from "../components/Panel";
 import { ProgressBar } from "../components/ProgressBar";
 import { Screen } from "../components/Screen";
 import { Screentone } from "../components/Screentone";
+import { TrackingNotice } from "../components/TrackingNotice";
+
+/** Durée pendant laquelle le bouton de synchronisation montre sa coche après un appui. */
+const SYNC_CONFIRM_MS = 1500;
 
 export function HomeScreen() {
   const router = useRouter();
@@ -41,6 +47,20 @@ export function HomeScreen() {
   const resetProgressionDev = usePlayerStore((state) => state.resetProgressionDev);
   const streakDays = useBrandStore((state) => state.status.streakDays);
   const threshold = useSettingsStore((state) => state.dailyGoal);
+  const [justSynced, setJustSynced] = useState(false);
+  const syncTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => {
+    if (syncTimerRef.current) clearTimeout(syncTimerRef.current);
+  }, []);
+
+  /** Recalcule la journée, puis le confirme : la coche remplace un instant les flèches. */
+  async function handleSync(): Promise<void> {
+    await runDailySync();
+    setJustSynced(true);
+    AccessibilityInfo.announceForAccessibility("Journée à jour");
+    if (syncTimerRef.current) clearTimeout(syncTimerRef.current);
+    syncTimerRef.current = setTimeout(() => setJustSynced(false), SYNC_CONFIRM_MS);
+  }
 
   const activeDuels = computeDuels(BOSS_ENCOUNTERS, progress.lapSteps, BERSERK_CHECKPOINTS).filter(
     (duel) => duel.state === "active",
@@ -50,6 +70,7 @@ export function HomeScreen() {
   // L'historique du jour peut avoir un temps de retard sur le compteur : le compteur fait foi pour aujourd'hui.
   const week = lastDays(history, new Date()).map((day) => (day.isToday ? { ...day, steps: stepsToday } : day));
   const recordedDayKeys = new Set(Object.keys(history));
+  const streakTarget = nextStreakMilestone(streakDays);
 
   const previousIndex = Math.max(
     0,
@@ -88,10 +109,10 @@ export function HomeScreen() {
           <Pressable
             accessibilityRole="button"
             accessibilityLabel="Synchroniser la journée"
-            onPress={() => void runDailySync()}
+            onPress={() => void handleSync()}
             style={({ pressed }) => [styles.iconButton, pressed && styles.iconButtonPressed]}
           >
-            <Ionicons name="refresh" size={20} color={theme.colors.black} />
+            <Ionicons name={justSynced ? "checkmark" : "refresh"} size={20} color={theme.colors.black} />
           </Pressable>
         </View>
         <Text style={styles.journeyLine}>{journeyLine}</Text>
@@ -114,7 +135,7 @@ export function HomeScreen() {
                   {formatDecimal(remainingKm)}
                   <Text style={styles.figureUnit}> km</Text>
                 </Text>
-                <Text style={styles.small}>{`≈ ${formatInt(remainingSteps)} pas jusqu'au point ${formatInt(next.kmThreshold)} km`}</Text>
+                <Text style={styles.small}>{`≈ ${formatInt(remainingSteps)} pas`}</Text>
               </View>
             </>
           ) : (
@@ -146,8 +167,10 @@ export function HomeScreen() {
       </View>
 
       <Panel reversed>
-        {/* La Marque en filigrane, coupée par le bord : rouge sombre tant qu'elle saigne. */}
-        <BrandWatermark width={96} color={isCalm ? theme.colors.toneDark : theme.colors.red} style={styles.watermark} />
+        {/* La Marque en filigrane, coupée par le bord, en gris : le rouge vif reste au seul chiffre des pas à faire. */}
+        <BrandWatermark width={96} style={styles.watermark} />
+        {/* Si les pas ne sont pas comptés, on le dit ici, au-dessus du « 0 pas » qui sinon tromperait. */}
+        <TrackingNotice />
         <View style={styles.todayRow}>
           <View
             style={styles.todayCol}
@@ -174,11 +197,11 @@ export function HomeScreen() {
           </View>
         </View>
         <View style={styles.week}>
-          <DayCells days={week} thresholdSteps={threshold} recordedDayKeys={recordedDayKeys} reversed />
+          <DayCells days={week} thresholdSteps={threshold} recordedDayKeys={recordedDayKeys} reversed showDates />
           <Text
             style={[styles.streak, styles.onBlack]}
-            accessibilityLabel={`Série : ${streakDays} ${streakDays > 1 ? "jours" : "jour"}`}
-          >{`Série ${streakDays} j`}</Text>
+            accessibilityLabel={`Série : ${streakDays} ${streakDays > 1 ? "jours" : "jour"}${streakTarget ? `, prochain palier ${streakTarget} jours` : ""}`}
+          >{streakTarget ? `Série ${streakDays} / ${streakTarget} j` : `Série ${streakDays} j`}</Text>
         </View>
       </Panel>
 

@@ -14,6 +14,7 @@ import { usePedometerStore } from "../src/store/usePedometerStore";
 import { flushCloudSave, myBandStatus, usePlayerStore } from "../src/store/usePlayerStore";
 import { useSocialStore } from "../src/store/useSocialStore";
 import { useSettingsStore } from "../src/store/useSettingsStore";
+import { useTrackingStore } from "../src/store/useTrackingStore";
 import { theme } from "../src/core/theme";
 import { Button } from "../src/ui/components/Button";
 import { AchievementToast } from "../src/ui/components/AchievementToast";
@@ -95,6 +96,8 @@ export default function RootLayout() {
         return;
       }
       if (nextState !== "active") return;
+      // Retour des réglages du téléphone : une autorisation a peut-être été accordée, on relance le comptage.
+      useTrackingStore.getState().retryAfterSettings();
       void hydrateStepsTodayPreference().then(() => {
         void runDailySync();
         syncReminder();
@@ -195,6 +198,7 @@ export default function RootLayout() {
         <Stack.Screen name="login" />
         <Stack.Screen name="oauthredirect" />
         <Stack.Screen name="(tabs)" />
+        <Stack.Screen name="settings" />
       </Stack>
       <CheckpointUnlockModal enabled={isAuthenticated && isProgressLoaded} />
       <BossEventModal enabled={isAuthenticated && isProgressLoaded} />

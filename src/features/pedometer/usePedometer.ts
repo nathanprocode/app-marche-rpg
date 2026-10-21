@@ -5,6 +5,7 @@ import { GAME_CONFIG } from "../../core/constants/game";
 import { shiftDay, toDayKey } from "../history/weekHistory";
 import { usePedometerStore } from "../../store/usePedometerStore";
 import { usePlayerStore } from "../../store/usePlayerStore";
+import { useTrackingStore } from "../../store/useTrackingStore";
 import { clearPersistentTrackingNotificationAsync, updatePersistentTrackingNotificationAsync } from "./persistentTracking";
 import {
   loadPermanentPedometerModule,
@@ -17,8 +18,17 @@ import {
 } from "./permanentPedometerNative";
 import { stepsToKm } from "./service";
 import { buildTrackingNotificationContent } from "./trackingNotification";
+import type { TrackingStatus } from "./trackingStatus";
 
 type PedometerPermission = "granted" | "denied" | "undetermined";
+
+/** Réponse d'Android à une demande d'autorisation : « blocked » quand il ne la redemandera plus (« Ne plus demander »). */
+type PermissionAnswer = "granted" | "denied" | "blocked";
+
+function toPermissionAnswer(result: string): PermissionAnswer {
+  if (result === PermissionsAndroid.RESULTS.GRANTED) return "granted";
+  return result === PermissionsAndroid.RESULTS.NEVER_ASK_AGAIN ? "blocked" : "denied";
+}
 
 type UsePedometerState = {
   isAvailable: boolean | null;
@@ -45,22 +55,14 @@ function shouldRefreshNotification(previousBucket: number | null, totalSteps: nu
   return previousBucket !== currentBucket;
 }
 
-async function requestAndroidPermanentTrackingPermissions(): Promise<boolean> {
+async function requestAndroidActivityRecognitionPermission(): Promise<PermissionAnswer> {
   if (Platform.OS !== "android") {
-    return true;
+    return "granted";
   }
 
-  const hasActivityPermission = await requestAndroidActivityRecognitionPermission();
-  if (!hasActivityPermission) {
-    return false;
-  }
-
-  return requestAndroidNotificationPermission();
-}
-
-async function requestAndroidActivityRecognitionPermission(): Promise<boolean> {
-  if (Platform.OS !== "android") {
-    return true;
+  // Déjà accordée : pas de fenêtre à chaque ouverture ou nouvel essai.
+  if (await PermissionsAndroid.check(PermissionsAndroid.PERMISSIONS.ACTIVITY_RECOGNITION)) {
+    return "granted";
   }
 
   const activityPermission = await PermissionsAndroid.request(
@@ -73,7 +75,7 @@ async function requestAndroidActivityRecognitionPermission(): Promise<boolean> {
     },
   );
 
-  return activityPermission === PermissionsAndroid.RESULTS.GRANTED;
+  return toPermissionAnswer(activityPermission);
 }
 
 async function requestAndroidNotificationPermission(): Promise<boolean> {
@@ -114,11 +116,19 @@ export function usePedometer(enabled = true, permanent = false): UsePedometerSta
   const permanentRef = useRef(permanent);
   permanentRef.current = permanent;
   const lastNotifiedDistanceBucketRef = useRef<number | null>(null);
+  // « Réessayer » et le retour des réglages du téléphone relancent le démarrage.
+  const attempt = useTrackingStore((tracking) => tracking.attempt);
 
   useEffect(() => {
     let isMounted = true;
     let intervalId: ReturnType<typeof setInterval> | null = null;
     let subscription: { remove: () => void } | null = null;
+    // Le suivi permanent a été demandé mais n'a pas pu démarrer : on compte quand même, appli ouverte.
+    let isBackgroundOff = false;
+
+    function report(status: TrackingStatus): void {
+      if (isMounted) useTrackingStore.getState().setStatus(status);
+    }
 
     /**
      * @param nativeSteps      pas en attente dans le service.
@@ -177,12 +187,19 @@ export function usePedometer(enabled = true, permanent = false): UsePedometerSta
         return false;
       }
 
-      const hasPermissions = await requestAndroidPermanentTrackingPermissions();
-      if (!hasPermissions) {
+      const activityPermission = await requestAndroidActivityRecognitionPermission();
+      if (activityPermission !== "granted") {
         if (isMounted) {
           setState({ isAvailable: true, permission: "denied", isWatching: false, error: null });
         }
+        report({ kind: "permissionDenied", canAsk: activityPermission === "denied" });
         return true;
+      }
+
+      // Notifications refusées : pas de service permanent, mais les pas restent comptés appli ouverte.
+      if (!(await requestAndroidNotificationPermission())) {
+        isBackgroundOff = true;
+        return false;
       }
 
       const progress = usePlayerStore.getState().progress;
@@ -197,12 +214,14 @@ export function usePedometer(enabled = true, permanent = false): UsePedometerSta
         GAME_CONFIG.metersPerStep,
       );
       if (!didStart) {
+        isBackgroundOff = true;
         return false;
       }
 
       const initialNativeSteps = safeGetSteps(permanentPedometer);
       if (initialNativeSteps === null) {
         void safeStopTracking();
+        isBackgroundOff = true;
         return false;
       }
 
@@ -221,16 +240,18 @@ export function usePedometer(enabled = true, permanent = false): UsePedometerSta
       if (isMounted) {
         setState({ isAvailable: true, permission: "granted", isWatching: true, error: null });
       }
+      report({ kind: "counting" });
 
       return true;
     }
 
     async function startExpoPedometerFallback(): Promise<void> {
-      const hasActivityPermission = await requestAndroidActivityRecognitionPermission();
-      if (!hasActivityPermission) {
+      const activityPermission = await requestAndroidActivityRecognitionPermission();
+      if (activityPermission !== "granted") {
         if (isMounted) {
           setState({ isAvailable: true, permission: "denied", isWatching: false, error: null });
         }
+        report({ kind: "permissionDenied", canAsk: activityPermission === "denied" });
         return;
       }
 
@@ -240,6 +261,7 @@ export function usePedometer(enabled = true, permanent = false): UsePedometerSta
       setState((current) => ({ ...current, isAvailable, error: null }));
 
       if (!isAvailable) {
+        report({ kind: "sensorUnavailable" });
         return;
       }
 
@@ -254,6 +276,7 @@ export function usePedometer(enabled = true, permanent = false): UsePedometerSta
       setState((current) => ({ ...current, permission }));
 
       if (!permissionResponse.granted) {
+        report({ kind: "permissionDenied", canAsk: permissionResponse.canAskAgain });
         return;
       }
 
@@ -317,9 +340,11 @@ export function usePedometer(enabled = true, permanent = false): UsePedometerSta
       if (isMounted) {
         setState((current) => ({ ...current, isWatching: true }));
       }
+      report(isBackgroundOff ? { kind: "backgroundOff" } : { kind: "counting" });
     }
 
     async function startPedometer(): Promise<void> {
+      report({ kind: "starting" });
       if (!enabled) {
         await clearPersistentTrackingNotificationAsync();
         return;
@@ -347,6 +372,7 @@ export function usePedometer(enabled = true, permanent = false): UsePedometerSta
           isWatching: false,
           error: error instanceof Error ? error.message : "Impossible de démarrer le podomètre.",
         }));
+        report({ kind: "error" });
       }
     }
 
@@ -364,7 +390,7 @@ export function usePedometer(enabled = true, permanent = false): UsePedometerSta
       }
       void clearPersistentTrackingNotificationAsync();
     };
-  }, [enabled, permanent]);
+  }, [enabled, permanent, attempt]);
 
   return state;
 }

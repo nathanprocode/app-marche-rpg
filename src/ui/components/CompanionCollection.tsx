@@ -17,7 +17,7 @@ function meetingPoint(companion: Companion) {
   return BERSERK_CHECKPOINTS.find((checkpoint) => checkpoint.id === companion.metAtCheckpointId)!;
 }
 
-/** Onglet « Compagnons » des Quêtes : les rencontrés sur papier, les autres en silhouette dans une case noire. */
+/** Onglet « Compagnons » de la Collection : les rencontrés sur papier, les autres en silhouette dans une case noire. */
 export function CompanionCollection({ unlockedCheckpointIds }: CompanionCollectionProps) {
   const [opened, setOpened] = useState<Companion | null>(null);
 
