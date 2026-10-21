@@ -135,7 +135,7 @@ export function HomeScreen() {
                   {formatDecimal(remainingKm)}
                   <Text style={styles.figureUnit}> km</Text>
                 </Text>
-                <Text style={styles.small}>{`≈ ${formatInt(remainingSteps)} pas jusqu'au point ${formatInt(next.kmThreshold)} km`}</Text>
+                <Text style={styles.small}>{`≈ ${formatInt(remainingSteps)} pas`}</Text>
               </View>
             </>
           ) : (
@@ -167,8 +167,8 @@ export function HomeScreen() {
       </View>
 
       <Panel reversed>
-        {/* La Marque en filigrane, coupée par le bord : rouge sombre tant qu'elle saigne. */}
-        <BrandWatermark width={96} color={isCalm ? theme.colors.toneDark : theme.colors.red} style={styles.watermark} />
+        {/* La Marque en filigrane, coupée par le bord, en gris : le rouge vif reste au seul chiffre des pas à faire. */}
+        <BrandWatermark width={96} style={styles.watermark} />
         {/* Si les pas ne sont pas comptés, on le dit ici, au-dessus du « 0 pas » qui sinon tromperait. */}
         <TrackingNotice />
         <View style={styles.todayRow}>
@@ -197,7 +197,7 @@ export function HomeScreen() {
           </View>
         </View>
         <View style={styles.week}>
-          <DayCells days={week} thresholdSteps={threshold} recordedDayKeys={recordedDayKeys} reversed />
+          <DayCells days={week} thresholdSteps={threshold} recordedDayKeys={recordedDayKeys} reversed showDates />
           <Text
             style={[styles.streak, styles.onBlack]}
             accessibilityLabel={`Série : ${streakDays} ${streakDays > 1 ? "jours" : "jour"}${streakTarget ? `, prochain palier ${streakTarget} jours` : ""}`}
