@@ -220,8 +220,11 @@ const styles = StyleSheet.create({
   list: { gap: theme.gutter },
   smallOnBlack: { ...theme.text.small, color: theme.colors.paperSoft },
   chronicle: { flexDirection: "row", minHeight: 136 },
-  chronicleThumb: { width: 112, alignItems: "center", justifyContent: "center", backgroundColor: theme.colors.black },
-  thumbImage: { width: "100%", height: "100%" },
+  chronicleThumb: { width: 112, alignItems: "center", justifyContent: "center", overflow: "hidden", backgroundColor: theme.colors.black },
+  // En fond de la colonne (position absolue) : c'est le texte qui donne la hauteur de la carte. Dans le flux, Android
+  // prenait la hauteur naturelle de la planche et la carte s'étirait sur tout l'écran. La colonne n'a pas de marges
+  // intérieures : les 100 % y sont justes sur Android comme sur le web.
+  thumbImage: { position: "absolute", top: 0, left: 0, width: "100%", height: "100%" },
   chronicleText: { flex: 1, padding: theme.space[16], gap: theme.space[4] },
   chronicleTitle: { ...theme.text.displayS, color: theme.colors.black },
   chronicleMeta: { ...theme.text.small, fontFamily: theme.fontFamily.gothicBold, color: theme.colors.blackSoft },
