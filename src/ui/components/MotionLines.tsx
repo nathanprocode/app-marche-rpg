@@ -1,4 +1,4 @@
-import { StyleSheet, type StyleProp, type ViewStyle } from "react-native";
+import { StyleSheet, View, type StyleProp, type ViewStyle } from "react-native";
 import Svg, { Polygon } from "react-native-svg";
 import { theme } from "../../core/theme";
 
@@ -28,17 +28,13 @@ type MotionLinesProps = {
  */
 export function MotionLines({ color = theme.colors.toneLight, style }: MotionLinesProps) {
   return (
-    <Svg
-      pointerEvents="none"
-      style={[StyleSheet.absoluteFill, style]}
-      viewBox="0 0 100 100"
-      preserveAspectRatio="none"
-      accessibilityElementsHidden
-      importantForAccessibility="no-hide-descendants"
-    >
-      {LINES.map((points, i) => (
-        <Polygon key={i} points={points} fill={color} />
-      ))}
-    </Svg>
+    // Le SVG remplit une vue tenue par ses bords (voir Screentone) : sa taille ne dépend ni du web ni des marges.
+    <View pointerEvents="none" style={[StyleSheet.absoluteFill, style]} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+      <Svg width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none">
+        {LINES.map((points, i) => (
+          <Polygon key={i} points={points} fill={color} />
+        ))}
+      </Svg>
+    </View>
   );
 }
