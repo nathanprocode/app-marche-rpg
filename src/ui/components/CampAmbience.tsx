@@ -33,6 +33,20 @@ const GLOW_DOT_GAP = 7;
 const GLOW_DOT_MAX_R = 2.2;
 /** La trame laisse la flamme blanche intacte : elle commence à cette fraction du rayon. */
 const GLOW_INNER = 0.22;
+/**
+ * Les états de la lueur : portée (fraction du rayon) et grain (graine du tirage des points). Le feu saute de l'un à
+ * l'autre d'un coup, comme une trame qu'on change, au lieu de grossir et rétrécir d'un bloc.
+ */
+const GLOW_FRAMES = [
+  { reach: 1, seed: 11 },
+  { reach: 0.88, seed: 23 },
+  { reach: 1.05, seed: 37 },
+  { reach: 0.94, seed: 53 },
+];
+/** Suite des états et durée de chacun (ms) : des à-coups irréguliers, longs et courts mêlés, comme une flamme. */
+const GLOW_FLICKER: [frame: number, ms: number][] = [
+  [0, 220], [1, 90], [2, 140], [1, 70], [3, 180], [0, 110], [2, 260], [3, 80], [1, 130], [0, 170], [3, 100], [2, 90],
+];
 
 /** Feuilles : position de départ (fraction de la largeur), retard, durée, balancement (px), couleur. */
 const LEAVES = [
@@ -96,13 +110,21 @@ function Ember({ ember, height, origin }: { ember: (typeof EMBERS)[number]; heig
   );
 }
 
+/** Tirage fixe entre 0 et 1 pour un point et une graine : la trame d'un état ne change pas d'un rendu à l'autre. */
+function grain(x: number, y: number, seed: number): number {
+  const n = Math.sin(x * 12.9898 + y * 78.233 + seed * 37.719) * 43758.5453;
+  return n - Math.floor(n);
+}
+
 /**
  * Points de la trame autour du feu, sur une grille en quinconce : gros près de la flamme, de plus en plus fins
- * vers le bord. Pas de dégradé : le monde n'a que des aplats et de la trame.
+ * vers le bord, chacun un peu plus ou moins gros selon le grain de l'état. Pas de dégradé : le monde n'a que des
+ * aplats et de la trame.
  */
-function glowDots(size: number): { x: number; y: number; r: number }[] {
+function glowDots(size: number, frame: (typeof GLOW_FRAMES)[number]): { x: number; y: number; r: number }[] {
   const center = size / 2;
   const inner = center * GLOW_INNER;
+  const outer = center * frame.reach;
   const dots: { x: number; y: number; r: number }[] = [];
   const rowGap = GLOW_DOT_GAP * 0.87;
   for (let row = 0; row * rowGap <= size; row++) {
@@ -110,46 +132,62 @@ function glowDots(size: number): { x: number; y: number; r: number }[] {
     for (let x = row % 2 ? GLOW_DOT_GAP / 2 : 0; x <= size; x += GLOW_DOT_GAP) {
       const distance = Math.hypot(x - center, y - center);
       if (distance < inner) continue;
-      const r = GLOW_DOT_MAX_R * (1 - (distance - inner) / (center - inner));
-      if (r >= 0.6) dots.push({ x, y, r });
+      const falloff = 1 - (distance - inner) / (outer - inner);
+      const r = GLOW_DOT_MAX_R * falloff * (0.7 + 0.6 * grain(x, y, frame.seed));
+      if (r >= 0.6) dots.push({ x, y, r: Math.min(r, GLOW_DOT_MAX_R) });
     }
   }
   return dots;
 }
 
-/** Lueur du feu : une trame de points rouges pleins qui palpite de façon irrégulière. */
+/**
+ * Lueur du feu : quatre trames de points rouges pleins, une seule visible à la fois. Le feu passe de l'une à l'autre
+ * par à-coups irréguliers ; ni zoom ni transparence (un rouge transparent virerait au rose).
+ */
 function FireGlow({ size, origin }: { size: number; origin: { x: number; y: number } }) {
-  const flicker = useRef(new Animated.Value(1)).current;
-  const dots = useMemo(() => glowDots(size), [size]);
+  const frame = useRef(new Animated.Value(0)).current;
+  const layers = useMemo(() => GLOW_FRAMES.map((glowFrame) => glowDots(size, glowFrame)), [size]);
 
   useEffect(() => {
-    // La lueur grandit et rétrécit (l'opacité reste pleine : un rouge transparent virerait au rose).
-    const steps = [1.08, 0.94, 1.04, 0.9, 1.06, 0.98];
-    const durations = [140, 90, 170, 110, 130, 160];
     const loop = Animated.loop(
       Animated.sequence(
-        steps.map((toValue, i) =>
-          Animated.timing(flicker, { toValue, duration: durations[i], easing: Easing.linear, useNativeDriver: true }),
+        GLOW_FLICKER.map(([toValue, ms]) =>
+          Animated.timing(frame, { toValue, duration: 0, delay: ms, useNativeDriver: true }),
         ),
       ),
     );
     loop.start();
     return () => loop.stop();
-  }, [flicker]);
+  }, [frame]);
 
   return (
-    <Animated.View
-      style={[
-        styles.glow,
-        { left: origin.x - size / 2, top: origin.y - size / 2, width: size, height: size, transform: [{ scale: flicker }] },
-      ]}
+    <View
+      pointerEvents="none"
+      style={[styles.glow, { left: origin.x - size / 2, top: origin.y - size / 2, width: size, height: size }]}
     >
-      <Svg width={size} height={size}>
-        {dots.map((dot, i) => (
-          <Circle key={i} cx={dot.x} cy={dot.y} r={dot.r} fill="#E8414A" />
-        ))}
-      </Svg>
-    </Animated.View>
+      {layers.map((dots, i) => (
+        <Animated.View
+          key={i}
+          style={[
+            StyleSheet.absoluteFill,
+            {
+              // Visible seulement quand la suite est sur cet état : tout ou rien.
+              opacity: frame.interpolate({
+                inputRange: [i - 0.5, i - 0.49, i + 0.49, i + 0.5],
+                outputRange: [0, 1, 1, 0],
+                extrapolate: "clamp",
+              }),
+            },
+          ]}
+        >
+          <Svg width={size} height={size}>
+            {dots.map((dot, j) => (
+              <Circle key={j} cx={dot.x} cy={dot.y} r={dot.r} fill="#E8414A" />
+            ))}
+          </Svg>
+        </Animated.View>
+      ))}
+    </View>
   );
 }
 
