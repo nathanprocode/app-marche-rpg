@@ -15,6 +15,8 @@ type Settings = {
   hapticsEnabled: boolean;
   /** Skin de Guts choisi dans le Profil (null : le dernier débloqué). Gardé aux tours suivants. */
   gutsSkinId: string | null;
+  /** Les trois cases d'introduction (Traque, Marque, duels) ont été lues ou passées. */
+  introSeen: boolean;
 };
 
 type SettingsState = Settings & {
@@ -25,6 +27,7 @@ type SettingsState = Settings & {
   setEveningReminderHour: (hour: number) => void;
   setHapticsEnabled: (enabled: boolean) => void;
   setGutsSkinId: (skinId: string) => void;
+  setIntroSeen: () => void;
 };
 
 const DEFAULTS: Settings = {
@@ -33,6 +36,7 @@ const DEFAULTS: Settings = {
   eveningReminderHour: DEFAULT_REMINDER_HOUR,
   hapticsEnabled: false,
   gutsSkinId: null,
+  introSeen: false,
 };
 
 /** Relit des réglages dont on ne connaît pas la forme : une valeur inconnue retombe sur le défaut. */
@@ -47,6 +51,7 @@ export function parseSettings(raw: unknown): Settings {
     eveningReminderHour: (REMINDER_HOUR_OPTIONS as readonly number[]).includes(hour) ? hour : DEFAULTS.eveningReminderHour,
     hapticsEnabled: data.hapticsEnabled === true,
     gutsSkinId: GUTS_SKINS.some((skin) => skin.id === data.gutsSkinId) ? (data.gutsSkinId as string) : DEFAULTS.gutsSkinId,
+    introSeen: data.introSeen === true,
   };
 }
 
@@ -63,6 +68,7 @@ function pickSettings(state: SettingsState): Settings {
     eveningReminderHour: state.eveningReminderHour,
     hapticsEnabled: state.hapticsEnabled,
     gutsSkinId: state.gutsSkinId,
+    introSeen: state.introSeen,
   };
 }
 
@@ -96,6 +102,10 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
   },
   setGutsSkinId: (skinId) => {
     set({ gutsSkinId: parseSettings({ gutsSkinId: skinId }).gutsSkinId });
+    persist(pickSettings(get()));
+  },
+  setIntroSeen: () => {
+    set({ introSeen: true });
     persist(pickSettings(get()));
   },
 }));

@@ -7,10 +7,13 @@ import { COMPANIONS, type Companion } from "../../data/companions";
 import { BERSERK_CHECKPOINTS } from "../../data/map/berserk-checkpoints";
 import { isCompanionMet } from "../../features/companions/journey";
 import { CompanionSprite } from "./CompanionSprite";
+import { NextEncounter } from "./NextEncounter";
 import { Panel } from "./Panel";
 
 type CompanionCollectionProps = {
   unlockedCheckpointIds: string[];
+  /** Distance parcourue dans le tour : pour dire combien il reste avant la prochaine rencontre. */
+  totalDistanceKm: number;
 };
 
 function meetingPoint(companion: Companion) {
@@ -18,11 +21,25 @@ function meetingPoint(companion: Companion) {
 }
 
 /** Onglet « Compagnons » de la Collection : les rencontrés sur papier, les autres en silhouette dans une case noire. */
-export function CompanionCollection({ unlockedCheckpointIds }: CompanionCollectionProps) {
+export function CompanionCollection({ unlockedCheckpointIds, totalDistanceKm }: CompanionCollectionProps) {
   const [opened, setOpened] = useState<Companion | null>(null);
+  // Le prochain à rencontrer : le plus proche des compagnons encore inconnus (aucun au-delà du premier tour).
+  const unmet = COMPANIONS.filter((companion) => !isCompanionMet(companion, unlockedCheckpointIds));
+  const nextKm = unmet.length > 0 ? Math.min(...unmet.map((companion) => meetingPoint(companion).kmThreshold)) : null;
+  const nextCompanions = unmet.filter((companion) => meetingPoint(companion).kmThreshold === nextKm);
 
   return (
     <>
+      {nextKm !== null && nextCompanions.length > 0 ? (
+        <NextEncounter
+          label="prochaine rencontre"
+          silhouette={<CompanionSprite companion={nextCompanions[0]} size={72} tint={theme.colors.paperSoft} />}
+          kmThreshold={nextKm}
+          totalDistanceKm={totalDistanceKm}
+          count={nextCompanions.length}
+          pluralNoun="compagnons"
+        />
+      ) : null}
       <View style={styles.grid}>
         {COMPANIONS.map((companion) =>
           isCompanionMet(companion, unlockedCheckpointIds) ? (

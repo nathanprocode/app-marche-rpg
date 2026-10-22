@@ -85,9 +85,9 @@ export function QuestsScreen() {
 
       <View style={styles.list}>
         {tab === "companions" ? (
-          <CompanionCollection unlockedCheckpointIds={unlockedIds} />
+          <CompanionCollection unlockedCheckpointIds={unlockedIds} totalDistanceKm={progress.totalDistanceKm} />
         ) : tab === "enemies" ? (
-          <EnemyCollection unlockedCheckpointIds={unlockedIds} bossVictories={bossVictories} />
+          <EnemyCollection unlockedCheckpointIds={unlockedIds} bossVictories={bossVictories} totalDistanceKm={progress.totalDistanceKm} />
         ) : tab === "achievements" ? (
           <AchievementList
             stats={achievementStats}

@@ -38,14 +38,15 @@ import {
   type MapView,
   type Offset,
 } from "../../features/mapZoom/mapZoom";
+import { placeLabels, type Box, type LabelRequest } from "../../features/mapZoom/labelPlacement";
 import { resolveGutsSkin } from "../../features/skins/gutsSkin";
 import { usePlayerStore } from "../../store/usePlayerStore";
 import { useSocialStore } from "../../store/useSocialStore";
 import { useAuthStore } from "../../store/useAuthStore";
 import { useSettingsStore } from "../../store/useSettingsStore";
-import { BAND_LABEL_CHAR_PX, BandMarker, bandLabel } from "../components/BandMarker";
+import { BAND_LABEL_CHAR_PX, BAND_LABEL_HEIGHT, BAND_LABEL_OFFSETS, BandMarker, bandLabel } from "../components/BandMarker";
 import { COMPANION_SPRITE_SIZE, CompanionMarker } from "../components/CompanionMarker";
-import { GutsMarker } from "../components/GutsMarker";
+import { GUTS_FEET_GAP, GUTS_SPRITE_HEIGHT, GutsMarker, gutsSpriteWidth } from "../components/GutsMarker";
 import { MapSheet } from "../components/MapSheet";
 
 // Version encrée de la carte (gravure en noir et blanc) : la piste rouge s'y lit d'un coup d'œil.
@@ -82,6 +83,30 @@ const LABEL_HEIGHT = LABEL_LINE_PX + 2 * LABEL_PADDING_Y;
 const LABEL_GAP = 4;
 const LABEL_TOP_BELOW = 16 + LABEL_GAP;
 const LABEL_TOP_ABOVE = -(LABEL_HEIGHT + LABEL_GAP + 4);
+/** Une place d'étiquette de point : hauteur sous le haut du losange, et côté où elle s'étire. */
+type LabelSpot = { y: number; align: "start" | "end" };
+/** Une rangée plus loin du losange, quand les places proches sont prises. */
+const LABEL_ROW = LABEL_HEIGHT + LABEL_GAP;
+/**
+ * Places essayées dans l'ordre (voir placeLabels) : le prochain point préfère le dessus, le dernier franchi le
+ * dessous ; puis l'autre côté du losange, puis une rangée plus loin.
+ */
+const NEXT_LABEL_SPOTS: readonly LabelSpot[] = [
+  { y: LABEL_TOP_ABOVE, align: "start" },
+  { y: LABEL_TOP_ABOVE, align: "end" },
+  { y: LABEL_TOP_BELOW, align: "start" },
+  { y: LABEL_TOP_BELOW, align: "end" },
+  { y: LABEL_TOP_ABOVE - LABEL_ROW, align: "start" },
+  { y: LABEL_TOP_BELOW + LABEL_ROW, align: "start" },
+];
+const PREVIOUS_LABEL_SPOTS: readonly LabelSpot[] = [
+  { y: LABEL_TOP_BELOW, align: "start" },
+  { y: LABEL_TOP_BELOW, align: "end" },
+  { y: LABEL_TOP_ABOVE, align: "start" },
+  { y: LABEL_TOP_ABOVE, align: "end" },
+  { y: LABEL_TOP_BELOW + LABEL_ROW, align: "start" },
+  { y: LABEL_TOP_BELOW + LABEL_ROW, align: "end" },
+];
 /** Colonne des boutons zoom / recentrer, en haut à droite (voir styles.hud, styles.controls, styles.mapButton). */
 const MAP_BUTTON_PX = 48;
 const MAP_BUTTON_COUNT = 3;
@@ -164,6 +189,72 @@ export function MapScreen() {
   const controlsTop = insets.top + theme.space[8];
   const controlsBottom = controlsTop + MAP_BUTTON_COUNT * MAP_BUTTON_PX + (MAP_BUTTON_COUNT - 1) * theme.gutter;
   const controlsWidth = theme.gutter * 2 + MAP_BUTTON_PX;
+
+  // Étiquettes de la carte : chacune prend sa première place qui ne touche ni Guts et sa troupe, ni une étiquette déjà
+  // posée. D'abord le prochain point, puis le dernier franchi, puis les amis (dont l'étiquette peut être masquée).
+  const toScreen = (xPct: number, yPct: number) => ({
+    x: (xPct / 100) * contentWidth + mapOffset.x,
+    y: (yPct / 100) * contentHeight + mapOffset.y,
+  });
+  const gutsOnScreen = toScreen(position.x, position.y);
+  const gutsHalfWidth = gutsSpriteWidth(gutsSkin) / 2;
+  const troupeEdges = troupeOffsets.flatMap((offset) => [offset - COMPANION_SPRITE_SIZE / 2, offset + COMPANION_SPRITE_SIZE / 2]);
+  const gutsBox: Box = {
+    left: gutsOnScreen.x + Math.min(-gutsHalfWidth, ...troupeEdges),
+    right: gutsOnScreen.x + Math.max(gutsHalfWidth, ...troupeEdges),
+    top: gutsOnScreen.y - GUTS_SPRITE_HEIGHT - GUTS_FEET_GAP,
+    bottom: gutsOnScreen.y,
+  };
+
+  /**
+   * L'étiquette d'un point à une place donnée : hauteur sous le haut du losange, et alignement (« start » : elle part
+   * du losange vers la droite ; « end » : elle s'arrête au losange). Renvoie sa place à l'écran et son décalage.
+   */
+  function checkpointLabel(checkpoint: (typeof BERSERK_CHECKPOINTS)[number], spot: LabelSpot) {
+    // L'étiquette glisse pour rester entière dans l'écran (largeur estimée du titre).
+    // Dans la bande des boutons zoom / recentrer, elle s'arrête avant leur colonne.
+    const slotLeft = (checkpoint.x / 100) * contentWidth + mapOffset.x - 8;
+    const top = (checkpoint.y / 100) * contentHeight + mapOffset.y - 8 + spot.y;
+    const besideButtons = top < controlsBottom && top + LABEL_HEIGHT > controlsTop;
+    const rightEdge = viewport.width - LABEL_SCREEN_MARGIN - (besideButtons ? controlsWidth : 0);
+    const width = checkpoint.title.length * LABEL_CHAR_PX + 2 * theme.space[8];
+    const idealLeft = spot.align === "start" ? slotLeft : slotLeft + 16 - width;
+    const left = Math.max(LABEL_SCREEN_MARGIN, Math.min(idealLeft, rightEdge - width));
+    return { shiftX: left - slotLeft, box: { left, top, right: left + width, bottom: top + LABEL_HEIGHT } };
+  }
+
+  /** L'étiquette d'un ami, centrée sous son point, à une hauteur donnée : sa place à l'écran et son décalage. */
+  function friendLabel(name: string, lap: number, spot: { x: number; y: number }, offsetY: number) {
+    const center = toScreen(spot.x, spot.y);
+    const width = bandLabel(name, lap).length * BAND_LABEL_CHAR_PX + 2 * theme.space[8];
+    const idealLeft = center.x - width / 2;
+    const left = Math.max(LABEL_SCREEN_MARGIN, Math.min(idealLeft, viewport.width - LABEL_SCREEN_MARGIN - width));
+    const top = center.y - 6 + offsetY;
+    return { shiftX: left - idealLeft, box: { left, top, right: left + width, bottom: top + BAND_LABEL_HEIGHT } };
+  }
+
+  const labelRequests: LabelRequest[] = [];
+  if (!isJourneyComplete) {
+    labelRequests.push({ id: "next", candidates: NEXT_LABEL_SPOTS.map((spot) => checkpointLabel(position.next, spot).box), required: true });
+  }
+  labelRequests.push({
+    id: "previous",
+    candidates: PREVIOUS_LABEL_SPOTS.map((spot) => checkpointLabel(position.previous, spot).box),
+    required: true,
+  });
+  for (const { member, spot } of friends) {
+    labelRequests.push({
+      id: `friend:${member.uid}`,
+      candidates: BAND_LABEL_OFFSETS.map((y) => friendLabel(member.displayName, member.lap, spot, y).box),
+      required: false,
+    });
+  }
+  const labelPlacement = placeLabels(labelRequests, [gutsBox]);
+  /** Place retenue pour une étiquette (null si elle n'est pas affichée). */
+  function placed<T>(id: string, spots: readonly T[]): T | null {
+    const index = labelPlacement[id];
+    return index === null || index === undefined ? null : spots[index];
+  }
 
   /** Applique la vue à la transformation de la carte, sans rendu. */
   function applyTransform(view: MapView): void {
@@ -328,20 +419,15 @@ export function MapScreen() {
               const isReached = checkpoint.kmThreshold <= progress.totalDistanceKm + REACHED_TOLERANCE_KM;
               const isNext = !isJourneyComplete && checkpoint.id === position.next.id;
               const isPrevious = checkpoint.id === position.previous.id;
-              // L'étiquette part du losange, mais glisse pour rester entière dans l'écran (largeur estimée du titre).
-              // Dans la bande des boutons zoom / recentrer, elle s'arrête avant leur colonne.
-              const slotLeft = (checkpoint.x / 100) * contentWidth + mapOffset.x - 8;
-              const labelTop = (checkpoint.y / 100) * contentHeight + mapOffset.y - 8 + (isNext ? LABEL_TOP_ABOVE : LABEL_TOP_BELOW);
-              const besideButtons = labelTop < controlsBottom && labelTop + LABEL_HEIGHT > controlsTop;
-              const labelRightEdge = viewport.width - LABEL_SCREEN_MARGIN - (besideButtons ? controlsWidth : 0);
-              const labelWidth = checkpoint.title.length * LABEL_CHAR_PX + 2 * theme.space[8];
-              const labelLeft = Math.max(LABEL_SCREEN_MARGIN, Math.min(slotLeft, labelRightEdge - labelWidth));
+              // La place trouvée par placeLabels ; au tout dernier point, prochain et dernier franchi sont le même.
+              const labelSpot = isNext ? placed("next", NEXT_LABEL_SPOTS) : isPrevious ? placed("previous", PREVIOUS_LABEL_SPOTS) : null;
+              const label = labelSpot === null ? null : checkpointLabel(checkpoint, labelSpot);
 
               return (
                 <View key={checkpoint.id} pointerEvents="none" style={[styles.markerSlot, { left: `${checkpoint.x}%`, top: `${checkpoint.y}%` }]}>
                   <View style={[styles.diamond, isReached ? styles.diamondReached : styles.diamondAhead]} />
-                  {isPrevious || isNext ? (
-                    <View style={[styles.markerChipLane, { left: labelLeft - slotLeft }, isNext && styles.markerChipAbove]}>
+                  {label && labelSpot !== null ? (
+                    <View style={[styles.markerChipLane, { left: label.shiftX, top: labelSpot.y }]}>
                       <View style={styles.markerChip}>
                         <Text numberOfLines={1} style={styles.markerChipText}>
                           {checkpoint.title}
@@ -364,11 +450,9 @@ export function MapScreen() {
               />
             ))}
             {friends.map(({ member, spot }, index) => {
-              // L'étiquette est centrée sous le point : on la fait glisser pour qu'elle reste entière dans l'écran.
-              const centerX = (spot.x / 100) * contentWidth + mapOffset.x;
-              const labelWidth = bandLabel(member.displayName, member.lap).length * BAND_LABEL_CHAR_PX + 2 * theme.space[8];
-              const idealLeft = centerX - labelWidth / 2;
-              const labelLeft = Math.max(LABEL_SCREEN_MARGIN, Math.min(idealLeft, viewport.width - LABEL_SCREEN_MARGIN - labelWidth));
+              // L'étiquette est centrée sous le point, à la place libre trouvée par placeLabels (ou masquée).
+              const offsetY = placed(`friend:${member.uid}`, BAND_LABEL_OFFSETS);
+              const shiftX = offsetY === null ? 0 : friendLabel(member.displayName, member.lap, spot, offsetY).shiftX;
               return (
                 <BandMarker
                   key={member.uid}
@@ -377,7 +461,8 @@ export function MapScreen() {
                   xPct={spot.x}
                   yPct={spot.y}
                   index={index}
-                  labelShiftX={labelLeft - idealLeft}
+                  labelShiftX={shiftX}
+                  labelOffsetY={offsetY}
                 />
               );
             })}
@@ -494,8 +579,6 @@ const styles = StyleSheet.create({
     paddingVertical: LABEL_PADDING_Y,
     backgroundColor: theme.colors.black,
   },
-  // Le prochain point s'affiche au-dessus, le dernier franchi en dessous : les étiquettes ne se chevauchent plus.
-  markerChipAbove: { top: LABEL_TOP_ABOVE },
   markerChipText: {
     ...theme.text.displayS,
     fontSize: LABEL_FONT_PX,
