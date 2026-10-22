@@ -6,10 +6,13 @@ import { theme } from "../../core/theme";
 import { ENEMIES, enemyStatus, type Enemy } from "../../data/enemies";
 import { BERSERK_CHECKPOINTS } from "../../data/map/berserk-checkpoints";
 import { victoriousEncounterIds } from "../../features/bosses/duel";
+import { NextEncounter } from "./NextEncounter";
 import { Panel } from "./Panel";
 
 type EnemyCollectionProps = {
   unlockedCheckpointIds: string[];
+  /** Distance parcourue dans le tour : pour dire combien il reste avant le prochain ennemi. */
+  totalDistanceKm: number;
   /** Victoires de duel (clés « tour/duel »). */
   bossVictories: Record<string, string>;
 };
@@ -19,12 +22,34 @@ function meetingPoint(enemy: Enemy) {
 }
 
 /** Onglet « Ennemis » de la Collection : les ennemis croisés sur papier, les autres en silhouette dans une case noire. */
-export function EnemyCollection({ unlockedCheckpointIds, bossVictories }: EnemyCollectionProps) {
+export function EnemyCollection({ unlockedCheckpointIds, bossVictories, totalDistanceKm }: EnemyCollectionProps) {
   const [opened, setOpened] = useState<Enemy | null>(null);
   const defeated = victoriousEncounterIds(bossVictories);
+  // Le prochain à croiser : le plus proche des ennemis encore inconnus.
+  const unknown = ENEMIES.filter((enemy) => enemyStatus(enemy, unlockedCheckpointIds, defeated) === "unknown");
+  const nextKm = unknown.length > 0 ? Math.min(...unknown.map((enemy) => meetingPoint(enemy).kmThreshold)) : null;
+  const nextEnemies = unknown.filter((enemy) => meetingPoint(enemy).kmThreshold === nextKm);
 
   return (
     <>
+      {nextKm !== null && nextEnemies.length > 0 ? (
+        <NextEncounter
+          label="prochain ennemi"
+          silhouette={
+            <Image
+              source={nextEnemies[0].forms[0].image}
+              style={styles.nextSprite}
+              resizeMode="contain"
+              tintColor={theme.colors.paperSoft}
+              accessibilityIgnoresInvertColors
+            />
+          }
+          kmThreshold={nextKm}
+          totalDistanceKm={totalDistanceKm}
+          count={nextEnemies.length}
+          pluralNoun="ennemis"
+        />
+      ) : null}
       <View style={styles.grid}>
         {ENEMIES.map((enemy) => {
           const status = enemyStatus(enemy, unlockedCheckpointIds, defeated);
@@ -113,6 +138,7 @@ export function EnemyCollection({ unlockedCheckpointIds, bossVictories }: EnemyC
 }
 
 const styles = StyleSheet.create({
+  nextSprite: { width: 72, height: 72 },
   grid: { flexDirection: "row", flexWrap: "wrap", gap: theme.gutter },
   cell: { flexBasis: "31%", flexGrow: 1 },
   // flexGrow : toutes les cases d'une rangée prennent la hauteur de la plus haute.
