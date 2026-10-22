@@ -13,10 +13,18 @@ type GutsMarkerProps = {
 
 /** Hauteur affichée sur la carte, quel que soit le skin. */
 const SPRITE_HEIGHT = 64;
+export const GUTS_SPRITE_HEIGHT = SPRITE_HEIGHT;
+/** Écart entre les pieds de Guts et son point sur la carte. */
+export const GUTS_FEET_GAP = 6;
 
 function spriteWidth(sprite: GutsSkinSprite): number {
   const source = sprite.kind === "sheet" ? sprite.frame : sprite;
   return Math.round((source.width / source.height) * SPRITE_HEIGHT);
+}
+
+/** Largeur affichée de Guts pour ce skin (pour écarter les étiquettes de la carte). */
+export function gutsSpriteWidth(skin: GutsSkin): number {
+  return spriteWidth(skin.sprite);
 }
 
 /**
@@ -92,6 +100,6 @@ const styles = StyleSheet.create({
   marker: {
     position: "absolute",
     height: SPRITE_HEIGHT,
-    marginTop: -SPRITE_HEIGHT - 6,
+    marginTop: -SPRITE_HEIGHT - GUTS_FEET_GAP,
   },
 });
