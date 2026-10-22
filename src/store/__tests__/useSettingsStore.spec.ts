@@ -17,6 +17,7 @@ describe("parseSettings", () => {
       eveningReminderHour: 20,
       hapticsEnabled: false,
       gutsSkinId: null,
+      introSeen: false,
     });
     expect(parseSettings({ dailyGoal: 42, eveningReminderHour: 3, gutsSkinId: "inconnu" })).toMatchObject({
       dailyGoal: 1500,
@@ -33,6 +34,7 @@ describe("parseSettings", () => {
         eveningReminderHour: 19,
         hapticsEnabled: true,
         gutsSkinId: "young",
+        introSeen: true,
       }),
     ).toEqual({
       dailyGoal: 5000,
@@ -40,11 +42,20 @@ describe("parseSettings", () => {
       eveningReminderHour: 19,
       hapticsEnabled: true,
       gutsSkinId: "young",
+      introSeen: true,
     });
   });
 });
 
 describe("useSettingsStore", () => {
+  it("se souvient que l'introduction a été lue", async () => {
+    useSettingsStore.getState().setIntroSeen();
+    useSettingsStore.setState({ introSeen: false });
+
+    await useSettingsStore.getState().hydrateSettings();
+    expect(useSettingsStore.getState().introSeen).toBe(true);
+  });
+
   it("relit les réglages après un redémarrage", async () => {
     useSettingsStore.getState().setDailyGoal(8000);
     useSettingsStore.getState().setEveningReminderEnabled(true);

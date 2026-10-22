@@ -12,6 +12,7 @@ import { eraseAllProgress } from "../../features/runtime/eraseProgress";
 import { useAuthStore } from "../../store/useAuthStore";
 import { flushCloudSave, usePlayerStore } from "../../store/usePlayerStore";
 import { useSettingsStore } from "../../store/useSettingsStore";
+import { useUIStore } from "../../store/useUIStore";
 import { Button } from "../components/Button";
 import { ChoiceRow } from "../components/ChoiceRow";
 import { Panel } from "../components/Panel";
@@ -38,6 +39,7 @@ export function SettingsScreen() {
   const hapticsEnabled = useSettingsStore((state) => state.hapticsEnabled);
   const setHapticsEnabled = useSettingsStore((state) => state.setHapticsEnabled);
   const [reminderDenied, setReminderDenied] = useState(false);
+  const setIntroReopened = useUIStore((state) => state.setIntroReopened);
 
   async function handleReminderToggle(enabled: boolean): Promise<void> {
     if (enabled && !(await requestReminderPermission())) {
@@ -140,6 +142,14 @@ export function SettingsScreen() {
             {...SWITCH_COLORS}
           />
         </View>
+      </Panel>
+
+      <Panel style={styles.section}>
+        <View style={styles.settingText}>
+          <Text style={styles.settingTitle}>Comment ça marche</Text>
+          <Text style={styles.small}>La Traque, la Marque et les duels, en trois cases.</Text>
+        </View>
+        <Button label="Relire les règles" variant="secondary" onPress={() => setIntroReopened(true)} />
       </Panel>
 
       <Panel style={styles.section}>

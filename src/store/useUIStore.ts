@@ -8,6 +8,9 @@ type UIState = {
   /** L'écran « Point franchi » est ouvert : la fin de Traque attend qu'il soit fermé. */
   isCheckpointModalOpen: boolean;
   setCheckpointModalOpen: (open: boolean) => void;
+  /** L'introduction rouverte depuis Réglages (« Comment ça marche »). */
+  isIntroReopened: boolean;
+  setIntroReopened: (open: boolean) => void;
 };
 
 export const useUIStore = create<UIState>((set) => ({
@@ -15,4 +18,6 @@ export const useUIStore = create<UIState>((set) => ({
   setActiveTab: (tab) => set({ activeTab: tab }),
   isCheckpointModalOpen: false,
   setCheckpointModalOpen: (open) => set({ isCheckpointModalOpen: open }),
+  isIntroReopened: false,
+  setIntroReopened: (open) => set({ isIntroReopened: open }),
 }));
