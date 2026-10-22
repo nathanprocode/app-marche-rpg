@@ -47,16 +47,11 @@ export function Panel({
     >
       {children}
       {slant ? (
-        <Svg
-          pointerEvents="none"
-          style={styles.slant}
-          viewBox="0 0 100 10"
-          preserveAspectRatio="none"
-          accessibilityElementsHidden
-          importantForAccessibility="no-hide-descendants"
-        >
-          <Polygon points="100,0 100,10 0,10" fill={theme.colors.black} />
-        </Svg>
+        <View pointerEvents="none" style={styles.slant} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+          <Svg width="100%" height="100%" viewBox="0 0 100 10" preserveAspectRatio="none">
+            <Polygon points="100,0 100,10 0,10" fill={theme.colors.black} />
+          </Svg>
+        </View>
       ) : null}
     </View>
   );
@@ -68,6 +63,8 @@ const styles = StyleSheet.create({
   reversed: { backgroundColor: theme.colors.black, borderWidth: theme.frame, borderColor: theme.colors.toneDark },
   padded: { padding: theme.space[16] },
   slantRoom: { paddingBottom: theme.space[16] + SLANT_HEIGHT },
-  // Largeur explicite : sur le web, un SVG absolu ne s'étire pas entre left et right.
-  slant: { position: "absolute", left: 0, bottom: 0, width: "100%", height: SLANT_HEIGHT },
+  // Tenue par ses bords, pas par une largeur en % : sur Android, le % d'un élément absolu se calcule sans les marges
+  // intérieures de la case, et la coupe s'arrêtait avant le bord droit. Le SVG remplit cette vue (sur le web, un SVG
+  // absolu ne s'étire pas seul entre left et right).
+  slant: { position: "absolute", left: 0, right: 0, bottom: 0, height: SLANT_HEIGHT },
 });

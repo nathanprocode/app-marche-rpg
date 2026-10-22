@@ -98,9 +98,17 @@ export function HomeScreen() {
         accessibilityLabel={`La Traque : ${formatDecimal(progress.totalDistanceKm)} kilomètres ${journeyLine}`}
       >
         {/* La trame encre la case à mesure qu'on avance dans la Traque. */}
-        <Screentone color={theme.colors.tone} step={4} dot={1.3} style={{ width: `${progress.progressPct}%` }} />
-        {/* Devant la trame, la route qui reste : des lignes de mouvement en trame claire. */}
-        <MotionLines style={{ left: `${progress.progressPct}%`, width: `${100 - progress.progressPct}%` }} />
+        {/* Une bande sur toute la case : la trame pour la route faite, puis des lignes de mouvement pour celle qui reste.
+            Les % sont pris dans cette bande, et non dans la case : sur Android, le % d'un élément absolu ignore les
+            marges intérieures de la case et décalait les traits. */}
+        <View pointerEvents="none" style={styles.journeyTrack}>
+          <View style={{ width: `${progress.progressPct}%` }}>
+            <Screentone color={theme.colors.tone} step={4} dot={1.3} />
+          </View>
+          <View style={styles.journeyAhead}>
+            <MotionLines />
+          </View>
+        </View>
         <View style={styles.journeyTop}>
           <Text {...theme.fitDisplayText} style={styles.km}>
             {formatDecimal(progress.totalDistanceKm)}
@@ -250,6 +258,8 @@ function Total({ label, value }: { label: string; value: string }) {
 
 const styles = StyleSheet.create({
   journey: { paddingTop: theme.space[8] },
+  journeyTrack: { ...StyleSheet.absoluteFillObject, flexDirection: "row" },
+  journeyAhead: { flex: 1 },
   journeyTop: { flexDirection: "row", alignItems: "flex-start", gap: theme.space[8] },
   km: { ...theme.text.displayXl, color: theme.colors.black, flex: 1 },
   kmUnit: { ...theme.text.displayM, letterSpacing: 0 },
