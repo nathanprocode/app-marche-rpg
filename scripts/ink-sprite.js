@@ -1,13 +1,15 @@
 // Met une image générée au format des sprites « Trame & Encre » (voir docs/sprites-encre.md) :
 // fond retiré, personnage recadré, 192 px de haut, quatre valeurs (encre, trame dense, trame légère, papier),
 // contour noir et liseré papier pour rester lisible sur la carte, de jour comme de nuit.
-//   node scripts/ink-sprite.js <entrée.png> <sortie.png> [hauteur=192]
+//   node scripts/ink-sprite.js <entrée.png> <sortie.png> [hauteur=192] [éclaircir=0]
 // L'entrée doit être un PNG ou un JPG : convertir un .webp avec scripts/webp-to-png.ps1.
+// « éclaircir » (0 à 1, 0.15 conseillé) : pour une image à trame très fine, qui vire au noir une fois réduite.
 const path = require("path");
 const Jimp = require(path.resolve("node_modules/jimp-compact"));
 
-const [, , input, output, heightArg] = process.argv;
+const [, , input, output, heightArg, lightenArg] = process.argv;
 const TARGET_HEIGHT = Number(heightArg ?? 192);
+const LIGHTEN = Number(lightenArg ?? 0);
 const INK = [0x11, 0x11, 0x11];
 const PAPER = [0xf3, 0xf3, 0xf0];
 /** Au-dessus de cette luminosité, un pixel relié au bord de l'image est du fond. */
@@ -71,6 +73,7 @@ function backgroundMask(data, w, h) {
 
 (async () => {
   const image = await Jimp.read(input);
+  if (LIGHTEN) image.brightness(LIGHTEN);
   const { width: w, height: h, data } = image.bitmap;
   const bg = backgroundMask(data, w, h);
 

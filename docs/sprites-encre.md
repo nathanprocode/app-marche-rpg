@@ -114,7 +114,15 @@ Rien dans l'appli ne retourne les images : un boss généré tourné vers la dro
 3. La mettre au format : `node scripts/ink-sprite.js casca.png assets/companions/casca.png`
    Le script retire le fond, recadre, réduit à 192 px, ramène l'image à l'encre, la trame dense, la trame légère et le
    papier, puis ajoute le contour noir et le liseré papier (lisible sur la carte de nuit).
+   Image à trame très fine qui vire au noir une fois réduite (Zodd) : éclaircir avant, avec un quatrième argument,
+   `node scripts/ink-sprite.js zodd.png assets/companions/zodd.png 192 0.15`.
 4. Comparer avec les sprites déjà faits : mêmes proportions, même épaisseur de contour, même densité de trame.
+5. Visage minuscule illisible à 192 px (yeux de Bazuso, crâne du Chevalier Squelette) : le redessiner à la main, pixel
+   par pixel, après la mise au format.
+6. Boss généré tourné vers la droite : le retourner avant la mise au format (fait pour Zodd).
 
-Faits : Casca et Griffith (21/10/2026), Bazuso (24/10/2026, pupilles ajoutées à la main après la mise au format), Gambino, Judeau, Pippin et Rickert (24/10/2026). Le Guts généré servira aux planches de marche de la carte, qui demandent plusieurs
+Faits : Casca et Griffith (21/10/2026), Bazuso (24/10/2026, pupilles ajoutées à la main après la mise au format), Gambino, Judeau, Pippin et Rickert (24/10/2026), Godo, Zodd en forme humaine (retourné, éclairci de 0.15) et
+le Chevalier Squelette (éclairci de 0.15, crâne redessiné à la main) (24/10/2026). Plus difficiles à obtenir : ouvrir une
+nouvelle conversation ChatGPT tous les 3 ou 4 personnages (sinon il recopie Guts), ne pas joindre d'image sanglante et
+éviter les mots violents (refus pour « contenu violent »). Le Guts généré servira aux planches de marche de la carte, qui demandent plusieurs
 images (une par pas) : à faire à part.
