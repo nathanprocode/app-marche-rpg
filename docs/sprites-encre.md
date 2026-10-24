@@ -12,7 +12,8 @@ Pourquoi les redessiner : la conversion automatique des sprites en couleurs ne m
 | Guts sur la carte | `assets/map/guts-walk.png`, `guts-jeune-walk.png` (planches de marche), `guts-marker.png` | Marqueur animé (~48 px) |
 
 Les silhouettes « Inconnu » des collections se déduisent des nouveaux sprites : rien à dessiner.
-**Dessins de @CRYBAG** (Bazuso, Mozgus, Grunbeld, Guts jeune) : prêtés avec crédit obligatoire. Ne pas les redessiner ni les modifier sans son accord ; les garder tels quels en attendant.
+**Dessins de @CRYBAG** (Mozgus, Grunbeld, Guts jeune) : prêtés avec crédit obligatoire. Ne pas les modifier sans son accord.
+Décidé avec Nathan le 24/10/2026 : on les remplace par des sprites générés de zéro (Bazuso fait). Quand un dessin est remplacé, retirer son crédit.
 
 ## Le style
 
@@ -70,6 +71,41 @@ Si le style dérive : relancer, ou répondre `Closer to the reference image: mor
 
 Pour chaque personnage, décrire sa silhouette et ses objets tels qu'ils apparaissent dans les fiches (`src/data/companions.ts`, `src/data/enemies.ts`) ; ne rien inventer de l'histoire.
 
+### Les boss : une pose d'adversaire
+
+Décidé avec Nathan le 24/10/2026 (validé sur Bazuso) : les boss ne se tiennent pas comme les compagnons, pour qu'on
+reconnaisse un ennemi au premier coup d'œil.
+
+| | Compagnons | Boss |
+|---|---|---|
+| Direction | Tournés vers la droite | Tournés vers la **gauche**, face à Guts |
+| Angle | À hauteur d'yeux | **Légère** contre-plongée (trop forte, les pieds sortent et la tête devient minuscule) |
+| Jambes | Debout, posé | Pieds bien écartés, ancré au sol |
+| Arme | Au repos | Prête à frapper |
+
+- **Toujours joindre une case du manga** comme référence du personnage, en plus de Guts pour le style, et décrire son
+  vrai design. Sans elle, le générateur invente un chevalier noir générique (premier essai de Bazuso).
+- Armure claire (Bazuso, Grunbeld…) : la garder claire et mettre le noir dans les ombres, comme pour Griffith.
+- Le personnage reste entier, du casque aux pieds, pour être lisible à 80 px.
+
+Consigne (deux images jointes : Guts puis la case du manga) :
+
+```
+Two attached images: the first (Guts) is the STYLE reference, the second (manga panel) is the CHARACTER reference.
+Draw the character from the manga panel, [NOM], faithful to his design, in the exact style of the Guts image:
+same pixel size, same line thickness, same halftone screentone.
+
+His design, as in the manga panel: [DESCRIPTION DU DESIGN].
+
+This character is a BOSS: full body, three-quarter view facing LEFT, seen from a slightly low angle so he looks massive,
+feet planted wide apart, the whole body visible from head to feet, feet touching the bottom edge,
+[ARME, prête à frapper]. Plain flat off-white background. He fills the whole height of the image.
+
+Strictly 1-bit: pure black (#111111) and off-white paper (#F3F3F0) only, mid-tones as halftone dot screentone, no grey shading, no gradients, no colour.
+```
+
+Rien dans l'appli ne retourne les images : un boss généré tourné vers la droite doit être retourné avant la mise au format.
+
 ## La mise au format (avant d'ajouter une image à l'appli)
 
 1. Garder la meilleure image ; vérifier les défauts (mains, armes déformées).
@@ -78,7 +114,15 @@ Pour chaque personnage, décrire sa silhouette et ses objets tels qu'ils apparai
 3. La mettre au format : `node scripts/ink-sprite.js casca.png assets/companions/casca.png`
    Le script retire le fond, recadre, réduit à 192 px, ramène l'image à l'encre, la trame dense, la trame légère et le
    papier, puis ajoute le contour noir et le liseré papier (lisible sur la carte de nuit).
+   Image à trame très fine qui vire au noir une fois réduite (Zodd) : éclaircir avant, avec un quatrième argument,
+   `node scripts/ink-sprite.js zodd.png assets/companions/zodd.png 192 0.15`.
 4. Comparer avec les sprites déjà faits : mêmes proportions, même épaisseur de contour, même densité de trame.
+5. Visage minuscule illisible à 192 px (yeux de Bazuso, crâne du Chevalier Squelette) : le redessiner à la main, pixel
+   par pixel, après la mise au format.
+6. Boss généré tourné vers la droite : le retourner avant la mise au format (fait pour Zodd).
 
-Faits : Casca et Griffith (21/10/2026). Le Guts généré servira aux planches de marche de la carte, qui demandent plusieurs
+Faits : Casca et Griffith (21/10/2026), Bazuso (24/10/2026, pupilles ajoutées à la main après la mise au format), Gambino, Judeau, Pippin et Rickert (24/10/2026), Godo, Zodd en forme humaine (retourné, éclairci de 0.15) et
+le Chevalier Squelette (éclairci de 0.15, crâne redessiné à la main), Farnèse (en armure), Schierke, Flora, Serpico et Isidro (24/10/2026) : tous les compagnons sont faits. Plus difficiles à obtenir : ouvrir une
+nouvelle conversation ChatGPT tous les 3 ou 4 personnages (sinon il recopie Guts), ne pas joindre d'image sanglante et
+éviter les mots violents (refus pour « contenu violent »). Le Guts généré servira aux planches de marche de la carte, qui demandent plusieurs
 images (une par pas) : à faire à part.
