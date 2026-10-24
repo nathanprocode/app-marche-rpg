@@ -116,5 +116,5 @@ Rien dans l'appli ne retourne les images : un boss généré tourné vers la dro
    papier, puis ajoute le contour noir et le liseré papier (lisible sur la carte de nuit).
 4. Comparer avec les sprites déjà faits : mêmes proportions, même épaisseur de contour, même densité de trame.
 
-Faits : Casca et Griffith (21/10/2026), Bazuso (24/10/2026, pupilles ajoutées à la main après la mise au format), Gambino, Judeau et Pippin (24/10/2026). Le Guts généré servira aux planches de marche de la carte, qui demandent plusieurs
+Faits : Casca et Griffith (21/10/2026), Bazuso (24/10/2026, pupilles ajoutées à la main après la mise au format), Gambino, Judeau, Pippin et Rickert (24/10/2026). Le Guts généré servira aux planches de marche de la carte, qui demandent plusieurs
 images (une par pas) : à faire à part.
