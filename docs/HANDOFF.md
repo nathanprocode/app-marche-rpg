@@ -39,10 +39,10 @@ Tests : 26 suites, 215 tests, tous verts. CI GitHub (`.github/workflows/ci.yml`)
 
 ### Ce qui n'est PAS fait
 
-- **Sprites des compagnons** : les 14 compagnons ont leur sprite. Pour en ajouter un : PNG à fond transparent, 192 px de haut,
-  `assets/companions/<id>.png`, puis `image: require("../../assets/companions/<id>.png")` dans `src/data/companions.ts`. Les formes
-  de boss vont dans `assets/bosses/`. Rickert, Godo et Flora viennent d'images générées : Rickert a été retravaillé (table et
-  formules retirées, jambes reconstituées) ; Godo et Flora gardent leur enclume et leur établi.
+- **Sprites à l'encre** (voir `docs/sprites-encre.md`) : les 14 compagnons sont refaits (24/10/2026), ainsi que Bazuso,
+  Femto et Void. Restent Ubik, Conrad, Slan, Mozgus et Grunbeld (formes humaines) et les formes d'Apôtre (Zodd, Mozgus,
+  Grunbeld en dragon). Pour en ajouter un : PNG à fond transparent, 192 px de haut, `assets/companions/<id>.png`, puis
+  `image: require("../../assets/companions/<id>.png")` dans `src/data/companions.ts`. Les formes de boss vont dans `assets/bosses/`.
 - **Marche de Guts jeune** : planche de 6 images (`assets/map/guts-jeune-walk.png`, 6 × 155 × 192 px) faite par Nathan
   sur fond vert, détourée et retournée. Le dessin d'origine de @CRYBAG n'est plus utilisé dans l'app (crédit « D'après un
   dessin de @CRYBAG »). Ajouter un skin = une entrée dans `src/data/gutsSkins.ts`.
