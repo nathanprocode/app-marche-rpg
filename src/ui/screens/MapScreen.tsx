@@ -219,7 +219,10 @@ export function MapScreen() {
     const rightEdge = viewport.width - LABEL_SCREEN_MARGIN - (besideButtons ? controlsWidth : 0);
     const width = checkpoint.title.length * LABEL_CHAR_PX + 2 * theme.space[8];
     const idealLeft = spot.align === "start" ? slotLeft : slotLeft + 16 - width;
-    const left = Math.max(LABEL_SCREEN_MARGIN, Math.min(idealLeft, rightEdge - width));
+    const onScreenLeft = Math.max(LABEL_SCREEN_MARGIN, Math.min(idealLeft, rightEdge - width));
+    // Elle ne quitte jamais son losange : quand le point sort de l'écran, l'étiquette part avec lui au lieu de rester
+    // collée au bord.
+    const left = Math.max(slotLeft + 16 - width, Math.min(onScreenLeft, slotLeft));
     return { shiftX: left - slotLeft, box: { left, top, right: left + width, bottom: top + LABEL_HEIGHT } };
   }
 
