@@ -117,3 +117,5 @@ Tests : 26 suites, 215 tests, tous verts. CI GitHub (`.github/workflows/ci.yml`)
 3. Autres boss et d'autres duels de l'histoire.
 4. Sons discrets aux grands moments (nouveau build).
 5. Rejouabilité : au tour 2, un événement équivalent à « Point franchi » ; difficulté croissante des duels par tour.
+6. Décor de duel sur l'accueil pendant un combat de boss (idée de Nathan, 24/10/2026) : le lieu du combat dans le
+   manga, à l'encre (château en ruine pour Bazuso…). À faire une fois tous les sprites refaits.
