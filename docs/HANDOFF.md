@@ -54,7 +54,7 @@ Tests : 26 suites, 215 tests, tous verts. CI GitHub (`.github/workflows/ci.yml`)
 - **Sons et ambiance** : pas implémentés. Idée retenue : rien de continu ; au plus un son bref (< 2 s) aux grands moments
   (point franchi, succès, fin de Traque), désactivé par défaut et coupé en mode silencieux. Demande un module audio natif
   (donc un build) et des fichiers audio libres de droits. Les vibrations sont la version déjà faite.
-- **Autres boss** : la mécanique est générique (une entrée dans `src/data/bosses.ts`, une dans `src/data/enemies.ts`, un succès, et `afterEncounterId` pour enchaîner des duels). Bazuso, Mozgus et Grunbeld sont faits. Les images de Bazuso, Mozgus et Grunbeld viennent de @CRYBAG (pixel art sur fond violet, signature à retirer). Elles sont reconstruites à leur résolution d'origine, détourées, puis agrandies à 192 px de haut.
+- **Autres boss** : la mécanique est générique (une entrée dans `src/data/bosses.ts`, une dans `src/data/enemies.ts`, un succès, et `afterEncounterId` pour enchaîner des duels). Bazuso, Mozgus et Grunbeld sont faits. Bazuso est redessiné à l’encre (24/10/2026, pose de boss : voir `docs/sprites-encre.md`). Les images de Mozgus et Grunbeld viennent de @CRYBAG (pixel art sur fond violet, signature à retirer). Elles sont reconstruites à leur résolution d'origine, détourées, puis agrandies à 192 px de haut.
 - **Supprimer le compte Google** : écarté (Firebase demande une reconnexion récente) ; « Recommencer à zéro » efface déjà les données.
 
 ## Décisions de game design (à respecter)

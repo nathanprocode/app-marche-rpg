@@ -12,7 +12,8 @@ Pourquoi les redessiner : la conversion automatique des sprites en couleurs ne m
 | Guts sur la carte | `assets/map/guts-walk.png`, `guts-jeune-walk.png` (planches de marche), `guts-marker.png` | Marqueur animé (~48 px) |
 
 Les silhouettes « Inconnu » des collections se déduisent des nouveaux sprites : rien à dessiner.
-**Dessins de @CRYBAG** (Bazuso, Mozgus, Grunbeld, Guts jeune) : prêtés avec crédit obligatoire. Ne pas les redessiner ni les modifier sans son accord ; les garder tels quels en attendant.
+**Dessins de @CRYBAG** (Mozgus, Grunbeld, Guts jeune) : prêtés avec crédit obligatoire. Ne pas les modifier sans son accord.
+Décidé avec Nathan le 24/10/2026 : on les remplace par des sprites générés de zéro (Bazuso fait). Quand un dessin est remplacé, retirer son crédit.
 
 ## Le style
 
@@ -115,5 +116,5 @@ Rien dans l'appli ne retourne les images : un boss généré tourné vers la dro
    papier, puis ajoute le contour noir et le liseré papier (lisible sur la carte de nuit).
 4. Comparer avec les sprites déjà faits : mêmes proportions, même épaisseur de contour, même densité de trame.
 
-Faits : Casca et Griffith (21/10/2026). Le Guts généré servira aux planches de marche de la carte, qui demandent plusieurs
+Faits : Casca et Griffith (21/10/2026), Bazuso (24/10/2026, pupilles ajoutées à la main après la mise au format). Le Guts généré servira aux planches de marche de la carte, qui demandent plusieurs
 images (une par pas) : à faire à part.
