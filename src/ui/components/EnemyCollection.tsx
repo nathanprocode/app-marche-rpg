@@ -51,8 +51,39 @@ export function EnemyCollection({ unlockedCheckpointIds, bossVictories, totalDis
         />
       ) : null}
       <View style={styles.grid}>
-        {ENEMIES.map((enemy) => {
+        {ENEMIES.map((enemy, index) => {
           const status = enemyStatus(enemy, unlockedCheckpointIds, defeated);
+          // La Main de Dieu inconnue : une seule case pour les cinq, dessinée au premier du groupe.
+          if (status === "unknown" && enemy.group) {
+            if (ENEMIES.findIndex((other) => other.group === enemy.group) !== index) return null;
+            const members = ENEMIES.filter((other) => other.group === enemy.group);
+            const km = formatInt(meetingPoint(enemy).kmThreshold);
+            return (
+              <View
+                key={enemy.group}
+                accessible
+                accessibilityLabel={`${enemy.group} : ${members.length} ennemis inconnus, croisés à ${km} kilomètres`}
+                style={styles.groupCell}
+              >
+                <Panel reversed style={styles.groupCard}>
+                  <View style={styles.groupSprites}>
+                    {members.map((member) => (
+                      <Image
+                        key={member.id}
+                        source={member.forms[0].image}
+                        style={styles.groupSprite}
+                        resizeMode="contain"
+                        tintColor={theme.colors.toneDark}
+                        accessibilityIgnoresInvertColors
+                      />
+                    ))}
+                  </View>
+                  <Text style={styles.groupName}>{enemy.group}</Text>
+                  <Text style={styles.titleLocked}>{`${members.length} ennemis, à ${km} km`}</Text>
+                </Panel>
+              </View>
+            );
+          }
           if (status === "unknown") {
             return (
               <View
@@ -147,6 +178,11 @@ const styles = StyleSheet.create({
   title: { ...theme.text.label, letterSpacing: 0, color: theme.colors.red, textAlign: "center", marginTop: 2 },
   nameLocked: { ...theme.text.displayS, fontSize: 16, lineHeight: 20, color: theme.colors.paperSoft, marginTop: theme.space[8] },
   titleLocked: { ...theme.text.label, letterSpacing: 0, color: theme.colors.paperSoft, textAlign: "center", marginTop: 2 },
+  groupCell: { flexBasis: "100%" },
+  groupCard: { alignItems: "center", paddingVertical: theme.space[16] },
+  groupSprites: { flexDirection: "row", alignSelf: "stretch", alignItems: "flex-end", gap: theme.space[8] },
+  groupSprite: { flex: 1, height: 88 },
+  groupName: { ...theme.text.displayS, color: theme.colors.paperSoft, marginTop: theme.space[8], textAlign: "center" },
   overlay: { flex: 1, justifyContent: "center", padding: theme.space[16], backgroundColor: "rgba(17,17,17,0.94)" },
   sheet: { maxHeight: "86%", padding: 0 },
   // Hors de la zone qui défile : le texte ne passe jamais sous la croix.

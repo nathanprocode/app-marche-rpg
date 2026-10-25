@@ -13,6 +13,8 @@ export type Enemy = {
   metAtCheckpointId: string;
   /** Duels (src/data/bosses.ts) qui l'opposent à Guts : l'ennemi est « vaincu » quand tous sont gagnés. */
   encounterIds: string[];
+  /** Ennemis croisés ensemble (la Main de Dieu) : tant qu'ils sont inconnus, la Collection les montre dans une seule case. */
+  group?: string;
 };
 
 /** Le bestiaire, dans l'ordre où on les croise sur la route. */
@@ -49,6 +51,7 @@ export const ENEMIES: Enemy[] = [
     forms: [{ label: "Main de Dieu", image: require("../../assets/bosses/void.png") }],
     metAtCheckpointId: "cp-008",
     encounterIds: ["void"],
+    group: "La Main de Dieu",
   },
   {
     id: "ubik",
@@ -59,6 +62,7 @@ export const ENEMIES: Enemy[] = [
     forms: [{ label: "Main de Dieu", image: require("../../assets/bosses/ubik.png") }],
     metAtCheckpointId: "cp-008",
     encounterIds: ["ubik"],
+    group: "La Main de Dieu",
   },
   {
     id: "conrad",
@@ -69,6 +73,7 @@ export const ENEMIES: Enemy[] = [
     forms: [{ label: "Main de Dieu", image: require("../../assets/bosses/conrad.png") }],
     metAtCheckpointId: "cp-008",
     encounterIds: ["conrad"],
+    group: "La Main de Dieu",
   },
   {
     id: "slan",
@@ -79,6 +84,7 @@ export const ENEMIES: Enemy[] = [
     forms: [{ label: "Main de Dieu", image: require("../../assets/bosses/slan.png") }],
     metAtCheckpointId: "cp-008",
     encounterIds: ["slan"],
+    group: "La Main de Dieu",
   },
   {
     id: "femto",
@@ -89,6 +95,7 @@ export const ENEMIES: Enemy[] = [
     forms: [{ label: "Main de Dieu", image: require("../../assets/bosses/femto.png") }],
     metAtCheckpointId: "cp-008",
     encounterIds: ["femto"],
+    group: "La Main de Dieu",
   },
   {
     id: "mozgus",
