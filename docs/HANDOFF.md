@@ -39,10 +39,9 @@ Tests : 26 suites, 215 tests, tous verts. CI GitHub (`.github/workflows/ci.yml`)
 
 ### Ce qui n'est PAS fait
 
-- **Sprites des compagnons** : les 14 compagnons ont leur sprite. Pour en ajouter un : PNG à fond transparent, 192 px de haut,
-  `assets/companions/<id>.png`, puis `image: require("../../assets/companions/<id>.png")` dans `src/data/companions.ts`. Les formes
-  de boss vont dans `assets/bosses/`. Rickert, Godo et Flora viennent d'images générées : Rickert a été retravaillé (table et
-  formules retirées, jambes reconstituées) ; Godo et Flora gardent leur enclume et leur établi.
+- **Sprites à l'encre** (voir `docs/sprites-encre.md`) : les 14 compagnons sont refaits (24/10/2026), ainsi que Bazuso,
+  tous les ennemis (25/10/2026), formes d'Apôtre comprises. Reste Guts sur la carte (planches de marche, en couleurs). Pour en ajouter un : PNG à fond transparent, 192 px de haut, `assets/companions/<id>.png`, puis
+  `image: require("../../assets/companions/<id>.png")` dans `src/data/companions.ts`. Les formes de boss vont dans `assets/bosses/`.
 - **Marche de Guts jeune** : planche de 6 images (`assets/map/guts-jeune-walk.png`, 6 × 155 × 192 px) faite par Nathan
   sur fond vert, détourée et retournée. Le dessin d'origine de @CRYBAG n'est plus utilisé dans l'app (crédit « D'après un
   dessin de @CRYBAG »). Ajouter un skin = une entrée dans `src/data/gutsSkins.ts`.
@@ -54,7 +53,7 @@ Tests : 26 suites, 215 tests, tous verts. CI GitHub (`.github/workflows/ci.yml`)
 - **Sons et ambiance** : pas implémentés. Idée retenue : rien de continu ; au plus un son bref (< 2 s) aux grands moments
   (point franchi, succès, fin de Traque), désactivé par défaut et coupé en mode silencieux. Demande un module audio natif
   (donc un build) et des fichiers audio libres de droits. Les vibrations sont la version déjà faite.
-- **Autres boss** : la mécanique est générique (une entrée dans `src/data/bosses.ts`, une dans `src/data/enemies.ts`, un succès, et `afterEncounterId` pour enchaîner des duels). Bazuso, Mozgus et Grunbeld sont faits. Bazuso est redessiné à l’encre (24/10/2026, pose de boss : voir `docs/sprites-encre.md`). Les images de Mozgus et Grunbeld viennent de @CRYBAG (pixel art sur fond violet, signature à retirer). Elles sont reconstruites à leur résolution d'origine, détourées, puis agrandies à 192 px de haut.
+- **Autres boss** : la mécanique est générique (une entrée dans `src/data/bosses.ts`, une dans `src/data/enemies.ts`, un succès, et `afterEncounterId` pour enchaîner des duels). Bazuso, Mozgus et Grunbeld sont faits. Tous les ennemis sont redessinés à l’encre (24-25/10/2026, pose de boss : voir `docs/sprites-encre.md`) ; les anciens dessins de @CRYBAG ne servent plus pour les boss.
 - **Supprimer le compte Google** : écarté (Firebase demande une reconnexion récente) ; « Recommencer à zéro » efface déjà les données.
 
 ## Décisions de game design (à respecter)

@@ -118,7 +118,7 @@ export function EnemyCollection({ unlockedCheckpointIds, bossVictories, totalDis
                 </Text>
                 <Text style={styles.sheetTitle}>{opened.title}</Text>
                 <Text style={styles.sheetMeta}>
-                  {`Première rencontre · ${meetingPoint(opened).title} · ${formatInt(meetingPoint(opened).kmThreshold)} km`}
+                  {`Première rencontre : « ${meetingPoint(opened).title} », à ${formatInt(meetingPoint(opened).kmThreshold)} km`}
                 </Text>
                 <Text style={styles.sheetDescription}>{opened.description}</Text>
                 <Text style={styles.sheetStatus}>
@@ -149,17 +149,17 @@ const styles = StyleSheet.create({
   titleLocked: { ...theme.text.label, letterSpacing: 0, color: theme.colors.paperSoft, textAlign: "center", marginTop: 2 },
   overlay: { flex: 1, justifyContent: "center", padding: theme.space[16], backgroundColor: "rgba(17,17,17,0.94)" },
   sheet: { maxHeight: "86%", padding: 0 },
+  // Hors de la zone qui défile : le texte ne passe jamais sous la croix.
   close: {
-    position: "absolute",
-    top: theme.space[8],
-    right: theme.space[8],
-    zIndex: 2,
+    alignSelf: "flex-end",
+    marginTop: theme.space[8],
+    marginRight: theme.space[8],
     width: 48,
     height: 48,
     alignItems: "center",
     justifyContent: "center",
   },
-  sheetContent: { alignItems: "center", padding: theme.space[24] },
+  sheetContent: { alignItems: "center", padding: theme.space[24], paddingTop: 0 },
   sheetName: { ...theme.text.displayL, color: theme.colors.black, textAlign: "center", marginTop: theme.space[16] },
   sheetTitle: { ...theme.text.bodyStrong, color: theme.colors.blackSoft, textAlign: "center" },
   sheetMeta: { ...theme.text.small, fontFamily: theme.fontFamily.gothicBold, color: theme.colors.red, marginTop: theme.space[8], textAlign: "center" },

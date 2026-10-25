@@ -15,7 +15,10 @@ export function DuelCard({ duel }: DuelCardProps) {
   const isLastForm = phaseIndex === encounter.phases.length - 1;
   const pct = (phaseHpLeft / phaseHp) * 100;
   const left = formatInt(phaseHpLeft);
-  const formLine = encounter.phases.length > 1 ? ` · forme ${phaseIndex + 1} sur ${encounter.phases.length}` : "";
+  const formLine =
+    encounter.phases.length > 1 ? `${phase.label} (${phaseIndex + 1} sur ${encounter.phases.length})` : phase.label;
+  // « Duel contre Zodd » redit le nom du boss ; « Revanche de Zodd » ou « L'Éclipse : Void » apprennent quelque chose.
+  const context = encounter.title.startsWith("Duel contre") ? null : encounter.title;
 
   return (
     <Panel
@@ -24,10 +27,14 @@ export function DuelCard({ duel }: DuelCardProps) {
       accessible
       accessibilityLabel={`Duel : ${encounter.title}. ${phase.label}. ${left} pas avant ${isLastForm ? "la victoire" : "sa prochaine forme"}. ${encounter.intro}`}
     >
-      <Image source={phase.image} style={styles.sprite} resizeMode="contain" accessibilityIgnoresInvertColors />
+      {/* Case de papier : les boss sombres (Zodd en Apôtre, Void) disparaîtraient sur le fond noir. */}
+      <View style={styles.plate}>
+        <Image source={phase.image} style={styles.sprite} resizeMode="contain" accessibilityIgnoresInvertColors />
+      </View>
       <View style={styles.text}>
-        <Text style={styles.title}>{phase.label}</Text>
-        <Text style={styles.meta}>{`Duel · ${encounter.title}${formLine}`}</Text>
+        {context ? <Text style={styles.context}>{context}</Text> : null}
+        <Text style={styles.title}>{encounter.bossName}</Text>
+        <Text style={styles.meta}>{formLine}</Text>
         <View style={styles.bar}>
           <ProgressBar reversed pct={pct} accessibilityLabel={`Vie de ${encounter.bossName}, ${phase.label}`} height={10} />
         </View>
@@ -40,10 +47,12 @@ export function DuelCard({ duel }: DuelCardProps) {
 
 const styles = StyleSheet.create({
   card: { flexDirection: "row", alignItems: "center", gap: theme.space[16] },
+  plate: { backgroundColor: theme.colors.paper, padding: theme.space[4] },
   sprite: { width: 80, height: 96 },
   text: { flex: 1, gap: theme.space[4] },
+  context: { ...theme.text.small, color: theme.colors.paperSoft },
   title: { ...theme.text.displayS, color: theme.colors.paper },
-  meta: { ...theme.text.label, letterSpacing: 0, color: theme.colors.redOnBlack },
+  meta: { ...theme.text.label, letterSpacing: 0, fontFamily: theme.fontFamily.gothicBold, color: theme.colors.redOnBlack },
   bar: { marginTop: theme.space[4] },
   left: { ...theme.text.bodyStrong, color: theme.colors.paper },
   intro: { ...theme.text.small, color: theme.colors.paperSoft },

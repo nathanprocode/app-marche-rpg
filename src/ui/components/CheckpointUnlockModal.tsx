@@ -91,7 +91,7 @@ export function CheckpointUnlockModal({ enabled }: CheckpointUnlockModalProps) {
                 <Text accessibilityRole="header" style={styles.title}>
                   {checkpoint.title}
                 </Text>
-                <Text style={styles.meta}>{`Nouveau chapitre · ${checkpoint.arc} · ${formatInt(checkpoint.kmThreshold)} km`}</Text>
+                <Text style={styles.meta}>{`Nouveau chapitre à ${formatInt(checkpoint.kmThreshold)} km (${checkpoint.arc})`}</Text>
               </View>
 
               {panel ? (

@@ -34,7 +34,7 @@ export function NextEncounter({ label, silhouette, kmThreshold, totalDistanceKm,
       <View style={styles.text}>
         <Text style={styles.km}>{`À ${formatInt(kmThreshold)} km`}</Text>
         <Text style={styles.small}>
-          {`${label} · encore ${formatDecimal(remainingKm)} km${count > 1 ? ` · ${count} ${pluralNoun} à ce point` : ""}`}
+          {`${label}, encore ${formatDecimal(remainingKm)} km${count > 1 ? `. ${count} ${pluralNoun} à ce point.` : ""}`}
         </Text>
       </View>
     </Panel>

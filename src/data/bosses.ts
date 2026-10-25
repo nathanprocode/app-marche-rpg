@@ -173,7 +173,7 @@ export const BOSS_ENCOUNTERS: BossEncounter[] = [
       { id: "human", label: "Forme humaine", hp: 15_000, image: MOZGUS },
       { id: "apostle", label: "Forme d'Apôtre", hp: 25_000, image: MOZGUS_APOSTLE },
     ],
-    intro: "Mozgus prie au pied du bûcher, son livre à la main, persuadé que Dieu marche à ses côtés. Chaque pas que tu fais ébranle sa foi.",
+    intro: "Mozgus prie au pied du bûcher, les mains jointes, persuadé que Dieu marche à ses côtés. Chaque pas que tu fais ébranle sa foi.",
     phaseChangeTexts: [
       "Le Béhélit a répondu à sa prière. Sa chair devient pierre, des ailes lui poussent dans le dos : l'inquisiteur se croit ange. Continue de marcher.",
     ],
