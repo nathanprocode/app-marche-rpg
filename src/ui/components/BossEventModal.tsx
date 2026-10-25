@@ -87,7 +87,10 @@ export function BossEventModal({ enabled }: BossEventModalProps) {
                 </Text>
                 <Text style={styles.meta}>{screen.kicker}</Text>
               </View>
-              <Image source={screen.image} style={styles.sprite} resizeMode="contain" accessibilityIgnoresInvertColors />
+              {/* Case de papier : les boss sombres (Zodd en Apôtre, Void) disparaîtraient sur le fond noir. */}
+              <View style={styles.plate}>
+                <Image source={screen.image} style={styles.sprite} resizeMode="contain" accessibilityIgnoresInvertColors />
+              </View>
               <Text style={styles.text}>{screen.text}</Text>
               {screen.achievementTitle ? (
                 <View style={styles.reward} accessible accessibilityLabel={`Succès débloqué : ${screen.achievementTitle}`}>
@@ -113,7 +116,8 @@ const styles = StyleSheet.create({
   title: { ...theme.text.displayL, color: theme.colors.paper, marginTop: theme.space[16], textAlign: "center" },
   meta: { ...theme.text.bodyStrong, color: theme.colors.redOnBlack, textAlign: "center", marginTop: theme.space[4] },
   content: { paddingHorizontal: theme.space[16], paddingBottom: theme.space[16], alignItems: "center" },
-  sprite: { width: "100%", height: 280, marginTop: theme.space[24] },
+  plate: { alignSelf: "stretch", marginTop: theme.space[24], padding: theme.space[16], backgroundColor: theme.colors.paper },
+  sprite: { width: "100%", height: 248 },
   text: { ...theme.text.body, color: theme.colors.paperSoft, textAlign: "center", marginTop: theme.space[24] },
   reward: {
     alignSelf: "stretch",
