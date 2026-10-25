@@ -12,9 +12,8 @@ Pourquoi les redessiner : la conversion automatique des sprites en couleurs ne m
 | Guts sur la carte | `assets/map/guts-walk.png`, `guts-jeune-walk.png` (planches de marche), `guts-marker.png` | Marqueur animé (~48 px) |
 
 Les silhouettes « Inconnu » des collections se déduisent des nouveaux sprites : rien à dessiner.
-**Dessins de @CRYBAG** : prêtés avec crédit obligatoire. Ne pas les modifier sans son accord.
-Décidé avec Nathan le 24/10/2026 : on les remplace par des sprites générés de zéro. Bazuso, Mozgus et Grunbeld sont remplacés
-(25/10/2026) ; reste le skin Guts jeune de la carte, toujours crédité dans l'Apparence.
+**Dessins de @CRYBAG** : décidé avec Nathan le 24/10/2026, on les a remplacés par des sprites générés de zéro (Bazuso,
+Mozgus, Grunbeld, puis Guts jeune le 25/10/2026). Plus aucun n'est utilisé, et son crédit est retiré de l'app.
 
 ## Le style
 
@@ -127,5 +126,10 @@ le Chevalier Squelette (éclairci de 0.15, crâne redessiné à la main), Farnè
 redessiné à la main), Zodd en Apôtre (éclairci de 0.15, trous entre les bras et dans la queue rendus transparents à la
 main), Mozgus et Grunbeld sous leurs deux formes (25/10/2026) : tous les ennemis sont faits. Plus difficiles à obtenir : ouvrir une
 nouvelle conversation ChatGPT tous les 3 ou 4 personnages (sinon il recopie Guts), ne pas joindre d'image sanglante et
-éviter les mots violents (refus pour « contenu violent »). Le Guts généré servira aux planches de marche de la carte, qui demandent plusieurs
-images (une par pas) : à faire à part.
+éviter les mots violents (refus pour « contenu violent »).
+
+**Planches de marche de la carte** (faites le 25/10/2026, Guts jeune et Guerrier Noir) : demander à ChatGPT les 4 images
+dans une seule image, côte à côte, de profil vers la gauche (consigne : style de Guts à l'encre + ancienne planche en
+couleurs pour la pose). Puis `node scripts/ink-walk.js planche.png assets/map/guts-walk.png 4` : il découpe la rangée,
+recale chaque image sur le haut du corps et les réduit toutes à la même échelle. Reporter la taille d'une image qu'il
+affiche dans `src/data/gutsSkins.ts` (`frame`, `frameCount`).
