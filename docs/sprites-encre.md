@@ -122,7 +122,8 @@ Rien dans l'appli ne retourne les images : un boss généré tourné vers la dro
 6. Boss généré tourné vers la droite : le retourner avant la mise au format (fait pour Zodd).
 
 Faits : Casca et Griffith (21/10/2026), Bazuso (24/10/2026, pupilles ajoutées à la main après la mise au format), Gambino, Judeau, Pippin et Rickert (24/10/2026), Godo, Zodd en forme humaine (retourné, éclairci de 0.15) et
-le Chevalier Squelette (éclairci de 0.15, crâne redessiné à la main), Farnèse (en armure), Schierke, Flora, Serpico et Isidro (24/10/2026) : tous les compagnons sont faits. Ennemis : Femto (éclairci de 0.15) et Void (éclairci de 0.15, visage redessiné à la main) (24/10/2026). Plus difficiles à obtenir : ouvrir une
+le Chevalier Squelette (éclairci de 0.15, crâne redessiné à la main), Farnèse (en armure), Schierke, Flora, Serpico et Isidro (24/10/2026) : tous les compagnons sont faits. Ennemis : Femto (éclairci de 0.15) et Void (éclairci de 0.15, visage redessiné à la main) (24/10/2026), Ubik, Conrad (monticule plus large que haut) et Slan (visage
+redessiné à la main) (25/10/2026). Plus difficiles à obtenir : ouvrir une
 nouvelle conversation ChatGPT tous les 3 ou 4 personnages (sinon il recopie Guts), ne pas joindre d'image sanglante et
 éviter les mots violents (refus pour « contenu violent »). Le Guts généré servira aux planches de marche de la carte, qui demandent plusieurs
 images (une par pas) : à faire à part.
