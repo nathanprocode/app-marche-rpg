@@ -4,12 +4,10 @@
 //   node scripts/ink-sprite.js <entrée.png> <sortie.png> [hauteur=192] [éclaircir=0]
 // L'entrée doit être un PNG ou un JPG : convertir un .webp avec scripts/webp-to-png.ps1.
 // « éclaircir » (0 à 1, 0.15 conseillé) : pour une image à trame très fine, qui vire au noir une fois réduite.
+// Les planches de marche passent par scripts/ink-walk.js, qui réutilise ces fonctions.
 const path = require("path");
 const Jimp = require(path.resolve("node_modules/jimp-compact"));
 
-const [, , input, output, heightArg, lightenArg] = process.argv;
-const TARGET_HEIGHT = Number(heightArg ?? 192);
-const LIGHTEN = Number(lightenArg ?? 0);
 const INK = [0x11, 0x11, 0x11];
 const PAPER = [0xf3, 0xf3, 0xf0];
 /** Au-dessus de cette luminosité, un pixel relié au bord de l'image est du fond. */
@@ -20,6 +18,8 @@ const SEAL_RADIUS = 5;
 const INK_BELOW = 85;
 const DENSE_BELOW = 140;
 const LIGHT_BELOW = 195;
+/** Contour noir + liseré papier autour de la silhouette. */
+const BORDER = 2;
 
 function luma(data, o) {
   return 0.3 * data[o] + 0.59 * data[o + 1] + 0.11 * data[o + 2];
@@ -71,42 +71,43 @@ function backgroundMask(data, w, h) {
   return bg;
 }
 
-(async () => {
-  const image = await Jimp.read(input);
-  if (LIGHTEN) image.brightness(LIGHTEN);
-  const { width: w, height: h, data } = image.bitmap;
-  const bg = backgroundMask(data, w, h);
-
-  // Cadre serré autour du personnage.
+/** Cadre serré autour du personnage, éventuellement limité aux colonnes [fromX, toX). */
+function contentBox(bg, w, h, fromX = 0, toX = w) {
   let minX = w, minY = h, maxX = -1, maxY = -1;
-  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) if (!bg[y * w + x]) {
+  for (let y = 0; y < h; y++) for (let x = fromX; x < toX; x++) if (!bg[y * w + x]) {
     if (x < minX) minX = x;
     if (x > maxX) maxX = x;
     if (y < minY) minY = y;
     if (y > maxY) maxY = y;
   }
-  if (maxX < 0) throw new Error("Aucun personnage trouvé : le fond couvre toute l'image.");
+  return maxX < 0 ? null : { minX, minY, maxX, maxY };
+}
+
+/**
+ * Réduit le cadre `box` de l'image à l'encre. `scale` = pixels d'origine par pixel de sortie : la hauteur du cadre
+ * remplit la sortie par défaut ; les planches de marche imposent la même échelle à toutes leurs images.
+ */
+function inkify(image, bg, box, targetHeight, scale = (box.maxY - box.minY + 1) / (targetHeight - BORDER * 2)) {
+  const { width: w, height: h, data } = image.bitmap;
+  const innerW = Math.max(1, Math.round((box.maxX - box.minX + 1) / scale));
+  const innerH = Math.max(1, Math.round((box.maxY - box.minY + 1) / scale));
+  const outW = innerW + BORDER * 2, outH = innerH + BORDER * 2;
 
   // Réduction par moyenne : chaque pixel de sortie résume un bloc de l'original (luminosité et couverture).
-  const border = 2; // contour noir + liseré papier
-  const innerH = TARGET_HEIGHT - border * 2;
-  const scale = (maxY - minY + 1) / innerH;
-  const innerW = Math.max(1, Math.round((maxX - minX + 1) / scale));
-  const outW = innerW + border * 2, outH = TARGET_HEIGHT;
   const tone = new Float32Array(outW * outH).fill(255);
   const solid = new Uint8Array(outW * outH);
   for (let oy = 0; oy < innerH; oy++) for (let ox = 0; ox < innerW; ox++) {
-    const x0 = minX + Math.floor(ox * scale), x1 = Math.max(x0 + 1, minX + Math.floor((ox + 1) * scale));
-    const y0 = minY + Math.floor(oy * scale), y1 = Math.max(y0 + 1, minY + Math.floor((oy + 1) * scale));
+    const x0 = box.minX + Math.floor(ox * scale), x1 = Math.max(x0 + 1, box.minX + Math.floor((ox + 1) * scale));
+    const y0 = box.minY + Math.floor(oy * scale), y1 = Math.max(y0 + 1, box.minY + Math.floor((oy + 1) * scale));
     let sum = 0, covered = 0, n = 0;
-    for (let y = y0; y < Math.min(y1, h); y++) for (let x = x0; x < Math.min(x1, w); x++) {
+    for (let y = Math.max(0, y0); y < Math.min(y1, h); y++) for (let x = Math.max(0, x0); x < Math.min(x1, w); x++) {
       n++;
       if (bg[y * w + x]) continue;
       covered++;
       sum += luma(data, (y * w + x) * 4);
     }
-    const i = (oy + border) * outW + ox + border;
-    if (covered * 2 >= n) {
+    const i = (oy + BORDER) * outW + ox + BORDER;
+    if (n > 0 && covered * 2 >= n) {
       solid[i] = 1;
       tone[i] = sum / covered;
     }
@@ -143,7 +144,24 @@ function backgroundMask(data, w, h) {
     for (let dy = -1; dy <= 1 && !touches; dy++) for (let dx = -1; dx <= 1; dx++) if (isSolid(x + dx, y + dy)) touches = true;
     if (touches) paint(i, PAPER);
   }
+  return out;
+}
 
-  await out.writeAsync(output);
-  console.log(`${output} : ${outW} × ${outH}`);
-})();
+module.exports = { Jimp, BORDER, backgroundMask, contentBox, inkify };
+
+if (require.main === module) {
+  const [, , input, output, heightArg, lightenArg] = process.argv;
+  const targetHeight = Number(heightArg ?? 192);
+  const lighten = Number(lightenArg ?? 0);
+  (async () => {
+    const image = await Jimp.read(input);
+    if (lighten) image.brightness(lighten);
+    const { width: w, height: h, data } = image.bitmap;
+    const bg = backgroundMask(data, w, h);
+    const box = contentBox(bg, w, h);
+    if (!box) throw new Error("Aucun personnage trouvé : le fond couvre toute l'image.");
+    const out = inkify(image, bg, box, targetHeight);
+    await out.writeAsync(output);
+    console.log(`${output} : ${out.bitmap.width} × ${out.bitmap.height}`);
+  })();
+}

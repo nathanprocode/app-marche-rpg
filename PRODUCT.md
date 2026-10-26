@@ -56,7 +56,7 @@ Contraintes :
 
 - 18 cases du manga : `assets/panels/` (une par checkpoint).
 - Carte : `assets/map/world-map.png`, marqueurs et planches de marche de Guts dans `assets/map/`.
-- Sprites en pixel art : `assets/companions/` (14), `assets/bosses/`, `assets/camp/`. La plupart ont été générés par IA ; le skin Guts jeune vient d'un dessin de @CRYBAG (les boss Bazuso, Mozgus et Grunbeld, d'abord dessinés par lui, ont été redessinés les 24-25/10/2026) (accord pour un usage non commercial, crédit obligatoire tant qu'ils sont utilisés). **Les sprites peuvent être refaits**, à condition de rester cohérents avec l'univers et entre eux. La façon de les produire reste à décider.
+- Sprites en pixel art : `assets/companions/` (14), `assets/bosses/`, `assets/camp/`. Tous sont générés par IA puis passés à l'encre (24-25/10/2026) ; les dessins de @CRYBAG (Bazuso, Mozgus, Grunbeld, Guts jeune) ont tous été remplacés et ne sont plus utilisés. **Les sprites peuvent être refaits**, à condition de rester cohérents avec l'univers et entre eux. La façon de les produire reste à décider.
 - Marque : `assets/brand_mark.svg`.
 - Textes : 18 chroniques, fiches des compagnons et des ennemis, 22 succès (`src/data/`).
 - Absences : pas de sprite pour Puck ; pas de sons. On n'invente pas de contenu de l'histoire sans validation.

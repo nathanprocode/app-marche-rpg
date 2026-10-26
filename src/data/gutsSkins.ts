@@ -42,16 +42,15 @@ export const GUTS_SKINS: GutsSkin[] = [
     description: "Le mercenaire de l'Âge d'Or, avant l'Éclipse.",
     unlock: { type: "always" },
     unlockHint: "Disponible dès le départ.",
-    // 6 images de marche (fond vert retiré, retournées pour marcher dans le même sens que le Guerrier Noir).
+    // 4 images de marche à l'encre (25/10/2026, voir docs/sprites-encre.md).
     sprite: {
       kind: "sheet",
       image: require("../../assets/map/guts-jeune-walk.png"),
-      frameCount: 6,
-      frame: { width: 155, height: 192 },
-      // Un pas complet en 1,2 s : à 100 ms par image, il marchait beaucoup trop vite sur téléphone.
-      frameMs: 200,
+      frameCount: 4,
+      frame: { width: 156, height: 192 },
+      // Un pas complet en 1,2 s : plus vite, il trottinait sur téléphone.
+      frameMs: 300,
     },
-    credit: "D'après un dessin de @CRYBAG",
   },
   {
     id: "black-swordsman",
@@ -62,9 +61,10 @@ export const GUTS_SKINS: GutsSkin[] = [
     sprite: {
       kind: "sheet",
       image: require("../../assets/map/guts-walk.png"),
-      frameCount: 8,
-      frame: { width: 124, height: 131 },
-      frameMs: 100,
+      frameCount: 4,
+      frame: { width: 165, height: 192 },
+      // Même cadence qu'avant (8 images à 100 ms) : un pas complet en 0,8 s.
+      frameMs: 200,
     },
   },
 ];

@@ -34,17 +34,17 @@ Tests : 26 suites, 215 tests, tous verts. CI GitHub (`.github/workflows/ci.yml`)
 | Vibrations | Option du Profil, désactivée par défaut : point franchi, succès, fin de Traque, boss, objectif du jour | `src/features/haptics` |
 | Remise à zéro | « Recommencer à zéro » (local + cloud), réglages conservés | `src/features/runtime/eraseProgress.ts` |
 | Bande (social) | Onglet « Bande » : créer/rejoindre avec un code `FAUCON-XXXXXX`, classement, amis sur la carte (point + nom), temps quasi réel via Firestore. **Demande de publier `firestore.rules`** | `docs/social.md`, `src/features/social`, `useSocialStore`, `BandScreen` |
-| Skins de Guts | Sur la carte seulement : Guts jeune (Troupe du Faucon) imposé jusqu'à la première Éclipse (315 km), puis le Guerrier Noir. Section « Apparence » du Profil pour choisir parmi les skins débloqués ; le choix est gardé aux tours suivants. Guts jeune d'après un dessin de @CRYBAG (accord pour un usage non commercial, crédité dans l'Apparence) | `src/data/gutsSkins.ts`, `src/features/skins`, `GutsMarker`, `AppearancePicker` |
+| Skins de Guts | Sur la carte seulement : Guts jeune (Troupe du Faucon) imposé jusqu'à la première Éclipse (315 km), puis le Guerrier Noir. Section « Apparence » du Profil pour choisir parmi les skins débloqués ; le choix est gardé aux tours suivants. Les deux skins sont des planches de marche à l'encre (25/10/2026) | `src/data/gutsSkins.ts`, `src/features/skins`, `GutsMarker`, `AppearancePicker` |
 | Accessibilité | Grandes polices, animations réduites, libellés TalkBack | partout |
 
 ### Ce qui n'est PAS fait
 
 - **Sprites à l'encre** (voir `docs/sprites-encre.md`) : les 14 compagnons sont refaits (24/10/2026), ainsi que Bazuso,
-  tous les ennemis (25/10/2026), formes d'Apôtre comprises. Reste Guts sur la carte (planches de marche, en couleurs). Pour en ajouter un : PNG à fond transparent, 192 px de haut, `assets/companions/<id>.png`, puis
+  tous les ennemis (25/10/2026), formes d'Apôtre comprises, et Guts sur la carte (25/10/2026, deux planches de 4 images).
+  Tout le dessin de l'app est à l'encre. Pour en ajouter un : PNG à fond transparent, 192 px de haut, `assets/companions/<id>.png`, puis
   `image: require("../../assets/companions/<id>.png")` dans `src/data/companions.ts`. Les formes de boss vont dans `assets/bosses/`.
-- **Marche de Guts jeune** : planche de 6 images (`assets/map/guts-jeune-walk.png`, 6 × 155 × 192 px) faite par Nathan
-  sur fond vert, détourée et retournée. Le dessin d'origine de @CRYBAG n'est plus utilisé dans l'app (crédit « D'après un
-  dessin de @CRYBAG »). Ajouter un skin = une entrée dans `src/data/gutsSkins.ts`.
+- **Marche de Guts** : planches de 4 images à l'encre (`assets/map/guts-jeune-walk.png`, `guts-walk.png`), mises au format
+  par `scripts/ink-walk.js`. Plus aucun dessin de @CRYBAG dans l'app. Ajouter un skin = une entrée dans `src/data/gutsSkins.ts`.
 - **Puck** : voulu par Nathan, pas d'image (il ne trouve rien et ne sait pas le dessiner). À ajouter quand un sprite existe
   (rencontre suggérée vers « Le Comte », `cp-008-5`).
 - **Isma et Ivalera** : proposés puis écartés, car leur place dans l'histoire n'était pas sûre. À vérifier avant de les ajouter.
